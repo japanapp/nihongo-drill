@@ -1,9 +1,11 @@
 const CACHE = 'nihongo-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=DM+Sans:wght@300;400;500;600&display=swap'
+  '/nihongo-drill/',
+  '/nihongo-drill/index.html',
+  '/nihongo-drill/vocab.js',
+  '/nihongo-drill/manifest.json',
+  '/nihongo-drill/icon-192.png',
+  '/nihongo-drill/icon-512.png',
 ];
 
 self.addEventListener('install', e => {
@@ -26,6 +28,6 @@ self.addEventListener('fetch', e => {
       const clone = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, clone));
       return res;
-    })).catch(() => caches.match('/index.html'))
+    })).catch(() => caches.match('/nihongo-drill/index.html'))
   );
 });
