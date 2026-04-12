@@ -496,6 +496,24 @@ function beginQuiz() {
   wordIndex  = 0;
   attempts   = 0;
   phaseOrder = shuffle(currentBlock);
+
+  // Restore quiz card area in case blockComplete() replaced it
+  document.getElementById('quiz-card-area').innerHTML = `
+    <div class="quiz-meta">
+      <span class="quiz-phase-label" id="quiz-phase-label">Phase 1</span>
+      <div class="cycle-dots" id="cycle-dots"></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="phase-pills" id="phase-pills"></div>
+    <div class="question-card" id="question-card"></div>
+    <div id="keyboard-hint-area"></div>
+    <input class="answer-input" id="answer-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="Type your answer..." />
+    <button class="submit-btn" onclick="submitAnswer()">Submit</button>
+    <div class="feedback-area"><div class="feedback-pill" id="feedback-pill"></div></div>
+    <div class="attempts-row" id="attempts-row"></div>`;
+
   showScreen('quiz');
   renderQuizFrame();
 }
