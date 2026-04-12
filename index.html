@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="日本語" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>日本語 Drill</title>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink:        #1a1a2e;
+      --ink-soft:   #2d2d4a;
+      --paper:      #f5f0e8;
+      --paper-warm: #ede8dc;
+      --red:        #c0392b;
+      --red-light:  #e74c3c;
+      --gold:       #c9a84c;
+      --gold-light: #f0c96a;
+      --green:      #27ae60;
+      --blue:       #2980b9;
+      --purple:     #8e44ad;
+      --text:       #1a1a2e;
+      --text-soft:  #5a5a7a;
+      --white:      #ffffff;
+      --shadow-lg:  0 8px 40px rgba(26,26,46,0.2);
+      --radius:     16px;
+      --radius-sm:  10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: var(--ink); font-family: 'DM Sans', sans-serif; color: var(--text); overscroll-behavior: none; }
+
+    .screen { display: none; position: fixed; inset: 0; background: var(--ink); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    .app-header {
+      background: var(--ink); padding: 12px 20px 14px;
+      padding-top: max(env(safe-area-inset-top, 12px), 12px);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .app-title { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--paper); letter-spacing: .04em; }
+    .app-subtitle { font-size: 10px; color: var(--gold); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
+    .header-back { background: none; border: none; color: var(--gold); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; padding: 8px 0; display: flex; align-items: center; gap: 6px; }
+    .header-back::before { content: '←'; font-size: 18px; }
+
+    .card-area { flex: 1; background: var(--paper); border-radius: 28px 28px 0 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px 20px 40px; padding-bottom: max(40px, env(safe-area-inset-bottom, 40px)); }
+
+    /* MODE TABS */
+    .mode-tabs { display: flex; gap: 6px; margin-bottom: 20px; background: var(--paper-warm); border-radius: 12px; padding: 4px; }
+    .mode-tab { flex: 1; border: none; border-radius: 9px; padding: 10px 4px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; background: transparent; color: var(--text-soft); transition: all .18s; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .mode-tab .tab-script { font-family: 'Shippori Mincho', serif; font-size: 17px; }
+    .mode-tab.active { background: var(--ink); color: var(--paper); box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+    .mode-tab.active .tab-script { color: var(--gold); }
+    .mode-tab.locked-tab { opacity: .3; cursor: not-allowed; }
+
+    /* HOME */
+    .home-hero { text-align: center; padding: 4px 0 16px; }
+    .kanji-bg { font-family: 'Shippori Mincho', serif; font-size: 70px; color: var(--ink); opacity: .07; line-height: 1; user-select: none; letter-spacing: -4px; }
+    .home-hero h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--ink); margin-top: -18px; }
+    .home-hero p { color: var(--text-soft); font-size: 12px; margin-top: 5px; }
+
+    .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin: 14px 0; }
+    .stat-card { background: var(--ink); border-radius: var(--radius-sm); padding: 13px 8px; text-align: center; }
+    .stat-card .num { font-family: 'Shippori Mincho', serif; font-size: 23px; font-weight: 800; color: var(--gold); line-height: 1; }
+    .stat-card .lbl { font-size: 9px; color: var(--paper-warm); margin-top: 3px; opacity: .7; text-transform: uppercase; letter-spacing: .08em; }
+
+    .section-heading { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--text-soft); margin: 18px 0 10px; }
+
+    .block-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 7px; }
+    .block-btn { aspect-ratio: 1; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: transform .12s; }
+    .block-btn:active { transform: scale(.92); }
+    .block-btn.unlocked { background: var(--ink); color: var(--paper); }
+    .block-btn.unlocked.complete { background: var(--green); color: var(--white); }
+    .block-btn.locked { background: var(--paper-warm); color: #bbb; cursor: not-allowed; }
+    .block-btn .bn { font-size: 13px; font-weight: 700; }
+
+    .review-row { margin-top: 10px; }
+    .review-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .review-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .review-btn { background: var(--paper-warm); border: 2px solid var(--ink); border-radius: var(--radius); padding: 13px 8px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .12s; text-align: center; line-height: 1.3; }
+    .review-btn:active { transform: scale(.96); }
+    .review-btn .ri { font-size: 18px; }
+    .review-btn-locked { opacity: .55; cursor: not-allowed; border-style: dashed; }
+    .review-lock { font-size: 9px; color: var(--text-soft); margin-top: 2px; font-weight: 400; }
+
+    .unlock-banner { background: var(--ink-soft); border: 2px solid var(--gold); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 14px; }
+    .unlock-banner .ub-emoji { font-size: 28px; margin-bottom: 6px; }
+    .unlock-banner h3 { font-family: 'Shippori Mincho', serif; font-size: 17px; color: var(--gold-light); margin-bottom: 4px; }
+    .unlock-banner p { font-size: 11px; color: var(--paper); opacity: .75; }
+
+    /* WORD LIST */
+    .word-list-header { text-align: center; margin-bottom: 16px; }
+    .word-list-header h2 { font-family: 'Shippori Mincho', serif; font-size: 20px; font-weight: 800; color: var(--ink); }
+    .word-list-header p { color: var(--text-soft); font-size: 12px; margin-top: 4px; }
+    .word-card { background: var(--white); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 9px; display: grid; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .word-card .kana { font-family: 'Shippori Mincho', serif; font-size: 26px; font-weight: 600; color: var(--ink); }
+    .word-card .romaji { font-size: 13px; color: var(--text-soft); }
+    .word-card .english { font-size: 13px; color: var(--text); font-weight: 500; }
+
+    /* QUIZ */
+    .quiz-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .quiz-phase-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--text-soft); }
+    .cycle-dots { display: flex; gap: 5px; }
+    .cycle-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper-warm); border: 2px solid var(--ink); transition: background .2s; }
+    .cycle-dot.active { background: var(--gold); border-color: var(--gold); }
+    .cycle-dot.done { background: var(--green); border-color: var(--green); }
+
+    .progress-track { height: 4px; background: var(--paper-warm); border-radius: 2px; margin-bottom: 18px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--red)); border-radius: 2px; transition: width .35s ease; }
+
+    .phase-pills { display: flex; gap: 6px; margin-bottom: 16px; }
+    .phase-pill { flex: 1; padding: 7px 4px; border-radius: 8px; font-size: 10px; font-weight: 600; text-align: center; line-height: 1.3; border: 1.5px solid var(--paper-warm); color: var(--text-soft); background: transparent; }
+    .phase-pill.pp-active { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+    .phase-pill.pp-done { background: var(--green); color: var(--white); border-color: var(--green); }
+
+    .question-card { background: var(--ink); border-radius: 24px; padding: 26px 20px; text-align: center; margin-bottom: 18px; box-shadow: var(--shadow-lg); min-height: 165px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+    .q-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--gold); opacity: .7; }
+    .q-kana { font-family: 'Shippori Mincho', serif; font-size: 50px; font-weight: 800; color: var(--paper); line-height: 1; letter-spacing: .04em; }
+    .q-romaji { font-size: 17px; font-weight: 400; color: var(--paper); opacity: .75; }
+    .q-english { font-size: 15px; font-weight: 500; color: var(--gold-light); font-style: italic; }
+
+    .keyboard-hint { text-align: center; font-size: 11px; color: var(--text-soft); margin-bottom: 10px; padding: 8px 12px; background: var(--paper-warm); border-radius: 8px; line-height: 1.5; }
+    .keyboard-hint strong { color: var(--ink); }
+
+    .answer-input { width: 100%; background: var(--white); border: 2.5px solid var(--paper-warm); border-radius: var(--radius); padding: 14px 16px; font-size: 18px; font-family: 'DM Sans', sans-serif; color: var(--ink); outline: none; transition: border-color .15s; margin-bottom: 12px; text-align: center; }
+    .answer-input:focus { border-color: var(--gold); }
+    .answer-input.correct { border-color: var(--green); background: #f0fff4; }
+    .answer-input.wrong { border-color: var(--red-light); background: #fff5f5; }
+
+    .submit-btn { width: 100%; background: var(--ink); color: var(--paper); border: none; border-radius: var(--radius); padding: 15px; font-size: 16px; font-family: 'DM Sans', sans-serif; font-weight: 600; cursor: pointer; transition: transform .12s; }
+    .submit-btn:active { transform: scale(.97); }
+
+    .feedback-area { min-height: 42px; display: flex; align-items: center; justify-content: center; margin-top: 10px; }
+    .feedback-pill { padding: 7px 18px; border-radius: 40px; font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 6px; }
+    .feedback-pill.show { display: flex; animation: popIn .2s ease; }
+    .feedback-pill.correct { background: #d4edda; color: #155724; }
+    .feedback-pill.wrong { background: #f8d7da; color: #721c24; }
+    .feedback-pill.reveal { background: #fff3cd; color: #856404; }
+    @keyframes popIn { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .attempts-row { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+    .attempt-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--paper-warm); border: 2px solid #ccc; }
+    .attempt-dot.used { background: var(--red-light); border-color: var(--red-light); }
+
+    .complete-card { background: var(--ink); border-radius: 24px; padding: 34px 20px; text-align: center; color: var(--paper); box-shadow: var(--shadow-lg); }
+    .complete-card .big-emoji { font-size: 50px; margin-bottom: 12px; }
+    .complete-card h2 { font-family: 'Shippori Mincho', serif; font-size: 24px; font-weight: 800; color: var(--gold-light); margin-bottom: 6px; }
+    .complete-card p { color: var(--paper); opacity: .7; font-size: 13px; margin-bottom: 22px; }
+    .complete-btn { display: block; width: 100%; background: var(--gold); color: var(--ink); border: none; border-radius: var(--radius); padding: 15px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 700; cursor: pointer; margin-bottom: 10px; transition: transform .12s; }
+    .complete-btn:active { transform: scale(.97); }
+    .complete-btn.secondary { background: transparent; border: 2px solid rgba(245,240,232,.3); color: var(--paper); opacity: .7; }
+
+    .big-btn { display: block; width: 100%; background: var(--ink); color: var(--paper); border: none; border-radius: var(--radius); padding: 15px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 600; cursor: pointer; text-align: center; margin-top: 14px; transition: transform .12s; }
+    .big-btn.gold { background: var(--gold); color: var(--ink); font-weight: 700; }
+    .big-btn:active { transform: scale(.97); }
+
+    .review-score { text-align: center; margin-bottom: 16px; }
+    .review-score .frac { font-family: 'Shippori Mincho', serif; font-size: 42px; font-weight: 800; color: var(--ink); }
+    .review-score .lbl { font-size: 12px; color: var(--text-soft); }
+
+    ::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="app-header">
+    <div>
+      <div class="app-title">日本語 Drill</div>
+      <div class="app-subtitle" id="home-mode-label">Hiragana Mode</div>
+    </div>
+  </div>
+  <div class="card-area">
+    <div id="mode-tabs-container"></div>
+    <div id="unlock-banner-container"></div>
+    <div class="home-hero">
+      <div class="kanji-bg" id="hero-bg">がくしゅう</div>
+      <h2 id="hero-title">Hiragana Mode</h2>
+      <p>Complete blocks to unlock the next script</p>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-card"><div class="num" id="stat-complete">0</div><div class="lbl">Blocks Done</div></div>
+      <div class="stat-card"><div class="num" id="stat-words">0</div><div class="lbl">Words Learnt</div></div>
+      <div class="stat-card"><div class="num" id="stat-total">0</div><div class="lbl">Total Words</div></div>
+    </div>
+    <div class="section-heading">Your Blocks</div>
+    <div class="block-grid" id="block-grid"></div>
+    <div class="section-heading" id="review-heading" style="display:none">Review Unlocked Words</div>
+    <div class="review-row" id="review-row"></div>
+  </div>
+</div>
+
+<!-- WORD LIST -->
+<div id="screen-wordlist" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="showScreen('home')">Back</button>
+    <div style="text-align:right">
+      <div class="app-title" id="wordlist-title">Block 1</div>
+      <div class="app-subtitle" id="wordlist-subtitle">5 words</div>
+    </div>
+  </div>
+  <div class="card-area">
+    <div class="word-list-header">
+      <h2>Study these words</h2>
+      <p>Memorise them, then take the quiz</p>
+    </div>
+    <div id="word-list-cards"></div>
+    <button class="big-btn gold" onclick="beginQuiz()">Start Quiz →</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="screen-quiz" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="confirmQuit()">Quit</button>
+    <div style="text-align:right">
+      <div class="app-title" id="quiz-block-label">Block 1</div>
+      <div class="app-subtitle" id="quiz-mode-label">Hiragana</div>
+    </div>
+  </div>
+  <div class="card-area" id="quiz-card-area">
+    <div class="quiz-meta">
+      <span class="quiz-phase-label" id="quiz-phase-label">Phase 1</span>
+      <div class="cycle-dots" id="cycle-dots"></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="phase-pills" id="phase-pills"></div>
+    <div class="question-card" id="question-card"></div>
+    <div id="keyboard-hint-area"></div>
+    <input class="answer-input" id="answer-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="Type your answer…" />
+    <button class="submit-btn" onclick="submitAnswer()">Submit</button>
+    <div class="feedback-area"><div class="feedback-pill" id="feedback-pill"></div></div>
+    <div class="attempts-row" id="attempts-row"></div>
+  </div>
+</div>
+
+<!-- REVIEW -->
+<div id="screen-review" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="showScreen('home')">Done</button>
+    <div style="text-align:right">
+      <div class="app-title">Review</div>
+      <div class="app-subtitle" id="review-subtitle">10 words</div>
+    </div>
+  </div>
+  <div class="card-area" id="review-card-area"></div>
+</div>
+
+<script src="vocab.js"></script>
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────
+const BLOCK_SIZE      = 5;
+const REQUIRED_CYCLES = 3;
+const MAX_ATTEMPTS    = 3;
+
+const MODE_META = {
+  hiragana: { label: 'Hiragana', script: 'あ', heroBg: 'がくしゅう', phases: 3 },
+  katakana: { label: 'Katakana', script: 'ア', heroBg: 'ガクシュウ', phases: 3 },
+  kanji:    { label: 'Kanji',    script: '字', heroBg: '学習',      phases: 1 },
+};
+
+// Phase definitions: what to show, what answer to expect
+const PHASES = {
+  hiragana: [
+    { label: 'Romaji',
+      prompt: w => `<div class="q-label">Read the hiragana</div><div class="q-kana">${w.hiragana}</div><div class="q-english">${w.english}</div>`,
+      answer: w => w.romaji, placeholder: 'Type romaji…', hint: null },
+    { label: 'English',
+      prompt: w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.hiragana}</div><div class="q-romaji">${w.romaji}</div>`,
+      answer: w => w.english, placeholder: 'Type English meaning…', hint: null },
+    { label: 'Write it',
+      prompt: w => `<div class="q-label">Write in hiragana</div><div class="q-romaji" style="font-size:22px;margin-bottom:4px">${w.romaji}</div><div class="q-english">${w.english}</div>`,
+      answer: w => w.hiragana, placeholder: 'Type in hiragana…',
+      hint: '🇯🇵 Switch to your <strong>Japanese keyboard</strong> to type hiragana' },
+  ],
+  katakana: [
+    { label: 'Romaji',
+      prompt: w => `<div class="q-label">Read the katakana</div><div class="q-kana">${w.katakana}</div><div class="q-english">${w.english}</div>`,
+      answer: w => w.romaji, placeholder: 'Type romaji…', hint: null },
+    { label: 'English',
+      prompt: w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.katakana}</div><div class="q-romaji">${w.romaji}</div>`,
+      answer: w => w.english, placeholder: 'Type English meaning…', hint: null },
+    { label: 'Write it',
+      prompt: w => `<div class="q-label">Write in katakana</div><div class="q-romaji" style="font-size:22px;margin-bottom:4px">${w.romaji}</div><div class="q-english">${w.english}</div>`,
+      answer: w => w.katakana, placeholder: 'Type in katakana…',
+      hint: '🇯🇵 Switch to your <strong>Japanese keyboard</strong> to type katakana' },
+  ],
+  kanji: [
+    { label: 'Read',
+      prompt: w => `<div class="q-label">Read this kanji</div><div class="q-kana">${w.kanji}</div><div class="q-english">${w.english}</div>`,
+      answer: w => w.romaji, placeholder: 'Type romaji…', hint: null },
+  ],
+};
+
+// ── STATE ──────────────────────────────────────────────────────
+let currentMode       = 'hiragana';
+let currentBlockIndex = 0;
+let currentBlock      = [];
+let quizPhase         = 0;
+let cycleCount        = 0;
+let wordIndex         = 0;
+let attempts          = 0;
+let phaseOrder        = [];
+let reviewWords       = [], reviewIndex = 0, reviewCorrect = 0, reviewType = '';
+
+// ── PERSISTENCE ────────────────────────────────────────────────
+const getProgress  = () => JSON.parse(localStorage.getItem('jp_v3') || '{}');
+const saveProgress = p  => localStorage.setItem('jp_v3', JSON.stringify(p));
+
+// ── VOCAB HELPERS ───────────────────────────────────────────────
+function vocabFor(mode) {
+  if (mode === 'kanji') return window.vocabData.filter(w => w.hasKanji);
+  return window.vocabData;
+}
+
+function isBlockUnlocked(mode, i, prog) {
+  if (i === 0) return true;
+  return !!prog[`${mode}_${i-1}`]?.done;
+}
+
+function isModeUnlocked(mode, prog) {
+  if (mode === 'hiragana') return true;
+  const src = mode === 'katakana' ? 'hiragana' : 'katakana';
+  const v   = vocabFor(src);
+  const n   = Math.ceil(v.length / BLOCK_SIZE);
+  for (let i = 0; i < n; i++) if (!prog[`${src}_${i}`]?.done) return false;
+  return true;
+}
+
+function shuffle(arr) {
+  return [...arr].map(v => ({ v, r: Math.random() })).sort((a, b) => a.r - b.r).map(o => o.v);
+}
+
+// ── SCREEN MANAGER ─────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if (id === 'home') renderHome();
+}
+
+// ── HOME ────────────────────────────────────────────────────────
+function renderHome() {
+  const prog  = getProgress();
+  const vocab = vocabFor(currentMode);
+  const n     = Math.ceil(vocab.length / BLOCK_SIZE);
+  const meta  = MODE_META[currentMode];
+
+  // count completed blocks
+  let done = 0;
+  for (let i = 0; i < n; i++) if (prog[`${currentMode}_${i}`]?.done) done++;
+
+  // hero
+  document.getElementById('hero-bg').textContent         = meta.heroBg;
+  document.getElementById('hero-title').textContent      = meta.label + ' Mode';
+  document.getElementById('home-mode-label').textContent = meta.label + ' Mode';
+
+  // stats
+  document.getElementById('stat-complete').textContent = done;
+  document.getElementById('stat-words').textContent    = done * BLOCK_SIZE;
+  document.getElementById('stat-total').textContent    = vocab.length;
+
+  // mode tabs — only show if at least katakana is unlocked
+  const tabsEl = document.getElementById('mode-tabs-container');
+  if (isModeUnlocked('katakana', prog)) {
+    tabsEl.innerHTML = '<div class="mode-tabs">' +
+      ['hiragana','katakana','kanji'].map(m => {
+        const unlocked = isModeUnlocked(m, prog);
+        const active   = m === currentMode;
+        return `<button class="mode-tab ${active?'active':''} ${!unlocked?'locked-tab':''}"
+          ${!unlocked ? 'disabled' : `onclick="switchMode('${m}')"`}>
+          <span class="tab-script">${MODE_META[m].script}</span>
+          <span>${MODE_META[m].label}</span>
+        </button>`;
+      }).join('') + '</div>';
+  } else {
+    tabsEl.innerHTML = '';
+  }
+
+  // unlock banner
+  const bannerEl = document.getElementById('unlock-banner-container');
+  bannerEl.innerHTML = '';
+  if (done === n) {
+    if (currentMode === 'hiragana' && isModeUnlocked('katakana', prog)) {
+      bannerEl.innerHTML = `<div class="unlock-banner"><div class="ub-emoji">🎉</div><h3>Katakana Unlocked!</h3><p>All Hiragana blocks complete. Switch to Katakana mode above.</p></div>`;
+    } else if (currentMode === 'katakana' && isModeUnlocked('kanji', prog)) {
+      bannerEl.innerHTML = `<div class="unlock-banner"><div class="ub-emoji">🏆</div><h3>Kanji Unlocked!</h3><p>All Katakana blocks complete. Switch to Kanji mode above.</p></div>`;
+    }
+  }
+
+  // block grid
+  const grid = document.getElementById('block-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const isDone  = !!prog[`${currentMode}_${i}`]?.done;
+    const open    = isBlockUnlocked(currentMode, i, prog);
+    const btn     = document.createElement('button');
+    btn.className = `block-btn ${open ? 'unlocked' : 'locked'} ${isDone ? 'complete' : ''}`;
+    btn.innerHTML = `<span class="bn">${i+1}</span><span>${isDone ? '✓' : open ? '○' : '🔒'}</span>`;
+    btn.disabled  = !open;
+    if (open) btn.onclick = () => openBlock(i);
+    grid.appendChild(btn);
+  }
+
+  // review — needs at least 10 words (2 completed blocks)
+  const reviewHeading = document.getElementById('review-heading');
+  const reviewRow     = document.getElementById('review-row');
+  if (done === 0) {
+    reviewHeading.style.display = 'none';
+    reviewRow.innerHTML = '';
+    return;
+  }
+  reviewHeading.style.display = '';
+
+  const wordsLearnt = done * BLOCK_SIZE;
+  const enough      = wordsLearnt >= 10;
+  const lockMsg     = enough ? '' : ' review-btn-locked';
+
+  if (currentMode === 'kanji') {
+    // Kanji: 3 types — no "write kana" since IME kanji input is a different skill
+    reviewRow.innerHTML = `
+      <div class="review-grid-3">
+        <button class="review-btn${lockMsg}" onclick="${enough ? "startReview('kana-rom')" : ''}">
+          <span class="ri">漢→あ</span>Kanji → Romaji
+          ${!enough ? '<span class="review-lock">🔒 Need 10 words</span>' : ''}
+        </button>
+        <button class="review-btn${lockMsg}" onclick="${enough ? "startReview('kana-eng')" : ''}">
+          <span class="ri">漢→🇬🇧</span>Kanji → English
+          ${!enough ? '<span class="review-lock">🔒 Need 10 words</span>' : ''}
+        </button>
+        <button class="review-btn${lockMsg}" onclick="${enough ? "startReview('eng-rom')" : ''}">
+          <span class="ri">🇬🇧→あ</span>Meaning → Romaji
+          ${!enough ? '<span class="review-lock">🔒 Need 10 words</span>' : ''}
+        </button>
+      </div>`;
+  } else {
+    const s = currentMode === 'hiragana' ? 'あ' : 'ア';
+    reviewRow.innerHTML = `
+      <div class="review-grid-2">
+        <button class="review-btn${lockMsg}" onclick="${enough ? "startReview('kana-rom')" : ''}">
+          <span class="ri">${s}→ ro</span>Kana → Romaji
+          ${!enough ? '<span class="review-lock">🔒 Need 10 words</span>' : ''}
+        </button>
+        <button class="review-btn${lockMsg}" onclick="${enough ? "startReview('kana-eng')" : ''}">
+          <span class="ri">${s}→🇬🇧</span>Kana → Meaning
+          ${!enough ? '<span class="review-lock">🔒 Need 10 words</span>' : ''}
+        </button>
+        <button class="review-btn${lockMsg}" onclick="${enough ? "startReview('eng-rom')" : ''}">
+          <span class="ri">🇬🇧→ ro</span>Meaning → Romaji
+          ${!enough ? '<span class="review-lock">🔒 Need 10 words</span>' : ''}
+        </button>
+        <button class="review-btn${lockMsg}" onclick="${enough ? "startReview('eng-kana')" : ''}">
+          <span class="ri">🇬🇧→${s}</span>Meaning → Kana
+          ${!enough ? '<span class="review-lock">🔒 Need 10 words</span>' : ''}
+        </button>
+      </div>`;
+  }
+}
+
+function switchMode(m) { currentMode = m; renderHome(); }
+
+// ── WORD LIST ───────────────────────────────────────────────────
+function openBlock(i) {
+  currentBlockIndex = i;
+  const vocab       = vocabFor(currentMode);
+  currentBlock      = vocab.slice(i * BLOCK_SIZE, (i+1) * BLOCK_SIZE);
+  cycleCount        = 0;
+
+  document.getElementById('wordlist-title').textContent    = 'Block ' + (i+1);
+  document.getElementById('wordlist-subtitle').textContent = MODE_META[currentMode].label + ' · ' + currentBlock.length + ' words';
+
+  const list = document.getElementById('word-list-cards');
+  list.innerHTML = '';
+  currentBlock.forEach(w => {
+    const script = currentMode === 'hiragana' ? w.hiragana : currentMode === 'katakana' ? w.katakana : w.kanji;
+    const d = document.createElement('div');
+    d.className = 'word-card';
+    d.innerHTML = `<div class="kana">${script}</div><div class="romaji">${w.romaji}</div><div class="english">${w.english}</div>`;
+    list.appendChild(d);
+  });
+  showScreen('wordlist');
+}
+
+// ── QUIZ ────────────────────────────────────────────────────────
+const numPhases = () => MODE_META[currentMode].phases;
+
+function beginQuiz() {
+  quizPhase  = 0;
+  cycleCount = 0;
+  wordIndex  = 0;
+  attempts   = 0;
+  phaseOrder = shuffle(currentBlock);
+  showScreen('quiz');
+  renderQuizFrame();
+}
+
+function renderQuizFrame() {
+  document.getElementById('quiz-block-label').textContent = 'Block ' + (currentBlockIndex+1);
+  document.getElementById('quiz-mode-label').textContent  = MODE_META[currentMode].label;
+
+  // cycle dots (multi-phase modes only)
+  const dots = document.getElementById('cycle-dots');
+  dots.innerHTML = '';
+  if (numPhases() > 1) {
+    for (let i = 0; i < REQUIRED_CYCLES; i++) {
+      const d = document.createElement('div');
+      d.className = 'cycle-dot ' + (i < cycleCount ? 'done' : i === cycleCount ? 'active' : '');
+      dots.appendChild(d);
+    }
+  }
+
+  // phase pills
+  const pills = document.getElementById('phase-pills');
+  pills.innerHTML = '';
+  if (numPhases() > 1) {
+    PHASES[currentMode].forEach((ph, i) => {
+      const p = document.createElement('div');
+      p.className = 'phase-pill ' + (i < quizPhase ? 'pp-done' : i === quizPhase ? 'pp-active' : '');
+      p.textContent = ph.label;
+      pills.appendChild(p);
+    });
+  }
+
+  showQuestion();
+}
+
+function showQuestion() {
+  const ph   = PHASES[currentMode][quizPhase];
+  const w    = phaseOrder[wordIndex];
+  const tp   = numPhases();
+
+  // progress bar
+  const totalSteps = currentBlock.length * tp * (tp === 1 ? 1 : REQUIRED_CYCLES);
+  const doneSteps  = tp === 1
+    ? wordIndex
+    : cycleCount * currentBlock.length * tp + quizPhase * currentBlock.length + wordIndex;
+  document.getElementById('progress-fill').style.width = Math.min((doneSteps / totalSteps) * 100, 99) + '%';
+
+  // phase label
+  document.getElementById('quiz-phase-label').textContent = tp > 1
+    ? `Cycle ${cycleCount+1}/${REQUIRED_CYCLES} · Phase ${quizPhase+1}/${tp}`
+    : 'Reading Exercise';
+
+  // question
+  document.getElementById('question-card').innerHTML = ph.prompt(w);
+
+  // keyboard hint
+  document.getElementById('keyboard-hint-area').innerHTML = ph.hint
+    ? `<div class="keyboard-hint">${ph.hint}</div>` : '';
+
+  // input
+  const inp = document.getElementById('answer-input');
+  inp.value = '';
+  inp.placeholder = ph.placeholder;
+  inp.className = 'answer-input';
+  if (quizPhase === 2) {
+    inp.setAttribute('lang', 'ja');
+    inp.removeAttribute('autocapitalize');
+  } else {
+    inp.setAttribute('lang', 'en');
+    inp.setAttribute('autocapitalize', 'off');
+  }
+
+  clearFeedback();
+  renderDots();
+  setTimeout(() => inp.focus(), 80);
+}
+
+function renderDots() {
+  const row = document.getElementById('attempts-row');
+  row.innerHTML = '';
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const d = document.createElement('div');
+    d.className = 'attempt-dot ' + (i < attempts ? 'used' : '');
+    row.appendChild(d);
+  }
+}
+
+function clearFeedback() {
+  const p = document.getElementById('feedback-pill');
+  p.className = 'feedback-pill'; p.textContent = '';
+}
+
+function showFeedback(type, msg) {
+  const p = document.getElementById('feedback-pill');
+  p.className = 'feedback-pill ' + type + ' show'; p.textContent = msg;
+}
+
+function submitAnswer() {
+  const inp     = document.getElementById('answer-input');
+  const val     = inp.value.trim().toLowerCase();
+  const ph      = PHASES[currentMode][quizPhase];
+  const w       = phaseOrder[wordIndex];
+  const correct = ph.answer(w).toLowerCase();
+
+  if (val === correct) {
+    inp.className = 'answer-input correct';
+    showFeedback('correct', '✓ Correct!');
+    attempts = 0;
+    setTimeout(nextWord, 900);
+  } else {
+    attempts++;
+    renderDots();
+    if (attempts >= MAX_ATTEMPTS) {
+      inp.className = 'answer-input wrong';
+      showFeedback('reveal', 'Answer: ' + ph.answer(w));
+      attempts = 0;
+      setTimeout(nextWord, 2000);
+    } else {
+      inp.className = 'answer-input wrong';
+      showFeedback('wrong', '✗ Try again (' + (MAX_ATTEMPTS - attempts) + ' left)');
+      setTimeout(() => {
+        inp.className = 'answer-input'; inp.value = '';
+        clearFeedback(); renderDots(); inp.focus();
+      }, 900);
+    }
+  }
+}
+
+function nextWord() {
+  wordIndex++;
+  if (wordIndex < phaseOrder.length) { showQuestion(); return; }
+
+  const tp = numPhases();
+
+  // single-phase mode (kanji) — just complete
+  if (tp === 1) { blockComplete(); return; }
+
+  // next phase
+  quizPhase++;
+  if (quizPhase < tp) {
+    wordIndex = 0; phaseOrder = shuffle(currentBlock);
+    renderQuizFrame(); return;
+  }
+
+  // completed all phases — end of cycle
+  quizPhase = 0; cycleCount++;
+  if (cycleCount < REQUIRED_CYCLES) {
+    wordIndex = 0; phaseOrder = shuffle(currentBlock);
+    renderQuizFrame();
+  } else {
+    blockComplete();
+  }
+}
+
+function blockComplete() {
+  const prog = getProgress();
+  prog[`${currentMode}_${currentBlockIndex}`] = { done: true };
+  saveProgress(prog);
+
+  document.getElementById('progress-fill').style.width = '100%';
+
+  const vocab      = vocabFor(currentMode);
+  const numBlocks  = Math.ceil(vocab.length / BLOCK_SIZE);
+  const isLast     = currentBlockIndex + 1 >= numBlocks;
+  const nextModeKey = currentMode === 'hiragana' ? 'katakana' : currentMode === 'katakana' ? 'kanji' : null;
+  const justUnlocked = isLast && nextModeKey && isModeUnlocked(nextModeKey, prog);
+  const nextModeLabel = nextModeKey ? MODE_META[nextModeKey].label : '';
+
+  let primaryBtn = '';
+  if (!isLast) {
+    primaryBtn = `<button class="complete-btn" onclick="openBlock(${currentBlockIndex+1})">Next: Block ${currentBlockIndex+2} →</button>`;
+  } else if (justUnlocked) {
+    primaryBtn = `<button class="complete-btn" onclick="switchMode('${nextModeKey}');showScreen('home')">🎉 Start ${nextModeLabel} Mode →</button>`;
+  }
+
+  document.getElementById('quiz-card-area').innerHTML = `
+    <div class="complete-card">
+      <div class="big-emoji">${justUnlocked ? '🏆' : '🎉'}</div>
+      <h2>Block ${currentBlockIndex+1} Complete!</h2>
+      <p>${justUnlocked ? nextModeLabel + ' mode is now unlocked!' : 'All ' + (numPhases() > 1 ? REQUIRED_CYCLES + ' cycles · ' + numPhases() + ' phases' : 'readings') + ' done!'}</p>
+      ${primaryBtn}
+      <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+    </div>`;
+}
+
+function confirmQuit() {
+  if (confirm('Quit this quiz? Your progress in this session will be lost.')) showScreen('home');
+}
+
+// ── REVIEW ─────────────────────────────────────────────────────
+
+// Review type definitions — prompt, answer, placeholder, Japanese input?
+const REVIEW_TYPES = {
+  'kana-rom': {
+    label: 'Kana → Romaji',
+    prompt: (w, mode) => {
+      const script = mode === 'kanji' ? w.kanji : mode === 'hiragana' ? w.hiragana : w.katakana;
+      return `<div class="q-label">Read &amp; romanise</div><div class="q-kana">${script}</div><div class="q-english">${w.english}</div>`;
+    },
+    answer: w => w.romaji,
+    placeholder: 'Type romaji…',
+    jpInput: false,
+  },
+  'kana-eng': {
+    label: 'Kana → Meaning',
+    prompt: (w, mode) => {
+      const script = mode === 'kanji' ? w.kanji : mode === 'hiragana' ? w.hiragana : w.katakana;
+      return `<div class="q-label">What does this mean?</div><div class="q-kana">${script}</div><div class="q-romaji">${w.romaji}</div>`;
+    },
+    answer: w => w.english,
+    placeholder: 'Type English meaning…',
+    jpInput: false,
+  },
+  'eng-rom': {
+    label: 'Meaning → Romaji',
+    prompt: (w) => `<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
+    answer: w => w.romaji,
+    placeholder: 'Type romaji…',
+    jpInput: false,
+  },
+  'eng-kana': {
+    label: 'Meaning → Kana',
+    prompt: (w, mode) => {
+      const script = mode === 'hiragana' ? 'hiragana' : 'katakana';
+      return `<div class="q-label">Write in ${script}</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div><div class="q-romaji">${w.romaji}</div>`;
+    },
+    answer: (w, mode) => mode === 'hiragana' ? w.hiragana : w.katakana,
+    placeholder: 'Type in Japanese…',
+    jpInput: true,
+    hint: (mode) => `🇯🇵 Switch to your <strong>Japanese keyboard</strong> to type ${mode === 'hiragana' ? 'hiragana' : 'katakana'}`,
+  },
+};
+
+function startReview(type) {
+  const prog  = getProgress();
+  const vocab = vocabFor(currentMode);
+  const n     = Math.ceil(vocab.length / BLOCK_SIZE);
+  const pool  = [];
+  for (let i = 0; i < n; i++) {
+    if (prog[`${currentMode}_${i}`]?.done)
+      pool.push(...vocab.slice(i * BLOCK_SIZE, (i+1) * BLOCK_SIZE));
+  }
+  if (pool.length < 10) { alert('Complete at least 2 blocks (10 words) to unlock revision!'); return; }
+
+  reviewType    = type;
+  reviewWords   = shuffle(pool).slice(0, 10);
+  reviewIndex   = 0;
+  reviewCorrect = 0;
+
+  // Set subtitle to show quiz type
+  const typeMeta = REVIEW_TYPES[type];
+  document.getElementById('review-subtitle').textContent = typeMeta.label + ' · 10 words';
+  showScreen('review');
+  showReviewQ();
+}
+
+function showReviewQ() {
+  const w      = reviewWords[reviewIndex];
+  const area   = document.getElementById('review-card-area');
+  const rd     = REVIEW_TYPES[reviewType];
+  const prompt = rd.prompt(w, currentMode);
+  const correct = typeof rd.answer === 'function' && rd.answer.length > 1
+    ? rd.answer(w, currentMode)
+    : rd.answer(w);
+  const isJP   = rd.jpInput;
+  const hint   = rd.hint ? rd.hint(currentMode) : null;
+
+  const safe = correct.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+  area.innerHTML = `
+    <div class="review-score">
+      <div class="frac">${reviewIndex}<span style="font-size:24px;opacity:.4">/10</span></div>
+      <div class="lbl">${reviewCorrect} correct · ${REVIEW_TYPES[reviewType].label}</div>
+    </div>
+    <div class="question-card" style="min-height:150px">${prompt}</div>
+    ${hint ? `<div class="keyboard-hint">${hint}</div>` : ''}
+    <input class="answer-input" id="review-input" type="text"
+           autocomplete="off" autocorrect="off" spellcheck="false"
+           ${isJP ? 'lang="ja"' : 'lang="en" autocapitalize="off"'}
+           placeholder="${rd.placeholder}" />
+    <button class="submit-btn" onclick="submitReview('${safe}')">Submit</button>
+    <div class="feedback-area"><div class="feedback-pill" id="review-fb"></div></div>`;
+  setTimeout(() => { const i = document.getElementById('review-input'); if(i) i.focus(); }, 80);
+}
+
+function submitReview(correct) {
+  const inp = document.getElementById('review-input');
+  const val = (inp?.value || '').trim().toLowerCase();
+  const fb  = document.getElementById('review-fb');
+  if (val === correct.toLowerCase()) {
+    reviewCorrect++;
+    inp.className = 'answer-input correct';
+    fb.className  = 'feedback-pill correct show'; fb.textContent = '✓ Correct!';
+  } else {
+    inp.className = 'answer-input wrong';
+    fb.className  = 'feedback-pill reveal show'; fb.textContent = 'Answer: ' + correct;
+  }
+  reviewIndex++;
+  setTimeout(reviewIndex < reviewWords.length ? showReviewQ : showReviewDone, 1400);
+}
+
+function showReviewDone() {
+  const pct   = Math.round((reviewCorrect / reviewWords.length) * 100);
+  const emoji = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
+  const msg   = pct === 100 ? 'Perfect score!' : pct >= 80 ? 'Great work!' : pct >= 50 ? 'Getting there!' : 'Keep practising!';
+  document.getElementById('review-card-area').innerHTML = `
+    <div class="complete-card">
+      <div class="big-emoji">${emoji}</div>
+      <h2>${msg}</h2>
+      <p>${reviewCorrect}/10 correct — ${pct}%</p>
+      <button class="complete-btn" onclick="startReview('${reviewType}')">Try Again ↺</button>
+      <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+    </div>`;
+}
+
+// ── KEYBOARD ───────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('screen-quiz').classList.contains('active')) submitAnswer();
+  else if (document.getElementById('screen-review').classList.contains('active')) {
+    document.querySelector('#screen-review .submit-btn')?.click();
+  }
+});
+
+// ── INIT ───────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderHome();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+});
+</script>
+</body>
+</html>
