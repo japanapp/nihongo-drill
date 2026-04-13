@@ -359,12 +359,7 @@ function isBlockUnlocked(mode, i, prog) {
 }
 
 function isModeUnlocked(mode, prog) {
-  if (mode === 'hiragana') return true;
-  const src = mode === 'katakana' ? 'hiragana' : 'katakana';
-  const v   = vocabFor(src);
-  const n   = Math.ceil(v.length / BLOCK_SIZE);
-  for (let i = 0; i < n; i++) if (!prog[`${src}_${i}`]?.done) return false;
-  return true;
+  return true; // All modes available from the start
 }
 
 function shuffle(arr) {
@@ -399,33 +394,19 @@ function renderHome() {
   document.getElementById('stat-words').textContent    = done * BLOCK_SIZE;
   document.getElementById('stat-total').textContent    = vocab.length;
 
-  // mode tabs — only show if at least katakana is unlocked
+  // mode tabs — always visible
   const tabsEl = document.getElementById('mode-tabs-container');
-  if (isModeUnlocked('katakana', prog)) {
-    tabsEl.innerHTML = '<div class="mode-tabs">' +
-      ['hiragana','katakana','kanji'].map(m => {
-        const unlocked = isModeUnlocked(m, prog);
-        const active   = m === currentMode;
-        return `<button class="mode-tab ${active?'active':''} ${!unlocked?'locked-tab':''}"
-          ${!unlocked ? 'disabled' : `onclick="switchMode('${m}')"`}>
-          <span class="tab-script">${MODE_META[m].script}</span>
-          <span>${MODE_META[m].label}</span>
-        </button>`;
-      }).join('') + '</div>';
-  } else {
-    tabsEl.innerHTML = '';
-  }
+  tabsEl.innerHTML = '<div class="mode-tabs">' +
+    ['hiragana','katakana','kanji'].map(m => {
+      const active = m === currentMode;
+      return `<button class="mode-tab ${active ? 'active' : ''}" onclick="switchMode('${m}')">
+        <span class="tab-script">${MODE_META[m].script}</span>
+        <span>${MODE_META[m].label}</span>
+      </button>`;
+    }).join('') + '</div>';
 
-  // unlock banner
-  const bannerEl = document.getElementById('unlock-banner-container');
-  bannerEl.innerHTML = '';
-  if (done === n) {
-    if (currentMode === 'hiragana' && isModeUnlocked('katakana', prog)) {
-      bannerEl.innerHTML = `<div class="unlock-banner"><div class="ub-emoji">🎉</div><h3>Katakana Unlocked!</h3><p>All Hiragana blocks complete. Switch to Katakana mode above.</p></div>`;
-    } else if (currentMode === 'katakana' && isModeUnlocked('kanji', prog)) {
-      bannerEl.innerHTML = `<div class="unlock-banner"><div class="ub-emoji">🏆</div><h3>Kanji Unlocked!</h3><p>All Katakana blocks complete. Switch to Kanji mode above.</p></div>`;
-    }
-  }
+  // no unlock banners needed
+  document.getElementById('unlock-banner-container').innerHTML = '';
 
   // block grid
   const grid = document.getElementById('block-grid');
@@ -745,26 +726,29 @@ function confirmQuit() {
 
 // Review type definitions — prompt, answer, placeholder, Japanese input?
 const REVIEW_TYPES = {
+  // Kana only — no meaning hint
   'kana-rom': {
     label: 'Kana → Romaji',
     prompt: (w, mode) => {
       const script = mode === 'kanji' ? w.kanji : mode === 'hiragana' ? w.hiragana : w.katakana;
-      return `<div class="q-label">Read &amp; romanise</div><div class="q-kana">${script}</div><div class="q-english">${w.english}</div>`;
+      return `<div class="q-label">Read &amp; romanise</div><div class="q-kana">${script}</div>`;
     },
     answer: w => w.romaji,
     placeholder: 'Type romaji…',
     jpInput: false,
   },
+  // Kana only — no romaji hint
   'kana-eng': {
     label: 'Kana → Meaning',
     prompt: (w, mode) => {
       const script = mode === 'kanji' ? w.kanji : mode === 'hiragana' ? w.hiragana : w.katakana;
-      return `<div class="q-label">What does this mean?</div><div class="q-kana">${script}</div><div class="q-romaji">${w.romaji}</div>`;
+      return `<div class="q-label">What does this mean?</div><div class="q-kana">${script}</div>`;
     },
     answer: w => w.english,
     placeholder: 'Type English meaning…',
     jpInput: false,
   },
+  // Meaning only — no kana hint
   'eng-rom': {
     label: 'Meaning → Romaji',
     prompt: (w) => `<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
@@ -772,11 +756,12 @@ const REVIEW_TYPES = {
     placeholder: 'Type romaji…',
     jpInput: false,
   },
+  // Meaning only — no romaji hint
   'eng-kana': {
     label: 'Meaning → Kana',
     prompt: (w, mode) => {
       const script = mode === 'hiragana' ? 'hiragana' : 'katakana';
-      return `<div class="q-label">Write in ${script}</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div><div class="q-romaji">${w.romaji}</div>`;
+      return `<div class="q-label">Write in ${script}</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`;
     },
     answer: (w, mode) => mode === 'hiragana' ? w.hiragana : w.katakana,
     placeholder: 'Type in Japanese…',
