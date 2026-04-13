@@ -267,34 +267,67 @@ const MODE_META = {
 };
 
 // Phase definitions: what to show, what answer to expect
+// PHASES — each phase has 3 prompts, one per cycle (escalating difficulty)
+// prompt[0] = cycle 1 (both hints), prompt[1] = cycle 2 (one hint), prompt[2] = cycle 3 (bare)
 const PHASES = {
   hiragana: [
     { label: 'Romaji',
-      prompt: w => `<div class="q-label">Read the hiragana</div><div class="q-kana">${w.hiragana}</div><div class="q-english">${w.english}</div>`,
+      // C1: kana + meaning  C2: kana only  C3: meaning only
+      prompts: [
+        w => `<div class="q-label">Read &amp; romanise</div><div class="q-kana">${w.hiragana}</div><div class="q-english">${w.english}</div>`,
+        w => `<div class="q-label">Read &amp; romanise</div><div class="q-kana">${w.hiragana}</div>`,
+        w => `<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
+      ],
       answer: w => w.romaji, placeholder: 'Type romaji…', hint: null },
     { label: 'English',
-      prompt: w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.hiragana}</div><div class="q-romaji">${w.romaji}</div>`,
+      // C1: kana + romaji  C2: romaji only  C3: kana only
+      prompts: [
+        w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.hiragana}</div><div class="q-romaji">${w.romaji}</div>`,
+        w => `<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:26px">${w.romaji}</div>`,
+        w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.hiragana}</div>`,
+      ],
       answer: w => w.english, placeholder: 'Type English meaning…', hint: null },
     { label: 'Write it',
-      prompt: w => `<div class="q-label">Write in hiragana</div><div class="q-romaji" style="font-size:22px;margin-bottom:4px">${w.romaji}</div><div class="q-english">${w.english}</div>`,
+      // C1: romaji + meaning  C2: romaji only  C3: meaning only
+      prompts: [
+        w => `<div class="q-label">Write in hiragana</div><div class="q-romaji" style="font-size:22px;margin-bottom:4px">${w.romaji}</div><div class="q-english">${w.english}</div>`,
+        w => `<div class="q-label">Write in hiragana</div><div class="q-romaji" style="font-size:26px">${w.romaji}</div>`,
+        w => `<div class="q-label">Write in hiragana</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
+      ],
       answer: w => w.hiragana, placeholder: 'Type in hiragana…',
       hint: '🇯🇵 Switch to your <strong>Japanese keyboard</strong> to type hiragana' },
   ],
   katakana: [
     { label: 'Romaji',
-      prompt: w => `<div class="q-label">Read the katakana</div><div class="q-kana">${w.katakana}</div><div class="q-english">${w.english}</div>`,
+      prompts: [
+        w => `<div class="q-label">Read &amp; romanise</div><div class="q-kana">${w.katakana}</div><div class="q-english">${w.english}</div>`,
+        w => `<div class="q-label">Read &amp; romanise</div><div class="q-kana">${w.katakana}</div>`,
+        w => `<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
+      ],
       answer: w => w.romaji, placeholder: 'Type romaji…', hint: null },
     { label: 'English',
-      prompt: w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.katakana}</div><div class="q-romaji">${w.romaji}</div>`,
+      prompts: [
+        w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.katakana}</div><div class="q-romaji">${w.romaji}</div>`,
+        w => `<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:26px">${w.romaji}</div>`,
+        w => `<div class="q-label">What does this mean?</div><div class="q-kana">${w.katakana}</div>`,
+      ],
       answer: w => w.english, placeholder: 'Type English meaning…', hint: null },
     { label: 'Write it',
-      prompt: w => `<div class="q-label">Write in katakana</div><div class="q-romaji" style="font-size:22px;margin-bottom:4px">${w.romaji}</div><div class="q-english">${w.english}</div>`,
+      prompts: [
+        w => `<div class="q-label">Write in katakana</div><div class="q-romaji" style="font-size:22px;margin-bottom:4px">${w.romaji}</div><div class="q-english">${w.english}</div>`,
+        w => `<div class="q-label">Write in katakana</div><div class="q-romaji" style="font-size:26px">${w.romaji}</div>`,
+        w => `<div class="q-label">Write in katakana</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
+      ],
       answer: w => w.katakana, placeholder: 'Type in katakana…',
       hint: '🇯🇵 Switch to your <strong>Japanese keyboard</strong> to type katakana' },
   ],
   kanji: [
     { label: 'Read',
-      prompt: w => `<div class="q-label">Read this kanji</div><div class="q-kana">${w.kanji}</div><div class="q-english">${w.english}</div>`,
+      prompts: [
+        w => `<div class="q-label">Read this kanji</div><div class="q-kana">${w.kanji}</div><div class="q-english">${w.english}</div>`,
+        w => `<div class="q-label">Read this kanji</div><div class="q-kana">${w.kanji}</div><div class="q-english">${w.english}</div>`,
+        w => `<div class="q-label">Read this kanji</div><div class="q-kana">${w.kanji}</div><div class="q-english">${w.english}</div>`,
+      ],
       answer: w => w.romaji, placeholder: 'Type romaji…', hint: null },
   ],
 };
@@ -560,16 +593,22 @@ function showQuestion() {
     : cycleCount * currentBlock.length * tp + quizPhase * currentBlock.length + wordIndex;
   document.getElementById('progress-fill').style.width = Math.min((doneSteps / totalSteps) * 100, 99) + '%';
 
-  // phase label
+  // phase label — show cycle hint context
+  const cycleHints = [
+    'Full hints',
+    'One hint',
+    'No hints',
+  ];
   document.getElementById('quiz-phase-label').textContent = tp > 1
-    ? `Cycle ${cycleCount+1}/${REQUIRED_CYCLES} · Phase ${quizPhase+1}/${tp}`
+    ? `Cycle ${cycleCount+1}/${REQUIRED_CYCLES} · ${cycleHints[Math.min(cycleCount,2)]}`
     : 'Reading Exercise';
 
-  // question
-  document.getElementById('question-card').innerHTML = ph.prompt(w);
+  // question — pick prompt based on cycle (0=both hints, 1=one hint, 2=bare)
+  const cycleIdx = Math.min(cycleCount, 2);
+  document.getElementById('question-card').innerHTML = ph.prompts[cycleIdx](w);
 
-  // keyboard hint
-  document.getElementById('keyboard-hint-area').innerHTML = ph.hint
+  // keyboard hint (only show on write phase — phase index 2)
+  document.getElementById('keyboard-hint-area').innerHTML = (ph.hint && quizPhase === 2)
     ? `<div class="keyboard-hint">${ph.hint}</div>` : '';
 
   // input
