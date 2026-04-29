@@ -277,6 +277,21 @@
     .phrases-complete h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--gold-light); margin-bottom: 6px; }
     .phrases-complete p { font-size: 13px; opacity: .7; margin-bottom: 20px; }
 
+    .psc-scenario { font-size: 13px; font-weight: 600; color: var(--text-soft); margin-bottom: 8px; font-style: italic; line-height: 1.4; }
+    .pq-scenario  { font-size: 15px; font-weight: 500; color: var(--gold-light); text-align: center; line-height: 1.5; padding: 0 8px; font-style: italic; }
+
+    .mc-grid { display: flex; flex-direction: column; gap: 9px; }
+    .mc-btn {
+      width: 100%; background: var(--white); border: 2.5px solid var(--paper-warm);
+      border-radius: var(--radius); padding: 13px 14px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer;
+      text-align: left; line-height: 1.4; transition: border-color .12s, transform .1s;
+    }
+    .mc-btn:active   { transform: scale(.98); }
+    .mc-btn:disabled { cursor: not-allowed; opacity: .85; }
+    .mc-btn.correct  { border-color: var(--green); background: #f0fff4; color: #155724; }
+    .mc-btn.wrong    { border-color: var(--red-light); background: #fff5f5; color: #721c24; }
+
     ::-webkit-scrollbar { width: 0; }
   </style>
 </head>
@@ -1633,106 +1648,104 @@ function showReviewDone() {
 // ═══════════════════════════════════════════════════════
 
 let currentThemeId   = null;
-let currentPhrases   = [];   // phrases in current theme
-let phraseQuizList   = [];   // ordered list for this quiz run
-let phraseQIndex     = 0;    // current question index
-let phraseQType      = 0;    // 0=eng→rom, 1=kana→eng, 2=eng→kana
+let currentPhrases   = [];
+let phraseQuizList   = [];
+let phraseQIndex     = 0;
+let phraseQType      = 0;   // 0=situational→romaji, 1=kana→situation MC, 2=situational→kana, 3=fill-gap
 let phraseQCorrect   = 0;
 let phraseQTotal     = 0;
+let pqAttempts       = 0;
+
+// Question type metadata
+const PQ_TYPES = [
+  { label: 'Situation → Romaji',    subtitle: 'Read the situation, type the phrase' },
+  { label: 'Japanese → Situation',  subtitle: 'Read the phrase, pick the right situation' },
+  { label: 'Situation → Japanese',  subtitle: 'Read the situation, write the phrase' },
+];
 
 // ── Get unlocked vocab words matching a tag ──────────
 function getUnlockedForTag(tag) {
   const prog = getProgress();
-  const unlocked = [];
-  window.vocabData.forEach((w, idx) => {
-    if (!w.tags || !w.tags.includes(tag)) return;
-    const blockIdx = Math.floor(idx / BLOCK_SIZE);
-    // A word is "unlocked" if its drill block is done in any drill mode
-    const hiDone = !!prog[pKey('drill','hiragana',blockIdx)]?.done;
-    const kaDone = !!prog[pKey('drill','katakana',blockIdx)]?.done;
-    const kjDone = !!prog[pKey('drill','kanji',blockIdx)]?.done;
-    if (hiDone || kaDone || kjDone) unlocked.push(w);
+  return window.vocabData.filter((w, idx) => {
+    if (!w.tags || !w.tags.includes(tag)) return false;
+    const bi = Math.floor(idx / BLOCK_SIZE);
+    return !!prog[pKey('drill','hiragana',bi)]?.done
+        || !!prog[pKey('drill','katakana',bi)]?.done
+        || !!prog[pKey('drill','kanji',bi)]?.done;
   });
-  return unlocked;
 }
 
-// ── Resolve a phrase — fill slot with a random unlocked word ──
-function resolvePhrase(phrase, preferredRomaji) {
-  if (!phrase.slot) return { ...phrase, resolvedKana: phrase.kana, resolvedRomaji: phrase.romaji, slotWord: null };
-
+// ── Resolve slot in a phrase ─────────────────────────
+function resolvePhrase(phrase) {
+  if (!phrase.slot) {
+    return { ...phrase,
+      resolvedKana:    phrase.kana,
+      resolvedRomaji:  phrase.romaji,
+      resolvedEnglish: phrase.english,
+      resolvedScenario:phrase.scenario,
+      slotWord: null, candidates: [] };
+  }
   const candidates = getUnlockedForTag(phrase.slot);
-  let chosen;
-  if (preferredRomaji) {
-    chosen = candidates.find(w => w.romaji === preferredRomaji);
-  }
-  if (!chosen) {
-    chosen = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : null;
-  }
-
-  const slotWord = chosen
+  const chosen = candidates.length > 0
+    ? candidates[Math.floor(Math.random() * candidates.length)]
+    : null;
+  const sw = chosen
     ? { romaji: chosen.romaji, kana: chosen.hiragana, english: chosen.english }
     : phrase.fallback;
 
-  const resolvedRomaji = phrase.romaji.replace('['+phrase.slot+']', slotWord.romaji);
-  const resolvedKana   = phrase.kana.replace('['+phrase.slot+']', slotWord.kana);
-  const resolvedEnglish = phrase.english.replace('['+phrase.slot+']', slotWord.english);
-
-  return { ...phrase, resolvedKana, resolvedRomaji, resolvedEnglish, slotWord, candidates };
+  return {
+    ...phrase,
+    resolvedKana:    phrase.kana.replace('['+phrase.slot+']', sw.kana),
+    resolvedRomaji:  phrase.romaji.replace('['+phrase.slot+']', sw.romaji),
+    resolvedEnglish: phrase.english.replace('['+phrase.slot+']', sw.english),
+    resolvedScenario:phrase.scenario,
+    slotWord: sw,
+    candidates,
+  };
 }
 
-// ── Get vocab words that appear in a phrase (for highlighting) ──
-function getKnownWordsInPhrase(phrase) {
+// ── Known words highlighted in a phrase ─────────────
+function knownWordsInPhrase(phrase) {
   const prog = getProgress();
-  const known = [];
-  window.vocabData.forEach((w, idx) => {
-    // Check if this word's romaji appears in the phrase romaji
-    if (!phrase.romaji.toLowerCase().includes(w.romaji.toLowerCase())) return;
-    const blockIdx = Math.floor(idx / BLOCK_SIZE);
-    const done = !!prog[pKey('drill','hiragana',blockIdx)]?.done
-               || !!prog[pKey('drill','katakana',blockIdx)]?.done;
-    if (done) known.push(w);
+  return window.vocabData.filter((w, idx) => {
+    if (!phrase.romaji.toLowerCase().includes(w.romaji.toLowerCase())) return false;
+    const bi = Math.floor(idx / BLOCK_SIZE);
+    return !!prog[pKey('drill','hiragana',bi)]?.done
+        || !!prog[pKey('drill','katakana',bi)]?.done;
   });
-  return known;
 }
 
-// ── Count completed phrase themes ──
-function phraseThemeDone(themeId) {
-  return !!(getProgress()[`phrases_${themeId}`]?.practiced);
+function phraseThemeDone(id) {
+  return !!(getProgress()[`phrases_${id}`]?.practiced);
 }
 
-// ── RENDER PHRASES HOME ────────────────────────────────
+// ── PHRASES HOME ─────────────────────────────────────
 function renderPhrasesHome(body) {
-  const themes = window.phraseData.themes;
+  const themes  = window.phraseData.themes;
   const phrases = window.phraseData.phrases;
-  let done = 0;
-  themes.forEach(t => { if (phraseThemeDone(t.id)) done++; });
+  let done = themes.filter(t => phraseThemeDone(t.id)).length;
 
-  let html = '';
-
-  // Hero
-  html += `<div class="home-hero">
-    <div class="kanji-bg">日本語</div>
-    <h2>Phrases</h2>
-    <p>Real tourist phrases — vocabulary you know, highlighted in gold</p>
-  </div>`;
-
-  // Stats
-  html += `<div class="stats-bar">
-    <div class="stat-card"><div class="num">${done}</div><div class="lbl">Themes Practiced</div></div>
-    <div class="stat-card"><div class="num">${phrases.length}</div><div class="lbl">Total Phrases</div></div>
-    <div class="stat-card"><div class="num">${phrases.filter(p=>p.slot).length}</div><div class="lbl">Dynamic Templates</div></div>
-  </div>`;
-
-  html += '<div class="section-heading">Choose a Theme</div>';
-  html += '<div class="theme-grid">';
+  let html = `
+    <div class="home-hero">
+      <div class="kanji-bg">日本語</div>
+      <h2>Phrases</h2>
+      <p>Real situations — vocabulary you know, highlighted in gold</p>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-card"><div class="num">${done}</div><div class="lbl">Practiced</div></div>
+      <div class="stat-card"><div class="num">${phrases.length}</div><div class="lbl">Phrases</div></div>
+      <div class="stat-card"><div class="num">${phrases.filter(p=>p.slot).length}</div><div class="lbl">Templates</div></div>
+    </div>
+    <div class="section-heading">Choose a Theme</div>
+    <div class="theme-grid">`;
 
   themes.forEach(t => {
-    const themeCount = phrases.filter(p => p.theme === t.id).length;
-    const practiced  = phraseThemeDone(t.id);
-    html += `<div class="theme-card ${practiced ? 'complete' : ''}" onclick="openPhraseTheme('${t.id}')">
+    const count    = phrases.filter(p => p.theme === t.id).length;
+    const practiced = phraseThemeDone(t.id);
+    html += `<div class="theme-card ${practiced?'complete':''}" onclick="openPhraseTheme('${t.id}')">
       <div class="tc-icon">${t.icon}</div>
       <div class="tc-label">${t.label}</div>
-      <div class="tc-count">${themeCount} phrases</div>
+      <div class="tc-count">${count} phrases</div>
       ${practiced ? '<div class="tc-check">✓ Practiced</div>' : ''}
     </div>`;
   });
@@ -1741,7 +1754,7 @@ function renderPhrasesHome(body) {
   body.innerHTML = html;
 }
 
-// ── OPEN A THEME → study screen ───────────────────────
+// ── OPEN THEME → study cards ─────────────────────────
 function openPhraseTheme(themeId) {
   currentThemeId = themeId;
   const theme    = window.phraseData.themes.find(t => t.id === themeId);
@@ -1749,16 +1762,15 @@ function openPhraseTheme(themeId) {
 
   document.getElementById('phrase-study-title').textContent    = theme.label;
   document.getElementById('phrase-study-subtitle').textContent = currentPhrases.length + ' phrases';
-  document.getElementById('phrase-study-heading').textContent  = 'Study these phrases';
 
   const cardsEl = document.getElementById('phrase-study-cards');
   cardsEl.innerHTML = '';
 
   currentPhrases.forEach(phrase => {
-    const resolved  = resolvePhrase(phrase);
-    const knownWords = getKnownWordsInPhrase(phrase);
+    const resolved   = resolvePhrase(phrase);
+    const known      = knownWordsInPhrase(phrase);
 
-    // Build kana display with slot word highlighted
+    // Highlight slot word in kana
     let kanaDisplay = resolved.resolvedKana;
     if (phrase.slot && resolved.slotWord) {
       kanaDisplay = phrase.kana.replace(
@@ -1767,49 +1779,44 @@ function openPhraseTheme(themeId) {
       );
     }
 
-    // Build word chips for known vocabulary
-    const chipHTML = knownWords.length > 0
-      ? `<div class="psc-words">
-          <span style="font-size:9px;color:var(--text-soft);margin-right:2px">Known:</span>
-          ${knownWords.map(w => `<span class="psc-word-chip known">${w.romaji}</span>`).join('')}
-        </div>`
+    const templateBadge = phrase.slot
+      ? `<span class="psc-badge template">${resolved.candidates.length} words available</span>`
       : '';
 
-    const templateBadge = phrase.slot
-      ? `<span class="psc-badge template">+${resolved.candidates?.length || 0} words</span>`
+    const knownChips = known.length
+      ? `<div class="psc-words"><span style="font-size:9px;color:var(--text-soft);margin-right:3px">You know:</span>${known.map(w=>`<span class="psc-word-chip known">${w.romaji}</span>`).join('')}</div>`
       : '';
 
     const card = document.createElement('div');
     card.className = 'phrase-study-card';
     card.innerHTML = `
+      <div class="psc-scenario">${phrase.scenario}</div>
       <div class="psc-kana">${kanaDisplay}</div>
       <div class="psc-romaji">${resolved.resolvedRomaji}</div>
-      <div class="psc-english">${resolved.resolvedEnglish || resolved.english}</div>
       <div class="psc-meta">
         <span class="psc-badge ${phrase.formality}">${phrase.formality}</span>
         ${templateBadge}
         ${phrase.notes ? `<span class="psc-note">${phrase.notes}</span>` : ''}
       </div>
-      ${chipHTML}`;
+      ${knownChips}`;
     cardsEl.appendChild(card);
   });
 
   showScreen('phrase-study');
 }
 
-// ── BEGIN PHRASE QUIZ ─────────────────────────────────
+// ── BEGIN QUIZ ───────────────────────────────────────
 function beginPhraseQuiz() {
-  // Build quiz list — each phrase gets asked in 3 ways: eng→rom, kana→eng, eng→kana
-  // We create one question per phrase per type, then shuffle within type groups
-  // so user goes eng→rom for all, then kana→eng for all, then eng→kana for all
   phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
   phraseQIndex   = 0;
-  phraseQType    = 0;  // start with eng→rom
+  phraseQType    = 0;
   phraseQCorrect = 0;
   phraseQTotal   = 0;
+  pqAttempts     = 0;
 
-  document.getElementById('phrase-quiz-title').textContent    = window.phraseData.themes.find(t=>t.id===currentThemeId)?.label || 'Phrases';
-  document.getElementById('phrase-quiz-subtitle').textContent = 'Phrases · Type 1/3';
+  const theme = window.phraseData.themes.find(t => t.id === currentThemeId);
+  document.getElementById('phrase-quiz-title').textContent    = theme.label;
+  document.getElementById('phrase-quiz-subtitle').textContent = PQ_TYPES[0].label;
 
   rebuildPhraseQuizArea();
   showScreen('phrase-quiz');
@@ -1817,118 +1824,151 @@ function beginPhraseQuiz() {
 }
 
 function rebuildPhraseQuizArea() {
-  const typeLabels = ['English → Romaji', 'Japanese → English', 'English → Japanese'];
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrase-quiz-meta">
-      <span class="pq-type-label" id="pq-type-label">${typeLabels[phraseQType]}</span>
+      <span class="pq-type-label" id="pq-type-label">${PQ_TYPES[phraseQType].label}</span>
       <div class="pq-type-dots">
-        ${[0,1,2].map(i=>`<div class="pq-dot ${i<phraseQType?'done':i===phraseQType?'active':''}"></div>`).join('')}
+        ${PQ_TYPES.map((_,i) => `<div class="pq-dot ${i<phraseQType?'done':i===phraseQType?'active':''}"></div>`).join('')}
       </div>
     </div>
     <div class="progress-track"><div class="progress-fill" id="pq-progress" style="width:0%"></div></div>
     <div class="phrase-q-card" id="pq-card"></div>
-    <div id="pq-hint-area"></div>
-    <input class="answer-input" id="pq-input" type="text"
-           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-           placeholder="Type your answer…" />
-    <button class="submit-btn" onclick="submitPhraseAnswer()">Submit</button>
-    <div class="feedback-area"><div class="feedback-pill" id="pq-feedback"></div></div>
-    <div class="attempts-row" id="pq-attempts"></div>`;
-
-  setTimeout(() => {
-    const inp = document.getElementById('pq-input');
-    if (inp) inp.addEventListener('keydown', e => { if(e.key==='Enter') submitPhraseAnswer(); });
-  }, 80);
+    <div id="pq-answer-area"></div>
+    <div class="feedback-area"><div class="feedback-pill" id="pq-feedback"></div></div>`;
 }
 
 function showPhraseQuestion() {
   const p     = phraseQuizList[phraseQIndex];
   const total = phraseQuizList.length;
-  const pct   = Math.min((phraseQIndex / total) * 100, 99);
-  document.getElementById('pq-progress').style.width = pct + '%';
+  document.getElementById('pq-progress').style.width = Math.min((phraseQIndex/total)*100, 99) + '%';
+  document.getElementById('pq-type-label').textContent = PQ_TYPES[phraseQType].label;
+  clearPQFeedback();
+  pqAttempts = 0;
 
-  const qCard = document.getElementById('pq-card');
-  const inp   = document.getElementById('pq-input');
-  const hintEl = document.getElementById('pq-hint-area');
-  const attEl  = document.getElementById('pq-attempts');
+  const qCard  = document.getElementById('pq-card');
+  const aArea  = document.getElementById('pq-answer-area');
 
-  // Build kana with slot highlighted
+  // Kana with slot highlighted
   let kanaHL = p.resolvedKana;
   if (p.slot && p.slotWord) {
     kanaHL = p.kana.replace('['+p.slot+']', `<span class="slot-hl">${p.slotWord.kana}</span>`);
   }
 
-  const eng = p.resolvedEnglish || p.english;
-
   if (phraseQType === 0) {
-    // English → Romaji
+    // ── Type 1: Situation → type romaji ────────────
     qCard.innerHTML = `
-      <div class="pq-theme">Type the romaji</div>
-      <div class="pq-english">${eng}</div>
-      <div class="pq-progress">${phraseQIndex+1} / ${total}</div>`;
-    inp.placeholder   = 'Type romaji…';
-    inp.setAttribute('lang','en');
-    inp.setAttribute('autocapitalize','off');
-    hintEl.innerHTML  = '';
+      <div class="pq-theme">What would you say?</div>
+      <div class="pq-scenario">${p.resolvedScenario}</div>
+      <div class="pq-progress">${phraseQIndex+1}/${total}</div>`;
+
+    aArea.innerHTML = `
+      <div class="keyboard-hint" style="margin-bottom:10px">Type the romaji for the full phrase</div>
+      <input class="answer-input" id="pq-input" type="text"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             placeholder="Type romaji…" />
+      <button class="submit-btn" onclick="submitPhraseAnswer()">Submit</button>
+      <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
+    setTimeout(() => {
+      const inp = document.getElementById('pq-input');
+      if (inp) {
+        inp.focus();
+        inp.addEventListener('keydown', e => { if(e.key==='Enter') submitPhraseAnswer(); });
+      }
+    }, 80);
+
   } else if (phraseQType === 1) {
-    // Kana → English
+    // ── Type 2: Kana → pick the situation (MC) ─────
     qCard.innerHTML = `
-      <div class="pq-theme">What does this mean?</div>
+      <div class="pq-theme">When would you use this?</div>
       <div class="pq-kana">${kanaHL}</div>
-      <div class="pq-progress">${phraseQIndex+1} / ${total}</div>`;
-    inp.placeholder   = 'Type English meaning…';
-    inp.setAttribute('lang','en');
-    inp.setAttribute('autocapitalize','off');
-    hintEl.innerHTML  = '';
+      <div class="pq-progress">${phraseQIndex+1}/${total}</div>`;
+
+    // Build MC options — correct scenario + 3 wrong ones from other phrases in theme
+    // or from mcWrong if available
+    const allThemePhrases = window.phraseData.phrases.filter(ph => ph.theme === currentThemeId && ph.id !== p.id);
+    const wrongScenarios  = shuffle(allThemePhrases).slice(0,3).map(ph => ph.scenario);
+    // Pad with generic wrong answers if not enough in theme
+    const wrongPad = [
+      'You want to order a drink',
+      'You need to find the exit',
+      'You want to pay the bill',
+      'You are greeting someone for the first time',
+    ];
+    while (wrongScenarios.length < 3) wrongScenarios.push(wrongPad[wrongScenarios.length]);
+
+    const options = shuffle([
+      { text: p.resolvedScenario, correct: true },
+      ...wrongScenarios.slice(0,3).map(s => ({ text: s, correct: false })),
+    ]);
+
+    aArea.innerHTML = `<div class="mc-grid">${options.map((opt,i) =>
+      `<button class="mc-btn" onclick="checkPhraseMC(this,${opt.correct},'${escMC(p.resolvedScenario)}')">${opt.text}</button>`
+    ).join('')}</div>`;
+
   } else {
-    // English → Kana
+    // ── Type 3: Situation → type kana ──────────────
     qCard.innerHTML = `
-      <div class="pq-theme">Write in Japanese</div>
-      <div class="pq-english">${eng}</div>
-      <div class="pq-progress">${phraseQIndex+1} / ${total}</div>`;
-    inp.placeholder   = 'Type in Japanese…';
-    inp.setAttribute('lang','ja');
-    inp.removeAttribute('autocapitalize');
-    hintEl.innerHTML  = `<div class="keyboard-hint">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>`;
+      <div class="pq-theme">Write this in Japanese</div>
+      <div class="pq-scenario">${p.resolvedScenario}</div>
+      <div class="pq-progress">${phraseQIndex+1}/${total}</div>`;
+
+    aArea.innerHTML = `
+      <div class="keyboard-hint" style="margin-bottom:10px">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>
+      <input class="answer-input" id="pq-input" type="text" lang="ja"
+             autocomplete="off" autocorrect="off" spellcheck="false"
+             placeholder="Type in Japanese…" />
+      <button class="submit-btn" onclick="submitPhraseAnswer()">Submit</button>
+      <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
+    setTimeout(() => {
+      const inp = document.getElementById('pq-input');
+      if (inp) {
+        inp.focus();
+        inp.addEventListener('keydown', e => { if(e.key==='Enter') submitPhraseAnswer(); });
+      }
+    }, 80);
   }
-
-  // Attempt dots
-  attEl.innerHTML = [0,1,2].map(i=>`<div class="attempt-dot"></div>`).join('');
-
-  inp.value = '';
-  inp.className = 'answer-input';
-  clearPQFeedback();
-  setTimeout(() => inp.focus(), 80);
 }
 
-let pqAttempts = 0;
+function escMC(s) { return (s||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;').replace(/\\/g,''); }
 
 function clearPQFeedback() {
   const fb = document.getElementById('pq-feedback');
-  if (fb) { fb.className = 'feedback-pill'; fb.textContent = ''; }
+  if (fb) { fb.className='feedback-pill'; fb.textContent=''; }
 }
 function showPQFeedback(type, msg) {
   const fb = document.getElementById('pq-feedback');
-  if (fb) { fb.className = `feedback-pill ${type} show`; fb.textContent = msg; }
+  if (fb) { fb.className=`feedback-pill ${type} show`; fb.textContent=msg; }
 }
 
+// ── MC answer check ──────────────────────────────────
+function checkPhraseMC(btn, correct, correctDisplay) {
+  document.querySelectorAll('#pq-answer-area .mc-btn').forEach(b => b.disabled=true);
+  phraseQTotal++;
+  if (correct) {
+    btn.classList.add('correct');
+    phraseQCorrect++;
+    showPQFeedback('correct', '✓ Correct!');
+  } else {
+    btn.classList.add('wrong');
+    showPQFeedback('reveal', 'Correct: ' + correctDisplay.substring(0,50) + '…');
+  }
+  setTimeout(nextPhraseQuestion, correct ? 900 : 2200);
+}
+
+// ── Typed answer check ───────────────────────────────
 function submitPhraseAnswer() {
   const inp = document.getElementById('pq-input');
   if (!inp) return;
-  const val = inp.value.trim().toLowerCase();
-  const p   = phraseQuizList[phraseQIndex];
+  const val     = inp.value.trim();
+  const p       = phraseQuizList[phraseQIndex];
+  const correct = phraseQType === 0 ? p.resolvedRomaji : p.resolvedKana;
   phraseQTotal++;
 
-  let correct;
-  if (phraseQType === 0)      correct = p.resolvedRomaji.toLowerCase();
-  else if (phraseQType === 1) correct = (p.resolvedEnglish || p.english).toLowerCase();
-  else                        correct = p.resolvedKana.toLowerCase();
+  // Normalise: strip spaces and lowercase for comparison
+  const norm = s => s.replace(/\s+/g,'').toLowerCase();
+  const ok   = norm(val) === norm(correct);
 
-  // Allow close matches for phrases — strip spaces and check
-  const normalise = s => s.replace(/\s+/g,'').toLowerCase();
-  const isCorrect  = normalise(val) === normalise(correct);
-
-  if (isCorrect) {
+  if (ok) {
     inp.className = 'answer-input correct';
     showPQFeedback('correct', '✓ Correct!');
     phraseQCorrect++;
@@ -1936,15 +1976,14 @@ function submitPhraseAnswer() {
     setTimeout(nextPhraseQuestion, 900);
   } else {
     pqAttempts++;
-    // Highlight used attempt dots
-    const dots = document.querySelectorAll('#pq-attempts .attempt-dot');
-    dots.forEach((d,i) => { if(i<pqAttempts) d.classList.add('used'); });
-
+    document.querySelectorAll('#pq-attempts .attempt-dot').forEach((d,i)=>{
+      if(i<pqAttempts) d.classList.add('used');
+    });
     if (pqAttempts >= MAX_ATTEMPTS) {
       inp.className = 'answer-input wrong';
-      showPQFeedback('reveal', 'Answer: ' + (phraseQType === 0 ? p.resolvedRomaji : phraseQType === 1 ? (p.resolvedEnglish||p.english) : p.resolvedKana));
+      showPQFeedback('reveal', 'Answer: ' + correct);
       pqAttempts = 0;
-      setTimeout(nextPhraseQuestion, 2200);
+      setTimeout(nextPhraseQuestion, 2500);
     } else {
       inp.className = 'answer-input wrong';
       showPQFeedback('wrong', '✗ Try again (' + (MAX_ATTEMPTS - pqAttempts) + ' left)');
@@ -1956,6 +1995,7 @@ function submitPhraseAnswer() {
   }
 }
 
+// ── Advance to next question / type / complete ───────
 function nextPhraseQuestion() {
   phraseQIndex++;
   if (phraseQIndex < phraseQuizList.length) {
@@ -1963,40 +2003,36 @@ function nextPhraseQuestion() {
     return;
   }
 
-  // Move to next question type
   phraseQType++;
-  if (phraseQType < 3) {
+  if (phraseQType < PQ_TYPES.length) {
     phraseQIndex   = 0;
     phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
     pqAttempts     = 0;
-    const typeLabels = ['English → Romaji', 'Japanese → English', 'English → Japanese'];
-    document.getElementById('phrase-quiz-subtitle').textContent = 'Phrases · Type ' + (phraseQType+1) + '/3';
+    document.getElementById('phrase-quiz-subtitle').textContent = PQ_TYPES[phraseQType].label;
     rebuildPhraseQuizArea();
     showPhraseQuestion();
     return;
   }
 
-  // All 3 types done — mark practiced
+  // All types done
   const prog = getProgress();
   prog[`phrases_${currentThemeId}`] = { practiced: true };
   saveProgress(prog);
-
   phraseQuizComplete();
 }
 
 function phraseQuizComplete() {
-  const pct = Math.round((phraseQCorrect / phraseQTotal) * 100);
-  const emoji = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
+  const pct    = Math.round((phraseQCorrect / phraseQTotal) * 100);
+  const emoji  = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
   const themes = window.phraseData.themes;
-  const curIdx = themes.findIndex(t => t.id === currentThemeId);
-  const nextTheme = themes[curIdx + 1];
+  const next   = themes[themes.findIndex(t => t.id === currentThemeId) + 1];
 
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete">
       <div class="big-emoji">${emoji}</div>
-      <h2>${pct >= 80 ? 'Excellent!' : pct >= 50 ? 'Good work!' : 'Keep practising!'}</h2>
+      <h2>${pct===100 ? 'Perfect!' : pct>=80 ? 'Excellent!' : pct>=50 ? 'Good work!' : 'Keep practising!'}</h2>
       <p>${phraseQCorrect}/${phraseQTotal} correct — ${pct}%</p>
-      ${nextTheme ? `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next: ${nextTheme.label} →</button>` : ''}
+      ${next ? `<button class="complete-btn" onclick="openPhraseTheme('${next.id}')">Next: ${next.label} →</button>` : ''}
       <button class="complete-btn" onclick="beginPhraseQuiz()">Practice Again ↺</button>
       <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
     </div>`;
@@ -2005,8 +2041,6 @@ function phraseQuizComplete() {
 function confirmPhraseQuit() {
   if (confirm('Quit this practice session?')) showScreen('home');
 }
-
-function isPhrasesSection() { return currentSection === 'phrases'; }
 
 // ═══════════════════════════════════════════════════════
 // INIT
