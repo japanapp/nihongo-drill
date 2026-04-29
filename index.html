@@ -220,15 +220,98 @@
     .review-score .lbl  { font-size: 12px; color: var(--text-soft); text-align: center; margin-bottom: 14px; }
 
     /* PHRASES PLACEHOLDER */
-    .phrases-placeholder { background: var(--ink); border-radius: 24px; padding: 40px 24px; text-align: center; color: var(--paper); box-shadow: var(--shadow-lg); margin-top: 20px; }
-    .phrases-placeholder .big-emoji { font-size: 56px; margin-bottom: 16px; }
-    .phrases-placeholder h2 { font-family: 'Shippori Mincho', serif; font-size: 24px; color: var(--gold-light); margin-bottom: 8px; }
-    .phrases-placeholder p { font-size: 14px; opacity: .75; line-height: 1.6; margin-bottom: 6px; }
+    /* ── PHRASES ── */
+    .theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .theme-card {
+      background: var(--ink); border-radius: var(--radius); padding: 16px 14px;
+      cursor: pointer; transition: transform .12s; border: 2px solid transparent;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .theme-card:active { transform: scale(.96); }
+    .theme-card.complete { border-color: var(--green); }
+    .theme-card .tc-icon { font-family: 'Shippori Mincho', serif; font-size: 28px; color: var(--gold); line-height: 1; }
+    .theme-card .tc-label { font-size: 12px; font-weight: 600; color: var(--paper); line-height: 1.3; }
+    .theme-card .tc-count { font-size: 10px; color: var(--paper); opacity: .45; }
+    .theme-card .tc-check { font-size: 10px; color: var(--green); font-weight: 700; }
+
+    .phrase-study-card {
+      background: var(--white); border-radius: var(--radius); padding: 16px;
+      margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .psc-kana { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); margin-bottom: 4px; line-height: 1.4; }
+    .psc-kana .slot-word { color: var(--gold); font-weight: 700; }
+    .psc-romaji { font-size: 13px; color: var(--text-soft); margin-bottom: 3px; }
+    .psc-english { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .psc-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .psc-badge { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: .06em; }
+    .psc-badge.polite  { background: #e8f4fd; color: #2980b9; }
+    .psc-badge.casual  { background: #fdf6e3; color: #c9a84c; }
+    .psc-badge.formal  { background: #f0e6f6; color: #8e44ad; }
+    .psc-badge.template { background: #eafaf1; color: #27ae60; }
+    .psc-note { font-size: 10px; color: var(--text-soft); font-style: italic; }
+    .psc-words { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .psc-word-chip { font-size: 9px; padding: 2px 6px; border-radius: 5px; background: var(--paper-warm); color: var(--text-soft); }
+    .psc-word-chip.known { background: rgba(201,168,76,.18); color: #856404; font-weight: 600; }
+
+    .phrase-q-card {
+      background: var(--ink); border-radius: 24px; padding: 26px 20px;
+      text-align: center; margin-bottom: 14px; box-shadow: var(--shadow-lg);
+      min-height: 155px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+    }
+    .pq-theme { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--gold); opacity: .6; }
+    .pq-kana  { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--paper); line-height: 1.4; }
+    .pq-kana .slot-hl { color: var(--gold-light); }
+    .pq-english { font-size: 16px; font-style: italic; color: var(--gold-light); }
+    .pq-progress { font-size: 10px; color: var(--paper); opacity: .45; margin-top: 4px; }
+
+    .phrase-quiz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .pq-type-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-soft); }
+    .pq-type-dots { display: flex; gap: 5px; }
+    .pq-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper-warm); border: 2px solid var(--ink); }
+    .pq-dot.active { background: var(--gold); border-color: var(--gold); }
+    .pq-dot.done   { background: var(--green); border-color: var(--green); }
+
+    .phrases-complete { background: var(--ink); border-radius: 24px; padding: 32px 20px; text-align: center; color: var(--paper); }
+    .phrases-complete .big-emoji { font-size: 48px; margin-bottom: 12px; }
+    .phrases-complete h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--gold-light); margin-bottom: 6px; }
+    .phrases-complete p { font-size: 13px; opacity: .7; margin-bottom: 20px; }
 
     ::-webkit-scrollbar { width: 0; }
   </style>
 </head>
 <body>
+
+<!-- PHRASE STUDY SCREEN -->
+<div id="screen-phrase-study" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="showScreen('home')">Back</button>
+    <div style="text-align:right">
+      <div class="app-title" id="phrase-study-title">Greetings</div>
+      <div class="app-subtitle" id="phrase-study-subtitle">Study & Practice</div>
+    </div>
+  </div>
+  <div class="card-area">
+    <div style="text-align:center;margin-bottom:16px">
+      <h2 style="font-family:'Shippori Mincho',serif;font-size:20px;font-weight:800;color:var(--ink)" id="phrase-study-heading">Study these phrases</h2>
+      <p style="color:var(--text-soft);font-size:12px;margin-top:4px">Gold words are ones you've already learned</p>
+    </div>
+    <div id="phrase-study-cards"></div>
+    <button class="big-btn gold" id="phrase-quiz-btn" onclick="beginPhraseQuiz()">Practice These Phrases →</button>
+  </div>
+</div>
+
+<!-- PHRASE QUIZ SCREEN -->
+<div id="screen-phrase-quiz" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="confirmPhraseQuit()">Quit</button>
+    <div style="text-align:right">
+      <div class="app-title" id="phrase-quiz-title">Greetings</div>
+      <div class="app-subtitle" id="phrase-quiz-subtitle">Phrases</div>
+    </div>
+  </div>
+  <div class="card-area" id="phrase-quiz-area"></div>
+</div>
 
 <!-- HOME -->
 <div id="screen-home" class="screen active">
@@ -291,6 +374,7 @@
   </div>
 </div>
 
+<script src="phrases.js"></script>
 <script src="vocab.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════
@@ -404,7 +488,7 @@ const SECTIONS = ['foundation', 'drill', 'phrases'];
 const SECTION_META = {
   foundation: { icon:'あ', label:'Foundation', comingSoon:false },
   drill:      { icon:'語', label:'Words',      comingSoon:false },
-  phrases:    { icon:'話', label:'Phrases',    comingSoon:true  },
+  phrases:    { icon:'話', label:'Phrases',    comingSoon:false },
 };
 
 const FOUNDATION_TABS = ['hiragana','katakana','numbers','time'];
@@ -689,13 +773,7 @@ function renderHome() {
   // Render body for current section
   const body = document.getElementById('home-body');
   if (currentSection === 'phrases') {
-    body.innerHTML = `
-      <div class="phrases-placeholder">
-        <div class="big-emoji">🗣️</div>
-        <h2>Phrases — Coming Soon</h2>
-        <p>Learn real tourist phrases that reference the words you already know.</p>
-        <p style="margin-top:12px;font-size:12px;opacity:.55">Complete blocks in Foundation and Words to prepare.</p>
-      </div>`;
+    renderPhrasesHome(body);
     return;
   }
 
@@ -1548,6 +1626,387 @@ function showReviewDone() {
       <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
     </div>`;
 }
+
+
+// ═══════════════════════════════════════════════════════
+// PHRASES SECTION
+// ═══════════════════════════════════════════════════════
+
+let currentThemeId   = null;
+let currentPhrases   = [];   // phrases in current theme
+let phraseQuizList   = [];   // ordered list for this quiz run
+let phraseQIndex     = 0;    // current question index
+let phraseQType      = 0;    // 0=eng→rom, 1=kana→eng, 2=eng→kana
+let phraseQCorrect   = 0;
+let phraseQTotal     = 0;
+
+// ── Get unlocked vocab words matching a tag ──────────
+function getUnlockedForTag(tag) {
+  const prog = getProgress();
+  const unlocked = [];
+  window.vocabData.forEach((w, idx) => {
+    if (!w.tags || !w.tags.includes(tag)) return;
+    const blockIdx = Math.floor(idx / BLOCK_SIZE);
+    // A word is "unlocked" if its drill block is done in any drill mode
+    const hiDone = !!prog[pKey('drill','hiragana',blockIdx)]?.done;
+    const kaDone = !!prog[pKey('drill','katakana',blockIdx)]?.done;
+    const kjDone = !!prog[pKey('drill','kanji',blockIdx)]?.done;
+    if (hiDone || kaDone || kjDone) unlocked.push(w);
+  });
+  return unlocked;
+}
+
+// ── Resolve a phrase — fill slot with a random unlocked word ──
+function resolvePhrase(phrase, preferredRomaji) {
+  if (!phrase.slot) return { ...phrase, resolvedKana: phrase.kana, resolvedRomaji: phrase.romaji, slotWord: null };
+
+  const candidates = getUnlockedForTag(phrase.slot);
+  let chosen;
+  if (preferredRomaji) {
+    chosen = candidates.find(w => w.romaji === preferredRomaji);
+  }
+  if (!chosen) {
+    chosen = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+  }
+
+  const slotWord = chosen
+    ? { romaji: chosen.romaji, kana: chosen.hiragana, english: chosen.english }
+    : phrase.fallback;
+
+  const resolvedRomaji = phrase.romaji.replace('['+phrase.slot+']', slotWord.romaji);
+  const resolvedKana   = phrase.kana.replace('['+phrase.slot+']', slotWord.kana);
+  const resolvedEnglish = phrase.english.replace('['+phrase.slot+']', slotWord.english);
+
+  return { ...phrase, resolvedKana, resolvedRomaji, resolvedEnglish, slotWord, candidates };
+}
+
+// ── Get vocab words that appear in a phrase (for highlighting) ──
+function getKnownWordsInPhrase(phrase) {
+  const prog = getProgress();
+  const known = [];
+  window.vocabData.forEach((w, idx) => {
+    // Check if this word's romaji appears in the phrase romaji
+    if (!phrase.romaji.toLowerCase().includes(w.romaji.toLowerCase())) return;
+    const blockIdx = Math.floor(idx / BLOCK_SIZE);
+    const done = !!prog[pKey('drill','hiragana',blockIdx)]?.done
+               || !!prog[pKey('drill','katakana',blockIdx)]?.done;
+    if (done) known.push(w);
+  });
+  return known;
+}
+
+// ── Count completed phrase themes ──
+function phraseThemeDone(themeId) {
+  return !!(getProgress()[`phrases_${themeId}`]?.practiced);
+}
+
+// ── RENDER PHRASES HOME ────────────────────────────────
+function renderPhrasesHome(body) {
+  const themes = window.phraseData.themes;
+  const phrases = window.phraseData.phrases;
+  let done = 0;
+  themes.forEach(t => { if (phraseThemeDone(t.id)) done++; });
+
+  let html = '';
+
+  // Hero
+  html += `<div class="home-hero">
+    <div class="kanji-bg">日本語</div>
+    <h2>Phrases</h2>
+    <p>Real tourist phrases — vocabulary you know, highlighted in gold</p>
+  </div>`;
+
+  // Stats
+  html += `<div class="stats-bar">
+    <div class="stat-card"><div class="num">${done}</div><div class="lbl">Themes Practiced</div></div>
+    <div class="stat-card"><div class="num">${phrases.length}</div><div class="lbl">Total Phrases</div></div>
+    <div class="stat-card"><div class="num">${phrases.filter(p=>p.slot).length}</div><div class="lbl">Dynamic Templates</div></div>
+  </div>`;
+
+  html += '<div class="section-heading">Choose a Theme</div>';
+  html += '<div class="theme-grid">';
+
+  themes.forEach(t => {
+    const themeCount = phrases.filter(p => p.theme === t.id).length;
+    const practiced  = phraseThemeDone(t.id);
+    html += `<div class="theme-card ${practiced ? 'complete' : ''}" onclick="openPhraseTheme('${t.id}')">
+      <div class="tc-icon">${t.icon}</div>
+      <div class="tc-label">${t.label}</div>
+      <div class="tc-count">${themeCount} phrases</div>
+      ${practiced ? '<div class="tc-check">✓ Practiced</div>' : ''}
+    </div>`;
+  });
+
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+// ── OPEN A THEME → study screen ───────────────────────
+function openPhraseTheme(themeId) {
+  currentThemeId = themeId;
+  const theme    = window.phraseData.themes.find(t => t.id === themeId);
+  currentPhrases = window.phraseData.phrases.filter(p => p.theme === themeId);
+
+  document.getElementById('phrase-study-title').textContent    = theme.label;
+  document.getElementById('phrase-study-subtitle').textContent = currentPhrases.length + ' phrases';
+  document.getElementById('phrase-study-heading').textContent  = 'Study these phrases';
+
+  const cardsEl = document.getElementById('phrase-study-cards');
+  cardsEl.innerHTML = '';
+
+  currentPhrases.forEach(phrase => {
+    const resolved  = resolvePhrase(phrase);
+    const knownWords = getKnownWordsInPhrase(phrase);
+
+    // Build kana display with slot word highlighted
+    let kanaDisplay = resolved.resolvedKana;
+    if (phrase.slot && resolved.slotWord) {
+      kanaDisplay = phrase.kana.replace(
+        '['+phrase.slot+']',
+        `<span class="slot-word">${resolved.slotWord.kana}</span>`
+      );
+    }
+
+    // Build word chips for known vocabulary
+    const chipHTML = knownWords.length > 0
+      ? `<div class="psc-words">
+          <span style="font-size:9px;color:var(--text-soft);margin-right:2px">Known:</span>
+          ${knownWords.map(w => `<span class="psc-word-chip known">${w.romaji}</span>`).join('')}
+        </div>`
+      : '';
+
+    const templateBadge = phrase.slot
+      ? `<span class="psc-badge template">+${resolved.candidates?.length || 0} words</span>`
+      : '';
+
+    const card = document.createElement('div');
+    card.className = 'phrase-study-card';
+    card.innerHTML = `
+      <div class="psc-kana">${kanaDisplay}</div>
+      <div class="psc-romaji">${resolved.resolvedRomaji}</div>
+      <div class="psc-english">${resolved.resolvedEnglish || resolved.english}</div>
+      <div class="psc-meta">
+        <span class="psc-badge ${phrase.formality}">${phrase.formality}</span>
+        ${templateBadge}
+        ${phrase.notes ? `<span class="psc-note">${phrase.notes}</span>` : ''}
+      </div>
+      ${chipHTML}`;
+    cardsEl.appendChild(card);
+  });
+
+  showScreen('phrase-study');
+}
+
+// ── BEGIN PHRASE QUIZ ─────────────────────────────────
+function beginPhraseQuiz() {
+  // Build quiz list — each phrase gets asked in 3 ways: eng→rom, kana→eng, eng→kana
+  // We create one question per phrase per type, then shuffle within type groups
+  // so user goes eng→rom for all, then kana→eng for all, then eng→kana for all
+  phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
+  phraseQIndex   = 0;
+  phraseQType    = 0;  // start with eng→rom
+  phraseQCorrect = 0;
+  phraseQTotal   = 0;
+
+  document.getElementById('phrase-quiz-title').textContent    = window.phraseData.themes.find(t=>t.id===currentThemeId)?.label || 'Phrases';
+  document.getElementById('phrase-quiz-subtitle').textContent = 'Phrases · Type 1/3';
+
+  rebuildPhraseQuizArea();
+  showScreen('phrase-quiz');
+  showPhraseQuestion();
+}
+
+function rebuildPhraseQuizArea() {
+  const typeLabels = ['English → Romaji', 'Japanese → English', 'English → Japanese'];
+  document.getElementById('phrase-quiz-area').innerHTML = `
+    <div class="phrase-quiz-meta">
+      <span class="pq-type-label" id="pq-type-label">${typeLabels[phraseQType]}</span>
+      <div class="pq-type-dots">
+        ${[0,1,2].map(i=>`<div class="pq-dot ${i<phraseQType?'done':i===phraseQType?'active':''}"></div>`).join('')}
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="pq-progress" style="width:0%"></div></div>
+    <div class="phrase-q-card" id="pq-card"></div>
+    <div id="pq-hint-area"></div>
+    <input class="answer-input" id="pq-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="Type your answer…" />
+    <button class="submit-btn" onclick="submitPhraseAnswer()">Submit</button>
+    <div class="feedback-area"><div class="feedback-pill" id="pq-feedback"></div></div>
+    <div class="attempts-row" id="pq-attempts"></div>`;
+
+  setTimeout(() => {
+    const inp = document.getElementById('pq-input');
+    if (inp) inp.addEventListener('keydown', e => { if(e.key==='Enter') submitPhraseAnswer(); });
+  }, 80);
+}
+
+function showPhraseQuestion() {
+  const p     = phraseQuizList[phraseQIndex];
+  const total = phraseQuizList.length;
+  const pct   = Math.min((phraseQIndex / total) * 100, 99);
+  document.getElementById('pq-progress').style.width = pct + '%';
+
+  const qCard = document.getElementById('pq-card');
+  const inp   = document.getElementById('pq-input');
+  const hintEl = document.getElementById('pq-hint-area');
+  const attEl  = document.getElementById('pq-attempts');
+
+  // Build kana with slot highlighted
+  let kanaHL = p.resolvedKana;
+  if (p.slot && p.slotWord) {
+    kanaHL = p.kana.replace('['+p.slot+']', `<span class="slot-hl">${p.slotWord.kana}</span>`);
+  }
+
+  const eng = p.resolvedEnglish || p.english;
+
+  if (phraseQType === 0) {
+    // English → Romaji
+    qCard.innerHTML = `
+      <div class="pq-theme">Type the romaji</div>
+      <div class="pq-english">${eng}</div>
+      <div class="pq-progress">${phraseQIndex+1} / ${total}</div>`;
+    inp.placeholder   = 'Type romaji…';
+    inp.setAttribute('lang','en');
+    inp.setAttribute('autocapitalize','off');
+    hintEl.innerHTML  = '';
+  } else if (phraseQType === 1) {
+    // Kana → English
+    qCard.innerHTML = `
+      <div class="pq-theme">What does this mean?</div>
+      <div class="pq-kana">${kanaHL}</div>
+      <div class="pq-progress">${phraseQIndex+1} / ${total}</div>`;
+    inp.placeholder   = 'Type English meaning…';
+    inp.setAttribute('lang','en');
+    inp.setAttribute('autocapitalize','off');
+    hintEl.innerHTML  = '';
+  } else {
+    // English → Kana
+    qCard.innerHTML = `
+      <div class="pq-theme">Write in Japanese</div>
+      <div class="pq-english">${eng}</div>
+      <div class="pq-progress">${phraseQIndex+1} / ${total}</div>`;
+    inp.placeholder   = 'Type in Japanese…';
+    inp.setAttribute('lang','ja');
+    inp.removeAttribute('autocapitalize');
+    hintEl.innerHTML  = `<div class="keyboard-hint">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>`;
+  }
+
+  // Attempt dots
+  attEl.innerHTML = [0,1,2].map(i=>`<div class="attempt-dot"></div>`).join('');
+
+  inp.value = '';
+  inp.className = 'answer-input';
+  clearPQFeedback();
+  setTimeout(() => inp.focus(), 80);
+}
+
+let pqAttempts = 0;
+
+function clearPQFeedback() {
+  const fb = document.getElementById('pq-feedback');
+  if (fb) { fb.className = 'feedback-pill'; fb.textContent = ''; }
+}
+function showPQFeedback(type, msg) {
+  const fb = document.getElementById('pq-feedback');
+  if (fb) { fb.className = `feedback-pill ${type} show`; fb.textContent = msg; }
+}
+
+function submitPhraseAnswer() {
+  const inp = document.getElementById('pq-input');
+  if (!inp) return;
+  const val = inp.value.trim().toLowerCase();
+  const p   = phraseQuizList[phraseQIndex];
+  phraseQTotal++;
+
+  let correct;
+  if (phraseQType === 0)      correct = p.resolvedRomaji.toLowerCase();
+  else if (phraseQType === 1) correct = (p.resolvedEnglish || p.english).toLowerCase();
+  else                        correct = p.resolvedKana.toLowerCase();
+
+  // Allow close matches for phrases — strip spaces and check
+  const normalise = s => s.replace(/\s+/g,'').toLowerCase();
+  const isCorrect  = normalise(val) === normalise(correct);
+
+  if (isCorrect) {
+    inp.className = 'answer-input correct';
+    showPQFeedback('correct', '✓ Correct!');
+    phraseQCorrect++;
+    pqAttempts = 0;
+    setTimeout(nextPhraseQuestion, 900);
+  } else {
+    pqAttempts++;
+    // Highlight used attempt dots
+    const dots = document.querySelectorAll('#pq-attempts .attempt-dot');
+    dots.forEach((d,i) => { if(i<pqAttempts) d.classList.add('used'); });
+
+    if (pqAttempts >= MAX_ATTEMPTS) {
+      inp.className = 'answer-input wrong';
+      showPQFeedback('reveal', 'Answer: ' + (phraseQType === 0 ? p.resolvedRomaji : phraseQType === 1 ? (p.resolvedEnglish||p.english) : p.resolvedKana));
+      pqAttempts = 0;
+      setTimeout(nextPhraseQuestion, 2200);
+    } else {
+      inp.className = 'answer-input wrong';
+      showPQFeedback('wrong', '✗ Try again (' + (MAX_ATTEMPTS - pqAttempts) + ' left)');
+      setTimeout(() => {
+        inp.className = 'answer-input'; inp.value = '';
+        clearPQFeedback(); inp.focus();
+      }, 900);
+    }
+  }
+}
+
+function nextPhraseQuestion() {
+  phraseQIndex++;
+  if (phraseQIndex < phraseQuizList.length) {
+    showPhraseQuestion();
+    return;
+  }
+
+  // Move to next question type
+  phraseQType++;
+  if (phraseQType < 3) {
+    phraseQIndex   = 0;
+    phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
+    pqAttempts     = 0;
+    const typeLabels = ['English → Romaji', 'Japanese → English', 'English → Japanese'];
+    document.getElementById('phrase-quiz-subtitle').textContent = 'Phrases · Type ' + (phraseQType+1) + '/3';
+    rebuildPhraseQuizArea();
+    showPhraseQuestion();
+    return;
+  }
+
+  // All 3 types done — mark practiced
+  const prog = getProgress();
+  prog[`phrases_${currentThemeId}`] = { practiced: true };
+  saveProgress(prog);
+
+  phraseQuizComplete();
+}
+
+function phraseQuizComplete() {
+  const pct = Math.round((phraseQCorrect / phraseQTotal) * 100);
+  const emoji = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
+  const themes = window.phraseData.themes;
+  const curIdx = themes.findIndex(t => t.id === currentThemeId);
+  const nextTheme = themes[curIdx + 1];
+
+  document.getElementById('phrase-quiz-area').innerHTML = `
+    <div class="phrases-complete">
+      <div class="big-emoji">${emoji}</div>
+      <h2>${pct >= 80 ? 'Excellent!' : pct >= 50 ? 'Good work!' : 'Keep practising!'}</h2>
+      <p>${phraseQCorrect}/${phraseQTotal} correct — ${pct}%</p>
+      ${nextTheme ? `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next: ${nextTheme.label} →</button>` : ''}
+      <button class="complete-btn" onclick="beginPhraseQuiz()">Practice Again ↺</button>
+      <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+    </div>`;
+}
+
+function confirmPhraseQuit() {
+  if (confirm('Quit this practice session?')) showScreen('home');
+}
+
+function isPhrasesSection() { return currentSection === 'phrases'; }
 
 // ═══════════════════════════════════════════════════════
 // INIT
