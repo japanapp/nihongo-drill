@@ -277,6 +277,42 @@
     .phrases-complete h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--gold-light); margin-bottom: 6px; }
     .phrases-complete p { font-size: 13px; opacity: .7; margin-bottom: 20px; }
 
+    /* chunk builder (Phase 1) */
+    .chunk-hint { font-size: 11px; color: var(--text-soft); text-align:center; margin-bottom: 10px; font-style:italic; }
+    .chunk-bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+    .chunk-block {
+      font-family: 'Shippori Mincho', serif; font-size: 18px;
+      background: var(--ink); color: var(--paper);
+      border-radius: 10px; padding: 10px 16px; cursor: pointer;
+      border: 2px solid transparent; transition: transform .1s, opacity .15s;
+      user-select: none;
+    }
+    .chunk-block:active { transform: scale(.93); }
+    .chunk-block.used   { opacity: .25; pointer-events: none; }
+    .chunk-target {
+      min-height: 52px; border: 2px dashed var(--paper-warm);
+      border-radius: 12px; display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 8px 10px; margin-bottom: 10px; align-items: center;
+    }
+    .chunk-built {
+      font-family: 'Shippori Mincho', serif; font-size: 18px;
+      background: var(--paper-warm); color: var(--ink);
+      border-radius: 8px; padding: 6px 12px;
+      transition: background .2s;
+    }
+    .chunk-built.correct { background: #d4edda; color: #155724; }
+    .chunk-built.wrong   { background: #f8d7da; color: #721c24; }
+    .chunk-clear-btn {
+      display: block; margin: 0 auto 10px; background: none;
+      border: 1.5px solid var(--paper-warm); border-radius: 8px;
+      padding: 5px 14px; font-size: 12px; color: var(--text-soft); cursor: pointer;
+    }
+    .pq-romaji-hint { font-size: 13px; color: var(--paper); opacity: .55; margin-top: 4px; }
+    .psc-scenario { font-size: 13px; font-weight: 600; color: var(--text-soft); margin-bottom: 8px; font-style: italic; line-height: 1.4; }
+    .psc-english  { font-size: 13px; color: var(--text-soft); margin-bottom: 6px; }
+    .pq-scenario  { font-size: 15px; font-weight: 500; color: var(--gold-light); line-height: 1.5; padding: 0 6px; font-style: italic; }
+    .pq-romaji-hint { font-size: 13px; color: var(--paper); opacity: .5; }
+
     .psc-scenario { font-size: 13px; font-weight: 600; color: var(--text-soft); margin-bottom: 8px; font-style: italic; line-height: 1.4; }
     .pq-scenario  { font-size: 15px; font-weight: 500; color: var(--gold-light); text-align: center; line-height: 1.5; padding: 0 8px; font-style: italic; }
 
@@ -1646,24 +1682,33 @@ function showReviewDone() {
 // ═══════════════════════════════════════════════════════
 // PHRASES SECTION
 // ═══════════════════════════════════════════════════════
+//
+// 5-phase scaffolded learning arc per theme:
+//   Phase 1 — Build it      : scenario + english + romaji shown → tap kana chunks in order
+//   Phase 2 — Recognise it  : scenario shown → MC pick correct romaji from 4
+//   Phase 3 — Recall it     : scenario shown → type romaji
+//   Phase 4 — Read it       : kana shown → MC pick correct situation
+//   Phase 5 — Produce it    : scenario shown → type full kana (JP keyboard)
+// ═══════════════════════════════════════════════════════
 
 let currentThemeId   = null;
 let currentPhrases   = [];
 let phraseQuizList   = [];
 let phraseQIndex     = 0;
-let phraseQType      = 0;   // 0=situational→romaji, 1=kana→situation MC, 2=situational→kana, 3=fill-gap
+let phraseQPhase     = 1;   // 1–5
 let phraseQCorrect   = 0;
 let phraseQTotal     = 0;
 let pqAttempts       = 0;
 
-// Question type metadata
-const PQ_TYPES = [
-  { label: 'Situation → Romaji',    subtitle: 'Read the situation, type the phrase' },
-  { label: 'Japanese → Situation',  subtitle: 'Read the phrase, pick the right situation' },
-  { label: 'Situation → Japanese',  subtitle: 'Read the situation, write the phrase' },
+const PQ_PHASES = [
+  { n:1, label:'Build the phrase',     hint:'Tap the chunks in the right order' },
+  { n:2, label:'Choose the romaji',    hint:'Which romaji matches this situation?' },
+  { n:3, label:'Type the romaji',      hint:'Type the full romaji from memory' },
+  { n:4, label:'Read & understand',    hint:'Pick the situation that matches the Japanese' },
+  { n:5, label:'Write in Japanese',    hint:'Type the full phrase using your Japanese keyboard' },
 ];
 
-// ── Get unlocked vocab words matching a tag ──────────
+// ── Get unlocked vocab for a tag ─────────────────────
 function getUnlockedForTag(tag) {
   const prog = getProgress();
   return window.vocabData.filter((w, idx) => {
@@ -1682,7 +1727,6 @@ function resolvePhrase(phrase) {
       resolvedKana:    phrase.kana,
       resolvedRomaji:  phrase.romaji,
       resolvedEnglish: phrase.english,
-      resolvedScenario:phrase.scenario,
       slotWord: null, candidates: [] };
   }
   const candidates = getUnlockedForTag(phrase.slot);
@@ -1698,13 +1742,21 @@ function resolvePhrase(phrase) {
     resolvedKana:    phrase.kana.replace('['+phrase.slot+']', sw.kana),
     resolvedRomaji:  phrase.romaji.replace('['+phrase.slot+']', sw.romaji),
     resolvedEnglish: phrase.english.replace('['+phrase.slot+']', sw.english),
-    resolvedScenario:phrase.scenario,
-    slotWord: sw,
-    candidates,
+    slotWord: sw, candidates,
   };
 }
 
-// ── Known words highlighted in a phrase ─────────────
+// ── Chunk a phrase into grammatical blocks ───────────
+// Splits on particle boundaries and natural phrase units
+function chunkPhrase(kana, romaji) {
+  // We store chunk boundaries in phrases.js as | delimiters in a chunks field
+  // If no chunks defined, fall back to splitting on spaces
+  const kanaChunks   = kana.split('|').map(s => s.trim()).filter(Boolean);
+  const romajiChunks = romaji.split('|').map(s => s.trim()).filter(Boolean);
+  return { kanaChunks, romajiChunks };
+}
+
+// ── Known words in phrase ────────────────────────────
 function knownWordsInPhrase(phrase) {
   const prog = getProgress();
   return window.vocabData.filter((w, idx) => {
@@ -1719,17 +1771,50 @@ function phraseThemeDone(id) {
   return !!(getProgress()[`phrases_${id}`]?.practiced);
 }
 
-// ── PHRASES HOME ─────────────────────────────────────
+// ── Build MC options for romaji (Phase 2) ────────────
+function buildRomajiMC(correct, allPhrases, currentId) {
+  const others = allPhrases.filter(p => p.id !== currentId);
+  const wrongPool = shuffle(others).slice(0,3).map(p => p.resolvedRomaji || p.romaji);
+  // Ensure we have 3 wrong answers, dedupe from correct
+  const wrongs = [...new Set(wrongPool.filter(r => r !== correct))].slice(0,3);
+  while (wrongs.length < 3) {
+    wrongs.push(['hai','sumimasen','arigatou gozaimasu','sayounara','onegaishimasu']
+      .find(w => w !== correct && !wrongs.includes(w)) || 'iie');
+  }
+  return shuffle([
+    { text: correct, correct: true },
+    ...wrongs.slice(0,3).map(r => ({ text: r, correct: false })),
+  ]);
+}
+
+// ── Build MC options for situations (Phase 4) ────────
+function buildSituationMC(correct, allPhrases, currentId) {
+  const others = allPhrases.filter(p => p.id !== currentId);
+  const wrongScenarios = shuffle(others).slice(0,3).map(p => p.scenario);
+  const fallbacks = [
+    'You want to order a drink','You need to find the exit',
+    'You want to pay the bill','You are saying goodbye',
+  ];
+  while (wrongScenarios.length < 3) wrongScenarios.push(fallbacks[wrongScenarios.length]);
+  return shuffle([
+    { text: correct, correct: true },
+    ...wrongScenarios.slice(0,3).map(s => ({ text: s, correct: false })),
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
 function renderPhrasesHome(body) {
   const themes  = window.phraseData.themes;
   const phrases = window.phraseData.phrases;
-  let done = themes.filter(t => phraseThemeDone(t.id)).length;
+  const done    = themes.filter(t => phraseThemeDone(t.id)).length;
 
   let html = `
     <div class="home-hero">
       <div class="kanji-bg">日本語</div>
       <h2>Phrases</h2>
-      <p>Real situations — vocabulary you know, highlighted in gold</p>
+      <p>Real situations · 5-step scaffolded practice</p>
     </div>
     <div class="stats-bar">
       <div class="stat-card"><div class="num">${done}</div><div class="lbl">Practiced</div></div>
@@ -1740,7 +1825,7 @@ function renderPhrasesHome(body) {
     <div class="theme-grid">`;
 
   themes.forEach(t => {
-    const count    = phrases.filter(p => p.theme === t.id).length;
+    const count     = phrases.filter(p => p.theme === t.id).length;
     const practiced = phraseThemeDone(t.id);
     html += `<div class="theme-card ${practiced?'complete':''}" onclick="openPhraseTheme('${t.id}')">
       <div class="tc-icon">${t.icon}</div>
@@ -1749,12 +1834,13 @@ function renderPhrasesHome(body) {
       ${practiced ? '<div class="tc-check">✓ Practiced</div>' : ''}
     </div>`;
   });
-
   html += '</div>';
   body.innerHTML = html;
 }
 
-// ── OPEN THEME → study cards ─────────────────────────
+// ═══════════════════════════════════════════════════════
+// STUDY SCREEN
+// ═══════════════════════════════════════════════════════
 function openPhraseTheme(themeId) {
   currentThemeId = themeId;
   const theme    = window.phraseData.themes.find(t => t.id === themeId);
@@ -1767,22 +1853,20 @@ function openPhraseTheme(themeId) {
   cardsEl.innerHTML = '';
 
   currentPhrases.forEach(phrase => {
-    const resolved   = resolvePhrase(phrase);
-    const known      = knownWordsInPhrase(phrase);
+    const resolved = resolvePhrase(phrase);
+    const known    = knownWordsInPhrase(phrase);
 
-    // Highlight slot word in kana
-    let kanaDisplay = resolved.resolvedKana;
+    let kanaDisplay = resolved.resolvedKana.replace(/\|/g,'');
     if (phrase.slot && resolved.slotWord) {
-      kanaDisplay = phrase.kana.replace(
-        '['+phrase.slot+']',
-        `<span class="slot-word">${resolved.slotWord.kana}</span>`
-      );
+      const slotKana = resolved.slotWord.kana;
+      kanaDisplay = phrase.kana
+        .replace('['+phrase.slot+']', `<span class="slot-word">${slotKana}</span>`)
+        .replace(/\|/g,'');
     }
 
     const templateBadge = phrase.slot
       ? `<span class="psc-badge template">${resolved.candidates.length} words available</span>`
       : '';
-
     const knownChips = known.length
       ? `<div class="psc-words"><span style="font-size:9px;color:var(--text-soft);margin-right:3px">You know:</span>${known.map(w=>`<span class="psc-word-chip known">${w.romaji}</span>`).join('')}</div>`
       : '';
@@ -1792,7 +1876,8 @@ function openPhraseTheme(themeId) {
     card.innerHTML = `
       <div class="psc-scenario">${phrase.scenario}</div>
       <div class="psc-kana">${kanaDisplay}</div>
-      <div class="psc-romaji">${resolved.resolvedRomaji}</div>
+      <div class="psc-romaji">${resolved.resolvedRomaji.replace(/\|/g,' ')}</div>
+      <div class="psc-english">${resolved.resolvedEnglish || phrase.english}</div>
       <div class="psc-meta">
         <span class="psc-badge ${phrase.formality}">${phrase.formality}</span>
         ${templateBadge}
@@ -1805,132 +1890,231 @@ function openPhraseTheme(themeId) {
   showScreen('phrase-study');
 }
 
-// ── BEGIN QUIZ ───────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+// QUIZ ENGINE
+// ═══════════════════════════════════════════════════════
 function beginPhraseQuiz() {
   phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
   phraseQIndex   = 0;
-  phraseQType    = 0;
+  phraseQPhase   = 1;
   phraseQCorrect = 0;
   phraseQTotal   = 0;
   pqAttempts     = 0;
 
   const theme = window.phraseData.themes.find(t => t.id === currentThemeId);
   document.getElementById('phrase-quiz-title').textContent    = theme.label;
-  document.getElementById('phrase-quiz-subtitle').textContent = PQ_TYPES[0].label;
+  document.getElementById('phrase-quiz-subtitle').textContent = 'Phase 1 / 5';
 
-  rebuildPhraseQuizArea();
+  buildPhraseQuizShell();
   showScreen('phrase-quiz');
   showPhraseQuestion();
 }
 
-function rebuildPhraseQuizArea() {
+function buildPhraseQuizShell() {
+  const ph = PQ_PHASES[phraseQPhase - 1];
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrase-quiz-meta">
-      <span class="pq-type-label" id="pq-type-label">${PQ_TYPES[phraseQType].label}</span>
+      <span class="pq-type-label" id="pq-phase-label">Phase ${phraseQPhase}/5 · ${ph.label}</span>
       <div class="pq-type-dots">
-        ${PQ_TYPES.map((_,i) => `<div class="pq-dot ${i<phraseQType?'done':i===phraseQType?'active':''}"></div>`).join('')}
+        ${PQ_PHASES.map((_,i) => `<div class="pq-dot ${i+1<phraseQPhase?'done':i+1===phraseQPhase?'active':''}"></div>`).join('')}
       </div>
     </div>
     <div class="progress-track"><div class="progress-fill" id="pq-progress" style="width:0%"></div></div>
-    <div class="phrase-q-card" id="pq-card"></div>
+    <div class="phrase-q-card" id="pq-card" style="min-height:140px"></div>
     <div id="pq-answer-area"></div>
     <div class="feedback-area"><div class="feedback-pill" id="pq-feedback"></div></div>`;
 }
 
+// ── Main question renderer ────────────────────────────
 function showPhraseQuestion() {
   const p     = phraseQuizList[phraseQIndex];
   const total = phraseQuizList.length;
-  document.getElementById('pq-progress').style.width = Math.min((phraseQIndex/total)*100, 99) + '%';
-  document.getElementById('pq-type-label').textContent = PQ_TYPES[phraseQType].label;
+  const pct   = Math.min((phraseQIndex / total) * 100, 99);
+
+  document.getElementById('pq-progress').style.width = pct + '%';
+  document.getElementById('pq-phase-label').textContent = `Phase ${phraseQPhase}/5 · ${PQ_PHASES[phraseQPhase-1].label}`;
   clearPQFeedback();
   pqAttempts = 0;
 
-  const qCard  = document.getElementById('pq-card');
-  const aArea  = document.getElementById('pq-answer-area');
-
   // Kana with slot highlighted
-  let kanaHL = p.resolvedKana;
+  let kanaHL = p.resolvedKana.replace(/\|/g,'');
   if (p.slot && p.slotWord) {
-    kanaHL = p.kana.replace('['+p.slot+']', `<span class="slot-hl">${p.slotWord.kana}</span>`);
+    kanaHL = p.kana
+      .replace('['+p.slot+']', `<span class="slot-hl">${p.slotWord.kana}</span>`)
+      .replace(/\|/g,'');
   }
 
-  if (phraseQType === 0) {
-    // ── Type 1: Situation → type romaji ────────────
-    qCard.innerHTML = `
-      <div class="pq-theme">What would you say?</div>
-      <div class="pq-scenario">${p.resolvedScenario}</div>
-      <div class="pq-progress">${phraseQIndex+1}/${total}</div>`;
+  const qCard = document.getElementById('pq-card');
+  const aArea = document.getElementById('pq-answer-area');
 
-    aArea.innerHTML = `
-      <div class="keyboard-hint" style="margin-bottom:10px">Type the romaji for the full phrase</div>
-      <input class="answer-input" id="pq-input" type="text"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-             placeholder="Type romaji…" />
-      <button class="submit-btn" onclick="submitPhraseAnswer()">Submit</button>
-      <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
-    setTimeout(() => {
-      const inp = document.getElementById('pq-input');
-      if (inp) {
-        inp.focus();
-        inp.addEventListener('keydown', e => { if(e.key==='Enter') submitPhraseAnswer(); });
-      }
-    }, 80);
-
-  } else if (phraseQType === 1) {
-    // ── Type 2: Kana → pick the situation (MC) ─────
-    qCard.innerHTML = `
-      <div class="pq-theme">When would you use this?</div>
-      <div class="pq-kana">${kanaHL}</div>
-      <div class="pq-progress">${phraseQIndex+1}/${total}</div>`;
-
-    // Build MC options — correct scenario + 3 wrong ones from other phrases in theme
-    // or from mcWrong if available
-    const allThemePhrases = window.phraseData.phrases.filter(ph => ph.theme === currentThemeId && ph.id !== p.id);
-    const wrongScenarios  = shuffle(allThemePhrases).slice(0,3).map(ph => ph.scenario);
-    // Pad with generic wrong answers if not enough in theme
-    const wrongPad = [
-      'You want to order a drink',
-      'You need to find the exit',
-      'You want to pay the bill',
-      'You are greeting someone for the first time',
-    ];
-    while (wrongScenarios.length < 3) wrongScenarios.push(wrongPad[wrongScenarios.length]);
-
-    const options = shuffle([
-      { text: p.resolvedScenario, correct: true },
-      ...wrongScenarios.slice(0,3).map(s => ({ text: s, correct: false })),
-    ]);
-
-    aArea.innerHTML = `<div class="mc-grid">${options.map((opt,i) =>
-      `<button class="mc-btn" onclick="checkPhraseMC(this,${opt.correct},'${escMC(p.resolvedScenario)}')">${opt.text}</button>`
-    ).join('')}</div>`;
-
-  } else {
-    // ── Type 3: Situation → type kana ──────────────
-    qCard.innerHTML = `
-      <div class="pq-theme">Write this in Japanese</div>
-      <div class="pq-scenario">${p.resolvedScenario}</div>
-      <div class="pq-progress">${phraseQIndex+1}/${total}</div>`;
-
-    aArea.innerHTML = `
-      <div class="keyboard-hint" style="margin-bottom:10px">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>
-      <input class="answer-input" id="pq-input" type="text" lang="ja"
-             autocomplete="off" autocorrect="off" spellcheck="false"
-             placeholder="Type in Japanese…" />
-      <button class="submit-btn" onclick="submitPhraseAnswer()">Submit</button>
-      <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
-    setTimeout(() => {
-      const inp = document.getElementById('pq-input');
-      if (inp) {
-        inp.focus();
-        inp.addEventListener('keydown', e => { if(e.key==='Enter') submitPhraseAnswer(); });
-      }
-    }, 80);
+  switch (phraseQPhase) {
+    case 1: renderPhase1(p, qCard, aArea, kanaHL); break;
+    case 2: renderPhase2(p, qCard, aArea);         break;
+    case 3: renderPhase3(p, qCard, aArea);         break;
+    case 4: renderPhase4(p, qCard, aArea, kanaHL); break;
+    case 5: renderPhase5(p, qCard, aArea);         break;
   }
 }
 
-function escMC(s) { return (s||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;').replace(/\\/g,''); }
+// ── Phase 1: Build the phrase (tap kana chunks) ───────
+function renderPhase1(p, qCard, aArea, kanaHL) {
+  qCard.innerHTML = `
+    <div class="pq-theme">Study this phrase</div>
+    <div class="pq-scenario" style="font-size:13px;margin-bottom:6px">${p.scenario}</div>
+    <div class="pq-kana">${kanaHL}</div>
+    <div class="pq-romaji-hint">${p.resolvedRomaji.replace(/\|/g,' ')}</div>
+    <div style="font-size:12px;color:var(--gold-light);font-style:italic;margin-top:4px">${p.resolvedEnglish || p.english}</div>`;
 
+  // Get chunks — split kana on | boundaries
+  const kanaChunks = p.resolvedKana.split('|').map(s => s.trim()).filter(Boolean);
+
+  if (kanaChunks.length <= 1) {
+    // No chunks defined — treat as single block, just ask them to tap it
+    aArea.innerHTML = `
+      <div class="chunk-hint">Tap the phrase to continue</div>
+      <div class="chunk-target" id="chunk-target"></div>
+      <div class="chunk-bank" id="chunk-bank">
+        <div class="chunk-block" onclick="tapChunk(this, true)">${p.resolvedKana}</div>
+      </div>`;
+  } else {
+    const shuffled = shuffle([...kanaChunks]);
+    aArea.innerHTML = `
+      <div class="chunk-hint">Tap the chunks in the correct order</div>
+      <div class="chunk-target" id="chunk-target"></div>
+      <div class="chunk-bank" id="chunk-bank">
+        ${shuffled.map((c,i) => `<div class="chunk-block" data-chunk="${c}" onclick="tapChunk(this,'${kanaChunks.join('|')}')">${c}</div>`).join('')}
+      </div>
+      <button class="chunk-clear-btn" onclick="clearChunks()">Clear ↺</button>`;
+  }
+}
+
+// Chunk interaction state
+let builtChunks = [];
+
+function tapChunk(btn, correctOrder) {
+  if (btn.classList.contains('used')) return;
+
+  // If single-block, just advance
+  if (correctOrder === true) {
+    btn.classList.add('correct');
+    phraseQTotal++;
+    phraseQCorrect++;
+    setTimeout(nextPhraseQuestion, 600);
+    return;
+  }
+
+  builtChunks.push(btn.dataset.chunk);
+  btn.classList.add('used');
+
+  const target = document.getElementById('chunk-target');
+  const builtEl = document.createElement('div');
+  builtEl.className = 'chunk-built';
+  builtEl.textContent = btn.dataset.chunk;
+  target.appendChild(builtEl);
+
+  const correctChunks = correctOrder.split('|');
+  if (builtChunks.length === correctChunks.length) {
+    phraseQTotal++;
+    const isCorrect = builtChunks.join('') === correctChunks.join('');
+    if (isCorrect) {
+      phraseQCorrect++;
+      document.querySelectorAll('.chunk-built').forEach(el => el.classList.add('correct'));
+      showPQFeedback('correct', '✓ Correct!');
+    } else {
+      document.querySelectorAll('.chunk-built').forEach(el => el.classList.add('wrong'));
+      showPQFeedback('reveal', 'Correct order: ' + correctChunks.join(' · '));
+    }
+    builtChunks = [];
+    setTimeout(nextPhraseQuestion, isCorrect ? 900 : 2200);
+  }
+}
+
+function clearChunks() {
+  builtChunks = [];
+  document.querySelectorAll('.chunk-block').forEach(b => b.classList.remove('used'));
+  const target = document.getElementById('chunk-target');
+  if (target) target.innerHTML = '';
+}
+
+// ── Phase 2: MC — pick correct romaji ─────────────────
+function renderPhase2(p, qCard, aArea) {
+  qCard.innerHTML = `
+    <div class="pq-theme">Which romaji matches this situation?</div>
+    <div class="pq-scenario">${p.scenario}</div>`;
+
+  const resolvedList = phraseQuizList; // already resolved
+  const options = buildRomajiMC(p.resolvedRomaji, resolvedList, p.id);
+  aArea.innerHTML = `<div class="mc-grid">${options.map(opt =>
+    `<button class="mc-btn" onclick="checkPhraseMC(this,${opt.correct},'${safeAttr(p.resolvedRomaji)}')">${opt.text}</button>`
+  ).join('')}</div>`;
+}
+
+// ── Phase 3: Type the romaji ──────────────────────────
+function renderPhase3(p, qCard, aArea) {
+  qCard.innerHTML = `
+    <div class="pq-theme">Type the full phrase in romaji</div>
+    <div class="pq-scenario">${p.scenario}</div>`;
+
+  aArea.innerHTML = `
+    <input class="answer-input" id="pq-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="Type romaji…" />
+    <button class="submit-btn" onclick="submitPhraseTyped('romaji')">Submit</button>
+    <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
+  focusPQ();
+}
+
+// ── Phase 4: Kana → pick situation (MC) ───────────────
+function renderPhase4(p, qCard, aArea, kanaHL) {
+  qCard.innerHTML = `
+    <div class="pq-theme">When would you use this phrase?</div>
+    <div class="pq-kana" style="font-size:20px;line-height:1.5">${kanaHL}</div>`;
+
+  const options = buildSituationMC(p.scenario, phraseQuizList, p.id);
+  aArea.innerHTML = `<div class="mc-grid">${options.map(opt =>
+    `<button class="mc-btn" onclick="checkPhraseMC(this,${opt.correct},'${safeAttr(p.scenario)}')">${opt.text}</button>`
+  ).join('')}</div>`;
+}
+
+// ── Phase 5: Type full kana ───────────────────────────
+function renderPhase5(p, qCard, aArea) {
+  qCard.innerHTML = `
+    <div class="pq-theme">Write this in Japanese</div>
+    <div class="pq-scenario">${p.scenario}</div>`;
+
+  aArea.innerHTML = `
+    <div class="keyboard-hint" style="margin-bottom:10px">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>
+    <input class="answer-input" id="pq-input" type="text" lang="ja"
+           autocomplete="off" autocorrect="off" spellcheck="false"
+           placeholder="Type in Japanese…" />
+    <button class="submit-btn" onclick="submitPhraseTyped('kana')">Submit</button>
+    <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
+  focusPQ();
+}
+
+function focusPQ() {
+  setTimeout(() => {
+    const inp = document.getElementById('pq-input');
+    if (inp) {
+      inp.focus();
+      inp.onkeydown = e => { if(e.key==='Enter') inp.getAttribute('data-type')==='kana' ? submitPhraseTyped('kana') : submitPhraseTyped('romaji'); };
+    }
+  }, 80);
+}
+
+function safeAttr(s) {
+  if (!s) return '';
+  let r = '';
+  for (let i=0; i<s.length; i++) {
+    const c = s[i];
+    if (c === "'") r += '&#39;';
+    else if (c === '"') r += '&quot;';
+    else r += c;
+  }
+  return r;
+}
+
+// ── Feedback helpers ─────────────────────────────────
 function clearPQFeedback() {
   const fb = document.getElementById('pq-feedback');
   if (fb) { fb.className='feedback-pill'; fb.textContent=''; }
@@ -1940,48 +2124,48 @@ function showPQFeedback(type, msg) {
   if (fb) { fb.className=`feedback-pill ${type} show`; fb.textContent=msg; }
 }
 
-// ── MC answer check ──────────────────────────────────
-function checkPhraseMC(btn, correct, correctDisplay) {
+// ── MC check ────────────────────────────────────────
+function checkPhraseMC(btn, correct, display) {
   document.querySelectorAll('#pq-answer-area .mc-btn').forEach(b => b.disabled=true);
   phraseQTotal++;
   if (correct) {
     btn.classList.add('correct');
     phraseQCorrect++;
     showPQFeedback('correct', '✓ Correct!');
+    setTimeout(nextPhraseQuestion, 900);
   } else {
     btn.classList.add('wrong');
-    showPQFeedback('reveal', 'Correct: ' + correctDisplay.substring(0,50) + '…');
+    // Highlight correct
+    document.querySelectorAll('#pq-answer-area .mc-btn').forEach(b => {
+      if (b.textContent.trim() === display) b.classList.add('correct');
+    });
+    showPQFeedback('reveal', 'Correct: ' + display.substring(0,60) + (display.length>60?'…':''));
+    setTimeout(nextPhraseQuestion, 2500);
   }
-  setTimeout(nextPhraseQuestion, correct ? 900 : 2200);
 }
 
-// ── Typed answer check ───────────────────────────────
-function submitPhraseAnswer() {
+// ── Typed check ──────────────────────────────────────
+function submitPhraseTyped(mode) {
   const inp = document.getElementById('pq-input');
   if (!inp) return;
-  const val     = inp.value.trim();
   const p       = phraseQuizList[phraseQIndex];
-  const correct = phraseQType === 0 ? p.resolvedRomaji : p.resolvedKana;
+  const correct = mode === 'romaji' ? p.resolvedRomaji : p.resolvedKana;
+  const norm    = s => s.replace(/[|\s]/g,'').toLowerCase();
+  const ok      = norm(inp.value) === norm(correct);
+
   phraseQTotal++;
-
-  // Normalise: strip spaces and lowercase for comparison
-  const norm = s => s.replace(/\s+/g,'').toLowerCase();
-  const ok   = norm(val) === norm(correct);
-
   if (ok) {
     inp.className = 'answer-input correct';
-    showPQFeedback('correct', '✓ Correct!');
     phraseQCorrect++;
     pqAttempts = 0;
+    showPQFeedback('correct', '✓ Correct!');
     setTimeout(nextPhraseQuestion, 900);
   } else {
     pqAttempts++;
-    document.querySelectorAll('#pq-attempts .attempt-dot').forEach((d,i)=>{
-      if(i<pqAttempts) d.classList.add('used');
-    });
+    document.querySelectorAll('#pq-attempts .attempt-dot').forEach((d,i)=>{ if(i<pqAttempts) d.classList.add('used'); });
     if (pqAttempts >= MAX_ATTEMPTS) {
       inp.className = 'answer-input wrong';
-      showPQFeedback('reveal', 'Answer: ' + correct);
+      showPQFeedback('reveal', 'Answer: ' + correct.replace(/\|/g,' '));
       pqAttempts = 0;
       setTimeout(nextPhraseQuestion, 2500);
     } else {
@@ -1989,13 +2173,15 @@ function submitPhraseAnswer() {
       showPQFeedback('wrong', '✗ Try again (' + (MAX_ATTEMPTS - pqAttempts) + ' left)');
       setTimeout(() => {
         inp.className = 'answer-input'; inp.value = '';
-        clearPQFeedback(); inp.focus();
+        clearPQFeedback();
+        document.querySelectorAll('#pq-attempts .attempt-dot').forEach((d,i)=>{ if(i<pqAttempts) d.classList.add('used'); else d.classList.remove('used'); });
+        inp.focus();
       }, 900);
     }
   }
 }
 
-// ── Advance to next question / type / complete ───────
+// ── Advance to next question / phase / done ──────────
 function nextPhraseQuestion() {
   phraseQIndex++;
   if (phraseQIndex < phraseQuizList.length) {
@@ -2003,18 +2189,20 @@ function nextPhraseQuestion() {
     return;
   }
 
-  phraseQType++;
-  if (phraseQType < PQ_TYPES.length) {
+  // Move to next phase
+  phraseQPhase++;
+  if (phraseQPhase <= 5) {
     phraseQIndex   = 0;
     phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
     pqAttempts     = 0;
-    document.getElementById('phrase-quiz-subtitle').textContent = PQ_TYPES[phraseQType].label;
-    rebuildPhraseQuizArea();
+    builtChunks    = [];
+    document.getElementById('phrase-quiz-subtitle').textContent = `Phase ${phraseQPhase} / 5`;
+    buildPhraseQuizShell();
     showPhraseQuestion();
     return;
   }
 
-  // All types done
+  // All 5 phases done
   const prog = getProgress();
   prog[`phrases_${currentThemeId}`] = { practiced: true };
   saveProgress(prog);
@@ -2022,15 +2210,15 @@ function nextPhraseQuestion() {
 }
 
 function phraseQuizComplete() {
-  const pct    = Math.round((phraseQCorrect / phraseQTotal) * 100);
-  const emoji  = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
+  const pct   = Math.round((phraseQCorrect / phraseQTotal) * 100);
+  const emoji = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
   const themes = window.phraseData.themes;
   const next   = themes[themes.findIndex(t => t.id === currentThemeId) + 1];
 
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete">
       <div class="big-emoji">${emoji}</div>
-      <h2>${pct===100 ? 'Perfect!' : pct>=80 ? 'Excellent!' : pct>=50 ? 'Good work!' : 'Keep practising!'}</h2>
+      <h2>${pct===100?'Perfect!':pct>=80?'Excellent!':pct>=50?'Good work!':'Keep practising!'}</h2>
       <p>${phraseQCorrect}/${phraseQTotal} correct — ${pct}%</p>
       ${next ? `<button class="complete-btn" onclick="openPhraseTheme('${next.id}')">Next: ${next.label} →</button>` : ''}
       <button class="complete-btn" onclick="beginPhraseQuiz()">Practice Again ↺</button>
@@ -2041,6 +2229,7 @@ function phraseQuizComplete() {
 function confirmPhraseQuit() {
   if (confirm('Quit this practice session?')) showScreen('home');
 }
+
 
 // ═══════════════════════════════════════════════════════
 // INIT
