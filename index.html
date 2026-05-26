@@ -119,6 +119,8 @@
     .study-char { font-family: var(--kana-font); font-size: 30px; color: var(--paper); line-height: 1; }
     .study-rom  { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: 500; }
     .study-hint { font-size: 8px; color: var(--paper); opacity: .4; margin-top: 2px; line-height: 1.3; }
+    .kanji-info-card { background: var(--ink); color: var(--paper); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 11.5px; line-height: 1.6; opacity: .92; }
+    .kanji-info-card i { color: var(--gold); margin-right: 4px; }
     .block-note { background: var(--ink-soft); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--paper); line-height: 1.5; }
     .study-card-num { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
     .sn-digit { font-size: 20px; font-weight: 700; color: var(--gold); }
@@ -622,7 +624,7 @@ const DRILL_TABS = ['hiragana','katakana','kanji'];
 const DRILL_META = {
   hiragana: {icon:'あ',label:'Hiragana',heroBg:'がくしゅう',heroTitle:'Native Japanese Words',heroSub:'Words written in hiragana and kanji',phases:3},
   katakana: {icon:'ア',label:'Katakana',heroBg:'ガクシュウ',heroTitle:'Loanwords & Foreign Terms',heroSub:'Words a Japanese person writes in katakana',phases:3},
-  kanji:    {icon:'字',label:'Kanji',heroBg:'学習',heroTitle:'Kanji Reading',heroSub:'Read the kanji and give the romaji',phases:1},
+  kanji:    {icon:'字',label:'Kanji',heroBg:'学習',heroTitle:'Kanji You Will See',heroSub:'Signs, menus and the written world',phases:1},
 };
 
 // Word drill phase definitions (3 cycles with escalating difficulty)
@@ -771,7 +773,15 @@ function isDrill(){return currentSection==='drill';}
 
 // Get the vocab/items for current tab
 function vocabForDrill(tab) {
-  if (tab==='kanji')    return window.vocabData.filter(w => w.hasKanji && !w.isLoanword);
+  if (tab==='kanji') {
+    // Kanji = reading recognition. Exclude numbers (covered in Foundation),
+    // exclude loanwords, and order by signage/reading priority — not the
+    // same order as hiragana, prioritising what a visitor needs to READ.
+    return window.vocabData
+      .filter(w => w.hasKanji && !w.isLoanword && !w.kanjiExclude)
+      .slice()
+      .sort((a,b) => (a.kanjiPriority||8000) - (b.kanjiPriority||8000));
+  }
   if (tab==='katakana') return window.vocabData.filter(w => w.isLoanword);
   // hiragana — native Japanese words only
   return window.vocabData.filter(w => !w.isLoanword);
@@ -943,6 +953,17 @@ function renderSectionHome(body) {
     <h2>${meta.heroTitle}</h2>
     <p>${meta.heroSub || 'Build your skills block by block'}</p>
   </div>`;
+
+  // Kanji section explainer — sets expectations about the real-world approach
+  if (isDrill() && currentTab === 'kanji') {
+    html += `<div class="kanji-info-card">
+      <i style="font-style:normal">✍️</i>
+      Kanji are shown as they appear in real Japanese text — with their hiragana
+      verb endings (okurigana). This is how you'll actually see them on menus,
+      signs and in conversation, rather than as isolated characters as you would
+      find in textbooks.
+    </div>`;
+  }
 
   // Stats
   html += `<div class="stats-bar">
@@ -1314,17 +1335,32 @@ function buildFoundationQuestion(item) {
     }
     qCard.innerHTML = prompt;
     const safe = escQ(correct);
-    aEl.innerHTML = `<input class="answer-input" id="ans-input" type="text"
-      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-      placeholder="${ph}"/>
-      <button class="submit-btn" onclick="checkTyped('${safe}')">Submit</button>`;
-    setTimeout(()=>{
-      const el=document.getElementById('ans-input');
-      if (el) {
-        el.focus();
-        el.addEventListener('keydown', e=>{if(e.key==='Enter')checkTyped(safe);});
-      }
-    }, 80);
+    const lang = (isKanaTab() || currentTab==='numbers' || currentTab==='time') ? 'en' : 'en';
+
+    // Reuse the existing input element if present — destroying & recreating it
+    // drops the mobile keyboard. Keeping it alive keeps the keyboard up.
+    let inp = document.getElementById('ans-input');
+    if (!inp) {
+      aEl.innerHTML = `<input class="answer-input" id="ans-input" type="text"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        placeholder="${ph}"/>
+        <button class="submit-btn" id="ans-submit">Submit</button>`;
+      inp = document.getElementById('ans-input');
+      const btn = document.getElementById('ans-submit');
+      // Keydown + submit handlers read the CURRENT answer from a data attribute,
+      // so we never rebind — the element persists across questions.
+      inp.addEventListener('keydown', e=>{ if(e.key==='Enter') checkTyped(inp.dataset.answer); });
+      btn.addEventListener('click', ()=> checkTyped(inp.dataset.answer));
+    }
+    inp.dataset.answer = safe;
+    inp.value = '';
+    inp.placeholder = ph;
+    inp.className = 'answer-input';
+    inp.disabled = false;
+    const sb = document.getElementById('ans-submit');
+    if (sb) sb.disabled = false;
+    // Focus synchronously — keeps the keyboard up on mobile between questions
+    inp.focus();
   }
 }
 
@@ -1349,26 +1385,31 @@ function checkMC(btn, ok) {
   }
 }
 
+let pqTypedLock = false;
 function checkTyped(correct) {
   const inp = document.getElementById('ans-input');
-  if (!inp) return;
+  if (!inp || pqTypedLock) return;
   const norm = s => s.trim().toLowerCase().replace(/\s+/g,'');
   const val  = norm(inp.value);
-  const alts = correct.toLowerCase().split('/').map(s=>norm(s));
+  const alts = (correct||'').toLowerCase().split('/').map(s=>norm(s));
   const ok   = alts.includes(val);
+  if (val === '') return; // ignore empty submits
   quizTotal++;
-  inp.disabled = true;
-  document.querySelector('#quiz-card-area .submit-btn').disabled = true;
+  pqTypedLock = true;
+  // Visually lock but DON'T disable the input — disabling drops the keyboard
+  inp.readOnly = true;
+  const sb = document.getElementById('ans-submit');
+  if (sb) sb.disabled = true;
   if (ok) {
     inp.className = 'answer-input correct';
     showFeedback('correct', '✓ Correct!');
     quizCorrect++;
-    setTimeout(nextFoundationWord, 900);
+    setTimeout(()=>{ pqTypedLock=false; inp.readOnly=false; nextFoundationWord(); }, 900);
   } else {
     inp.className = 'answer-input wrong';
     markMistake();
     showFeedback('reveal', '✗ '+correct);
-    setTimeout(nextFoundationWord, 1800);
+    setTimeout(()=>{ pqTypedLock=false; inp.readOnly=false; nextFoundationWord(); }, 1800);
   }
 }
 
