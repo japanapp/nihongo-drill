@@ -308,11 +308,13 @@
       padding: 5px 14px; font-size: 12px; color: var(--text-soft); cursor: pointer;
     }
     .pq-romaji-hint { font-size: 13px; color: var(--paper); opacity: .55; margin-top: 4px; }
+    .psc-ha-wa-note { font-size: 11px; color: #856404; background: #fff3cd; border-radius: 7px; padding: 6px 10px; margin-top: 6px; line-height: 1.5; }
     .psc-scenario { font-size: 13px; font-weight: 600; color: var(--text-soft); margin-bottom: 8px; font-style: italic; line-height: 1.4; }
     .psc-english  { font-size: 13px; color: var(--text-soft); margin-bottom: 6px; }
     .pq-scenario  { font-size: 15px; font-weight: 500; color: var(--gold-light); line-height: 1.5; padding: 0 6px; font-style: italic; }
     .pq-romaji-hint { font-size: 13px; color: var(--paper); opacity: .5; }
 
+    .psc-ha-wa-note { font-size: 11px; color: #856404; background: #fff3cd; border-radius: 7px; padding: 6px 10px; margin-top: 6px; line-height: 1.5; }
     .psc-scenario { font-size: 13px; font-weight: 600; color: var(--text-soft); margin-bottom: 8px; font-style: italic; line-height: 1.4; }
     .pq-scenario  { font-size: 15px; font-weight: 500; color: var(--gold-light); text-align: center; line-height: 1.5; padding: 0 8px; font-style: italic; }
 
@@ -321,7 +323,7 @@
       width: 100%; background: var(--white); border: 2.5px solid var(--paper-warm);
       border-radius: var(--radius); padding: 13px 14px; font-family: 'DM Sans', sans-serif;
       font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer;
-      text-align: left; line-height: 1.4; transition: border-color .12s, transform .1s;
+      text-align: center; line-height: 1.4; transition: border-color .12s, transform .1s;
     }
     .mc-btn:active   { transform: scale(.98); }
     .mc-btn:disabled { cursor: not-allowed; opacity: .85; }
@@ -371,6 +373,10 @@
       <div class="app-title">Japan Start</div>
       <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
     </div>
+    <button id="dev-unlock-btn" onclick="toggleDevUnlock()"
+      style="font-size:10px;font-weight:700;padding:5px 10px;border-radius:8px;border:1.5px solid rgba(201,168,76,.4);background:transparent;color:var(--gold);cursor:pointer;letter-spacing:.06em">
+      DEV
+    </button>
   </div>
   <div class="card-area">
     <div id="section-nav-container"></div>
@@ -1924,12 +1930,12 @@ function openPhraseBlock(themeId, blockIdx) {
     const resolved = resolvePhrase(phrase);
     const known    = knownWordsInPhrase(phrase);
 
-    let kanaDisplay = resolved.resolvedKana.replace(/\|/g,'');
+    let kanaDisplay = resolved.resolvedKana.replace(/\|/g,' ').trim();
     if (phrase.slot && resolved.slotWord) {
       const slotKana = resolved.slotWord.kana;
       kanaDisplay = phrase.kana
         .replace('['+phrase.slot+']', `<span class="slot-word">${slotKana}</span>`)
-        .replace(/\|/g,'');
+        .replace(/\|/g,' ').trim();
     }
 
     const templateBadge = phrase.slot
@@ -1951,6 +1957,7 @@ function openPhraseBlock(themeId, blockIdx) {
         ${templateBadge}
         ${phrase.notes ? `<span class="psc-note">${phrase.notes}</span>` : ''}
       </div>
+      ${phrase.haWaNote ? `<div class="psc-ha-wa-note">✍️ Note: ends in は (not わ) — は is the topic particle, always written は even when read as "wa"</div>` : ''}
       ${knownChips}`;
     cardsEl.appendChild(card);
   });
@@ -2005,11 +2012,11 @@ function showPhraseQuestion() {
   pqAttempts = 0;
 
   // Kana with slot highlighted
-  let kanaHL = p.resolvedKana.replace(/\|/g,'');
+  let kanaHL = p.resolvedKana.replace(/\|/g,' ').trim();
   if (p.slot && p.slotWord) {
     kanaHL = p.kana
       .replace('['+p.slot+']', `<span class="slot-hl">${p.slotWord.kana}</span>`)
-      .replace(/\|/g,'');
+      .replace(/\|/g,' ').trim();
   }
 
   const qCard = document.getElementById('pq-card');
@@ -2229,7 +2236,22 @@ function submitPhraseTyped(mode) {
   const p       = phraseQuizList[phraseQIndex];
   const correct = mode === 'romaji' ? p.resolvedRomaji : p.resolvedKana;
   const norm    = s => s.replace(/[|\s]/g,'').toLowerCase();
-  const ok      = norm(inp.value) === norm(correct);
+
+  // Phase 5: reject if input contains no Japanese script characters
+  if (mode === 'kana') {
+    const hasKana = /[぀-ゟ゠-ヿ一-龯･-ﾟ]/.test(inp.value);
+    if (!hasKana && inp.value.trim().length > 0) {
+      inp.className = 'answer-input wrong';
+      showPQFeedback('wrong', '🇯🇵 Please type using your Japanese keyboard');
+      setTimeout(() => {
+        inp.className = 'answer-input'; inp.value = '';
+        clearPQFeedback(); inp.focus();
+      }, 1200);
+      return;
+    }
+  }
+
+  const ok = norm(inp.value) === norm(correct);
 
   phraseQTotal++;
   if (ok) {
@@ -2243,7 +2265,8 @@ function submitPhraseTyped(mode) {
     document.querySelectorAll('#pq-attempts .attempt-dot').forEach((d,i)=>{ if(i<pqAttempts) d.classList.add('used'); });
     if (pqAttempts >= MAX_ATTEMPTS) {
       inp.className = 'answer-input wrong';
-      showPQFeedback('reveal', 'Answer: ' + correct.replace(/\|/g,' '));
+      const hwNote = phraseQuizList[phraseQIndex].haWaNote ? ' (tip: ends in は not わ)' : '';
+      showPQFeedback('reveal', 'Answer: ' + correct.replace(/\|/g,' ') + (mode === 'kana' ? hwNote : ''));
       pqAttempts = 0;
       setTimeout(nextPhraseQuestion, 2500);
     } else {
@@ -2289,30 +2312,38 @@ function nextPhraseQuestion() {
 
 function phraseQuizComplete() {
   const pct    = Math.round((phraseQCorrect / phraseQTotal) * 100);
-  const emoji  = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
+  const passed = pct >= 80;
+  const emoji  = pct === 100 ? '🌟' : pct >= 80 ? '⭐' : pct >= 50 ? '👍' : '📚';
   const blocks = phraseBlocksForTheme(currentThemeId);
   const theme  = window.phraseData.themes.find(t => t.id === currentThemeId);
   const hasNextBlock = currentBlockIdxP + 1 < blocks.length;
 
-  // Determine next action — next block in theme, or next theme
+  // Only show next block / next theme if 80% passed
   let nextBtn = '';
-  if (hasNextBlock) {
-    nextBtn = `<button class="complete-btn" onclick="openPhraseBlock('${currentThemeId}', ${currentBlockIdxP+1})">Next: Block ${currentBlockIdxP+2} →</button>`;
-  } else {
-    const themes = window.phraseData.themes;
-    const nextTheme = themes[themes.findIndex(t => t.id === currentThemeId) + 1];
-    if (nextTheme) {
-      nextBtn = `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next theme: ${nextTheme.label} →</button>`;
+  if (passed) {
+    if (hasNextBlock) {
+      nextBtn = `<button class="complete-btn" onclick="openPhraseBlock('${currentThemeId}', ${currentBlockIdxP+1})">Next: Block ${currentBlockIdxP+2} →</button>`;
+    } else {
+      const themes = window.phraseData.themes;
+      const nextTheme = themes[themes.findIndex(t => t.id === currentThemeId) + 1];
+      if (nextTheme) {
+        nextBtn = `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next theme: ${nextTheme.label} →</button>`;
+      }
     }
   }
+
+  const heading = pct === 100 ? 'Perfect!' : pct >= 80 ? 'Block complete!' : pct >= 50 ? 'Not quite!' : 'Keep practising!';
+  const subtext = passed
+    ? `Block ${currentBlockIdxP+1} cleared · ${phraseQCorrect}/${phraseQTotal} correct — ${pct}%`
+    : `${phraseQCorrect}/${phraseQTotal} correct — ${pct}% · Need 80% to unlock the next block`;
 
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete">
       <div class="big-emoji">${emoji}</div>
-      <h2>${pct===100?'Perfect!':pct>=80?'Excellent!':pct>=50?'Good work!':'Keep practising!'}</h2>
-      <p>Block ${currentBlockIdxP+1} of ${theme.label}<br>${phraseQCorrect}/${phraseQTotal} correct — ${pct}%</p>
+      <h2>${heading}</h2>
+      <p>${subtext}</p>
       ${nextBtn}
-      <button class="complete-btn" onclick="beginPhraseQuiz()">Practice Again ↺</button>
+      <button class="complete-btn ${passed?'secondary':''}" onclick="beginPhraseQuiz()">Practice Again ↺</button>
       <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
     </div>`;
 }
@@ -2321,6 +2352,57 @@ function confirmPhraseQuit() {
   if (confirm('Quit this practice session?')) showScreen('home');
 }
 
+
+// ═══════════════════════════════════════════════════════
+// DEV UNLOCK — unlocks all blocks for testing
+// ═══════════════════════════════════════════════════════
+let devUnlocked = false;
+
+function toggleDevUnlock() {
+  devUnlocked = !devUnlocked;
+  const btn = document.getElementById('dev-unlock-btn');
+
+  if (devUnlocked) {
+    // Mark everything as done in localStorage
+    const prog = getProgress();
+
+    // Foundation — hiragana, katakana, numbers, time
+    ['hiragana','katakana'].forEach(tab => {
+      const n = Math.ceil(KANA[tab].length / BLOCK_SIZE);
+      for (let i = 0; i < n; i++) prog[pKey('foundation', tab, i)] = { done:true, sessions:[0.9,0.9,0.9] };
+    });
+    [NUM_BLOCKS, TIME_BLOCKS].forEach((blocks, bi) => {
+      const tab = bi === 0 ? 'numbers' : 'time';
+      for (let i = 0; i < blocks.length; i++) prog[pKey('foundation', tab, i)] = { done:true, sessions:[0.9,0.9,0.9] };
+    });
+
+    // Words — hiragana, katakana, kanji
+    ['hiragana','katakana','kanji'].forEach(tab => {
+      const v = vocabForDrill(tab);
+      const n = Math.ceil(v.length / BLOCK_SIZE);
+      for (let i = 0; i < n; i++) prog[pKey('drill', tab, i)] = { done:true, sessions:[0.9,0.9,0.9] };
+    });
+
+    // Phrases — all themes, all blocks
+    window.phraseData.themes.forEach(t => {
+      const blocks = phraseBlocksForTheme(t.id);
+      blocks.forEach((_, i) => { prog[phraseBlockKey(t.id, i)] = { practiced:true }; });
+    });
+
+    saveProgress(prog);
+    btn.textContent = 'DEV ✓';
+    btn.style.color = '#27ae60';
+    btn.style.borderColor = 'rgba(39,174,96,.4)';
+  } else {
+    // Clear all progress
+    localStorage.removeItem('jp_app_v1');
+    btn.textContent = 'DEV';
+    btn.style.color = 'var(--gold)';
+    btn.style.borderColor = 'rgba(201,168,76,.4)';
+  }
+
+  renderHome();
+}
 
 // ═══════════════════════════════════════════════════════
 // INIT
