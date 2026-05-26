@@ -2102,9 +2102,19 @@ function renderPhase2(p, qCard, aArea) {
 
   const resolvedList = phraseQuizList; // already resolved
   const options = buildRomajiMC(p.resolvedRomaji, resolvedList, p.id);
-  aArea.innerHTML = `<div class="mc-grid">${options.map(opt =>
-    `<button class="mc-btn" onclick="checkPhraseMC(this,${opt.correct},'${safeAttr(p.resolvedRomaji)}')">${opt.text}</button>`
-  ).join('')}</div>`;
+  const aDiv = document.createElement('div');
+  aDiv.className = 'mc-grid';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-btn';
+    btn.textContent = opt.text;
+    btn.dataset.correct = opt.correct ? '1' : '0';
+    btn.dataset.display = p.resolvedRomaji;
+    btn.onclick = () => checkPhraseMC(btn, opt.correct, p.resolvedRomaji);
+    aDiv.appendChild(btn);
+  });
+  aArea.innerHTML = '';
+  aArea.appendChild(aDiv);
 }
 
 // ── Phase 3: Type the romaji ──────────────────────────
@@ -2129,9 +2139,19 @@ function renderPhase4(p, qCard, aArea, kanaHL) {
     <div class="pq-kana" style="font-size:20px;line-height:1.5">${kanaHL}</div>`;
 
   const options = buildSituationMC(p.scenario, phraseQuizList, p.id);
-  aArea.innerHTML = `<div class="mc-grid">${options.map(opt =>
-    `<button class="mc-btn" onclick="checkPhraseMC(this,${opt.correct},'${safeAttr(p.scenario)}')">${opt.text}</button>`
-  ).join('')}</div>`;
+  const aDiv = document.createElement('div');
+  aDiv.className = 'mc-grid';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-btn';
+    btn.textContent = opt.text;
+    btn.dataset.correct = opt.correct ? '1' : '0';
+    btn.dataset.display = p.scenario;
+    btn.onclick = () => checkPhraseMC(btn, opt.correct, p.scenario);
+    aDiv.appendChild(btn);
+  });
+  aArea.innerHTML = '';
+  aArea.appendChild(aDiv);
 }
 
 // ── Phase 5: Type full kana ───────────────────────────
