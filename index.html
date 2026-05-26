@@ -558,9 +558,9 @@ const FOUNDATION_META = {
 
 const DRILL_TABS = ['hiragana','katakana','kanji'];
 const DRILL_META = {
-  hiragana: {icon:'あ',label:'Hiragana',heroBg:'がくしゅう',heroTitle:'Hiragana Words',phases:3},
-  katakana: {icon:'ア',label:'Katakana',heroBg:'ガクシュウ',heroTitle:'Katakana Words',phases:3},
-  kanji:    {icon:'字',label:'Kanji',heroBg:'学習',heroTitle:'Kanji Reading',phases:1},
+  hiragana: {icon:'あ',label:'Hiragana',heroBg:'がくしゅう',heroTitle:'Native Japanese Words',heroSub:'Words written in hiragana and kanji',phases:3},
+  katakana: {icon:'ア',label:'Katakana',heroBg:'ガクシュウ',heroTitle:'Loanwords & Foreign Terms',heroSub:'Words a Japanese person writes in katakana',phases:3},
+  kanji:    {icon:'字',label:'Kanji',heroBg:'学習',heroTitle:'Kanji Reading',heroSub:'Read the kanji and give the romaji',phases:1},
 };
 
 // Word drill phase definitions (3 cycles with escalating difficulty)
@@ -709,8 +709,10 @@ function isDrill(){return currentSection==='drill';}
 
 // Get the vocab/items for current tab
 function vocabForDrill(tab) {
-  if (tab==='kanji') return window.vocabData.filter(w=>w.hasKanji);
-  return window.vocabData;
+  if (tab==='kanji')    return window.vocabData.filter(w => w.hasKanji && !w.isLoanword);
+  if (tab==='katakana') return window.vocabData.filter(w => w.isLoanword);
+  // hiragana — native Japanese words only
+  return window.vocabData.filter(w => !w.isLoanword);
 }
 
 // Get blocks list for any (section, tab) combo
@@ -1057,10 +1059,15 @@ function openBlock(i) {
     // Drill section — word cards
     cards = currentBlock.map(w => {
       const script = currentTab==='hiragana'?w.hiragana:currentTab==='katakana'?w.katakana:w.kanji;
+      // For katakana loanwords, show the katakana prominently with a note
+      const loanNote = (currentTab==='katakana')
+        ? `<div style="font-size:9px;color:var(--text-soft);margin-top:2px;letter-spacing:.06em;text-transform:uppercase">loanword</div>`
+        : '';
       return `<div class="word-card">
         <div class="kana">${script}</div>
         <div class="romaji">${w.romaji}</div>
         <div class="english">${w.english}</div>
+        ${loanNote}
       </div>`;
     }).join('');
   }
