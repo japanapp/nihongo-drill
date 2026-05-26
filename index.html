@@ -900,6 +900,73 @@ function renderSectionHome(body) {
   }
 
   // Block grid
+  // For Words section — show review at top if unlocked, then blocks below
+  if (isDrill() && done > 0) {
+    // Review buttons
+      html += '<div class="section-heading">Review</div>';
+    html += '<div class="review-row">';
+
+    if (isFound) {
+      const enough = done >= 2;
+      const lCls = enough ? '' : ' review-btn-locked';
+      const lEl  = enough ? '' : '<span class="review-lock">🔒 Complete 2 blocks first</span>';
+
+      if (currentTab==='hiragana' || currentTab==='katakana') {
+        const s = currentTab==='hiragana' ? 'あ' : 'ア';
+        html += `<div class="review-grid-2">
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('char-rom')"`:''}>
+            <span class="ri">${s}→ro</span>Kana → Romaji${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('rom-char')"`:''}>
+            <span class="ri">ro→${s}</span>Romaji → Kana${lEl}</button>
+        </div>`;
+      } else if (currentTab==='numbers') {
+        html += `<div class="review-grid-2">
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('num-jp')"`:''}>
+            <span class="ri">123→字</span>Number → Japanese${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('jp-num')"`:''}>
+            <span class="ri">字→123</span>Japanese → Number${lEl}</button>
+        </div>`;
+      } else {
+        html += `<div class="review-grid-2">
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('time-jp')"`:''}>
+            <span class="ri">🕐→字</span>Clock → Japanese${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('jp-time')"`:''}>
+            <span class="ri">字→ro</span>Japanese → Romaji${lEl}</button>
+        </div>`;
+      }
+    } else {
+        // Drill section — 4 review types (3 for kanji)
+      const wordsLearnt = done * BLOCK_SIZE;
+      const enough = wordsLearnt >= 10;
+      const lCls = enough ? '' : ' review-btn-locked';
+      const lEl  = enough ? '' : '<span class="review-lock">🔒 Need 10 words</span>';
+
+      if (currentTab==='kanji') {
+        html += `<div class="review-grid-3">
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-rom')"`:''}>
+            <span class="ri">漢→あ</span>Kanji → Romaji${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-eng')"`:''}>
+            <span class="ri">漢→🇬🇧</span>Kanji → English${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('eng-rom')"`:''}>
+            <span class="ri">🇬🇧→あ</span>Meaning → Romaji${lEl}</button>
+        </div>`;
+      } else {
+        const s = currentTab==='hiragana' ? 'あ' : 'ア';
+        html += `<div class="review-grid-2">
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-rom')"`:''}>
+            <span class="ri">${s}→ro</span>Kana → Romaji${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-eng')"`:''}>
+            <span class="ri">${s}→🇬🇧</span>Kana → Meaning${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('eng-rom')"`:''}>
+            <span class="ri">🇬🇧→ro</span>Meaning → Romaji${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('eng-kana')"`:''}>
+            <span class="ri">🇬🇧→${s}</span>Meaning → Kana${lEl}</button>
+        </div>`;
+      }
+    }
+    html += '</div>';
+  }
+
   html += '<div class="section-heading">Your Blocks</div>';
   let gridCls;
   if (isFound) {
@@ -933,71 +1000,7 @@ function renderSectionHome(body) {
   });
   html += '</div>';
 
-  // Review buttons
-  if (done > 0) {
-    html += '<div class="section-heading">Review Unlocked Items</div>';
-    html += '<div class="review-row">';
 
-    if (isFound) {
-      const enough = done >= 2;
-      const lCls = enough ? '' : ' review-btn-locked';
-      const lEl  = enough ? '' : '<span class="review-lock">🔒 Complete 2 blocks first</span>';
-
-      if (currentTab==='hiragana' || currentTab==='katakana') {
-        const s = currentTab==='hiragana' ? 'あ' : 'ア';
-        html += `<div class="review-grid-2">
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('char-rom')"`:''}>
-            <span class="ri">${s}→ro</span>Kana → Romaji${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('rom-char')"`:''}>
-            <span class="ri">ro→${s}</span>Romaji → Kana${lEl}</button>
-        </div>`;
-      } else if (currentTab==='numbers') {
-        html += `<div class="review-grid-2">
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('num-jp')"`:''}>
-            <span class="ri">123→字</span>Number → Japanese${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('jp-num')"`:''}>
-            <span class="ri">字→123</span>Japanese → Number${lEl}</button>
-        </div>`;
-      } else {
-        html += `<div class="review-grid-2">
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('time-jp')"`:''}>
-            <span class="ri">🕐→字</span>Clock → Japanese${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('jp-time')"`:''}>
-            <span class="ri">字→ro</span>Japanese → Romaji${lEl}</button>
-        </div>`;
-      }
-    } else {
-      // Drill section — 4 review types (3 for kanji)
-      const wordsLearnt = done * BLOCK_SIZE;
-      const enough = wordsLearnt >= 10;
-      const lCls = enough ? '' : ' review-btn-locked';
-      const lEl  = enough ? '' : '<span class="review-lock">🔒 Need 10 words</span>';
-
-      if (currentTab==='kanji') {
-        html += `<div class="review-grid-3">
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-rom')"`:''}>
-            <span class="ri">漢→あ</span>Kanji → Romaji${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-eng')"`:''}>
-            <span class="ri">漢→🇬🇧</span>Kanji → English${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('eng-rom')"`:''}>
-            <span class="ri">🇬🇧→あ</span>Meaning → Romaji${lEl}</button>
-        </div>`;
-      } else {
-        const s = currentTab==='hiragana' ? 'あ' : 'ア';
-        html += `<div class="review-grid-2">
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-rom')"`:''}>
-            <span class="ri">${s}→ro</span>Kana → Romaji${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('kana-eng')"`:''}>
-            <span class="ri">${s}→🇬🇧</span>Kana → Meaning${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('eng-rom')"`:''}>
-            <span class="ri">🇬🇧→ro</span>Meaning → Romaji${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('eng-kana')"`:''}>
-            <span class="ri">🇬🇧→${s}</span>Meaning → Kana${lEl}</button>
-        </div>`;
-      }
-    }
-    html += '</div>';
-  }
 
   body.innerHTML = html;
 }
@@ -1064,6 +1067,52 @@ function openBlock(i) {
 
   cardsEl.innerHTML = cards;
   showScreen('study');
+}
+
+// ── Kana distractor helper ───────────────────────────
+// Block quiz: pick distractors from same phonetic row first,
+// then fill from current block, then full kana set as last resort.
+// Revision quiz: picks from the full learned pool (handled in showFoundationReviewQ).
+const KANA_ROWS = [
+  ['a','i','u','e','o'],
+  ['ka','ki','ku','ke','ko'],
+  ['sa','shi','su','se','so'],
+  ['ta','chi','tsu','te','to'],
+  ['na','ni','nu','ne','no'],
+  ['ha','hi','fu','he','ho'],
+  ['ma','mi','mu','me','mo'],
+  ['ya','yu','yo'],
+  ['ra','ri','ru','re','ro'],
+  ['wa','wo','n'],
+  ['ga','gi','gu','ge','go'],
+];
+
+function kanaDistractors(item, blockItems, fullKana) {
+  // Find which row the answer belongs to
+  const row = KANA_ROWS.find(r => r.includes(item.rom)) || [];
+
+  // 1. Same-row kana that are in the current block (most confusable)
+  let pool = blockItems.filter(k => k.rom !== item.rom && row.includes(k.rom));
+
+  // 2. Other same-row kana from full kana set
+  if (pool.length < 3) {
+    const rowPool = fullKana.filter(k => k.rom !== item.rom && row.includes(k.rom) && !pool.includes(k));
+    pool = [...pool, ...shuffle(rowPool)];
+  }
+
+  // 3. Fill remaining from current block
+  if (pool.length < 3) {
+    const blockPool = shuffle(blockItems.filter(k => k.rom !== item.rom && !pool.includes(k)));
+    pool = [...pool, ...blockPool];
+  }
+
+  // 4. Last resort — anything from full kana
+  if (pool.length < 3) {
+    const lastResort = shuffle(fullKana.filter(k => k.rom !== item.rom && !pool.includes(k)));
+    pool = [...pool, ...lastResort];
+  }
+
+  return pool.slice(0, 3);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1138,8 +1187,9 @@ function buildFoundationQuestion(item) {
       qCard.innerHTML = `<div class="q-label">What is the reading?</div>
         <div class="q-kana">${item.char}</div>
         ${hint?`<div class="q-hint">${item.hint}</div>`:''}`;
-      const pool = shuffle(KANA[currentTab].filter(k=>k.rom!==item.rom)).slice(0,3);
-      const choices = shuffle([{val:item.rom,ok:true}, ...pool.map(k=>({val:k.rom,ok:false}))]);
+      // Distractors from same phonetic row first, then expand to current block
+      const kanaPool = kanaDistractors(item, currentBlock, KANA[currentTab]);
+      const choices = shuffle([{val:item.rom,ok:true}, ...kanaPool.map(k=>({val:k.rom,ok:false}))]);
       aEl.innerHTML = `<div class="choices-grid">${choices.map(c=>
         `<button class="choice-btn rom" onclick="checkMC(this,${c.ok})">${c.val}</button>`
       ).join('')}</div>`;
@@ -1535,14 +1585,16 @@ function showFoundationReviewQ() {
 
   if (reviewType === 'char-rom') {
     prompt = `<div class="q-label">What is the reading?</div><div class="q-kana">${item.char}</div>`;
-    const pool = shuffle(KANA[currentTab].filter(k=>k.rom!==item.rom)).slice(0,3);
+    // Distractors from learned pool only
+    const pool = shuffle(reviewWords.filter(k=>k.rom!==item.rom)).slice(0,3);
     const choices = shuffle([{val:item.rom,ok:true}, ...pool.map(k=>({val:k.rom,ok:false}))]);
     answer = `<div class="choices-grid">${choices.map(c=>
       `<button class="choice-btn rom" onclick="checkRev(this,${c.ok},'${escQ(item.rom)}')">${c.val}</button>`
     ).join('')}</div>`;
   } else if (reviewType === 'rom-char') {
     prompt = `<div class="q-label">Which character?</div><div class="q-romaji">${item.rom}</div>`;
-    const pool = shuffle(KANA[currentTab].filter(k=>k.char!==item.char)).slice(0,3);
+    // Distractors from learned pool only
+    const pool = shuffle(reviewWords.filter(k=>k.char!==item.char)).slice(0,3);
     const choices = shuffle([{val:item.char,ok:true}, ...pool.map(k=>({val:k.char,ok:false}))]);
     answer = `<div class="choices-grid">${choices.map(c=>
       `<button class="choice-btn" onclick="checkRev(this,${c.ok},'${escQ(item.char)}')">${c.val}</button>`
