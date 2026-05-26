@@ -1691,17 +1691,40 @@ function showReviewDone() {
 //   Phase 5 — Produce it    : scenario shown → type full kana (JP keyboard)
 // ═══════════════════════════════════════════════════════
 
-let currentThemeId   = null;
-let currentPhrases   = [];
-let phraseQuizList   = [];
-let phraseQIndex     = 0;
-let phraseQPhase     = 1;   // 1–5
-let phraseQCorrect   = 0;
-let phraseQTotal     = 0;
-let pqAttempts       = 0;
+let currentThemeId    = null;
+let currentBlockIdxP  = 0;     // which block within the theme
+let currentPhrases    = [];    // phrases in the CURRENT BLOCK (max 5)
+let phraseQuizList    = [];
+let phraseQIndex      = 0;
+let phraseQPhase      = 1;   // 1–5
+let phraseQCorrect    = 0;
+let phraseQTotal      = 0;
+let pqAttempts        = 0;
+
+const PHRASE_BLOCK_SIZE = 5;
+
+// Get phrases for a theme split into blocks of 5
+function phraseBlocksForTheme(themeId) {
+  const all = window.phraseData.phrases.filter(p => p.theme === themeId);
+  const blocks = [];
+  for (let i = 0; i < all.length; i += PHRASE_BLOCK_SIZE) {
+    blocks.push(all.slice(i, i + PHRASE_BLOCK_SIZE));
+  }
+  return blocks;
+}
+
+// Progress key for a phrase block
+function phraseBlockKey(themeId, blockIdx) { return `phrases_${themeId}_${blockIdx}`; }
+function phraseBlockDone(themeId, blockIdx) {
+  return !!(getProgress()[phraseBlockKey(themeId, blockIdx)]?.practiced);
+}
+function isPhraseBlockUnlocked(themeId, blockIdx) {
+  if (blockIdx === 0) return true;
+  return phraseBlockDone(themeId, blockIdx - 1);
+}
 
 const PQ_PHASES = [
-  { n:1, label:'Build the phrase',     hint:'Tap the chunks in the right order' },
+  { n:1, label:'Study & type',         hint:'Type the romaji while it is shown' },
   { n:2, label:'Choose the romaji',    hint:'Which romaji matches this situation?' },
   { n:3, label:'Type the romaji',      hint:'Type the full romaji from memory' },
   { n:4, label:'Read & understand',    hint:'Pick the situation that matches the Japanese' },
@@ -1768,7 +1791,9 @@ function knownWordsInPhrase(phrase) {
 }
 
 function phraseThemeDone(id) {
-  return !!(getProgress()[`phrases_${id}`]?.practiced);
+  const blocks = phraseBlocksForTheme(id);
+  if (blocks.length === 0) return false;
+  return blocks.every((_, i) => phraseBlockDone(id, i));
 }
 
 // ── Build MC options for romaji (Phase 2) ────────────
@@ -1825,13 +1850,14 @@ function renderPhrasesHome(body) {
     <div class="theme-grid">`;
 
   themes.forEach(t => {
-    const count     = phrases.filter(p => p.theme === t.id).length;
+    const blocks    = phraseBlocksForTheme(t.id);
+    const doneCount = blocks.filter((_,i) => phraseBlockDone(t.id, i)).length;
     const practiced = phraseThemeDone(t.id);
     html += `<div class="theme-card ${practiced?'complete':''}" onclick="openPhraseTheme('${t.id}')">
       <div class="tc-icon">${t.icon}</div>
       <div class="tc-label">${t.label}</div>
-      <div class="tc-count">${count} phrases</div>
-      ${practiced ? '<div class="tc-check">✓ Practiced</div>' : ''}
+      <div class="tc-count">${doneCount}/${blocks.length} blocks</div>
+      ${practiced ? '<div class="tc-check">✓ Complete</div>' : ''}
     </div>`;
   });
   html += '</div>';
@@ -1841,13 +1867,55 @@ function renderPhrasesHome(body) {
 // ═══════════════════════════════════════════════════════
 // STUDY SCREEN
 // ═══════════════════════════════════════════════════════
+// Opening a theme shows a BLOCK PICKER on the study screen
 function openPhraseTheme(themeId) {
   currentThemeId = themeId;
   const theme    = window.phraseData.themes.find(t => t.id === themeId);
-  currentPhrases = window.phraseData.phrases.filter(p => p.theme === themeId);
+  const blocks   = phraseBlocksForTheme(themeId);
 
   document.getElementById('phrase-study-title').textContent    = theme.label;
-  document.getElementById('phrase-study-subtitle').textContent = currentPhrases.length + ' phrases';
+  document.getElementById('phrase-study-subtitle').textContent = blocks.length + ' blocks';
+  document.getElementById('phrase-study-heading').textContent  = 'Choose a block';
+
+  // Hide the "practice" button on the picker view
+  const quizBtn = document.getElementById('phrase-quiz-btn');
+  if (quizBtn) quizBtn.style.display = 'none';
+
+  const cardsEl = document.getElementById('phrase-study-cards');
+  cardsEl.innerHTML = '';
+
+  // Render block picker grid
+  const grid = document.createElement('div');
+  grid.className = 'block-grid';
+  blocks.forEach((blockPhrases, i) => {
+    const isDone = phraseBlockDone(themeId, i);
+    const open   = isPhraseBlockUnlocked(themeId, i);
+    const btn = document.createElement('button');
+    btn.className = `block-btn numeric ${open?'unlocked':'locked'} ${isDone?'complete':''}`;
+    btn.innerHTML = `<span class="bn">${i+1}</span><span class="bs">${isDone?'✓':open?'○':'🔒'}</span>`;
+    btn.disabled = !open;
+    if (open) btn.onclick = () => openPhraseBlock(themeId, i);
+    grid.appendChild(btn);
+  });
+  cardsEl.appendChild(grid);
+
+  showScreen('phrase-study');
+}
+
+// Opening a block shows the study cards for those (max 5) phrases
+function openPhraseBlock(themeId, blockIdx) {
+  currentThemeId   = themeId;
+  currentBlockIdxP = blockIdx;
+  const theme  = window.phraseData.themes.find(t => t.id === themeId);
+  const blocks = phraseBlocksForTheme(themeId);
+  currentPhrases = blocks[blockIdx];
+
+  document.getElementById('phrase-study-title').textContent    = theme.label;
+  document.getElementById('phrase-study-subtitle').textContent = `Block ${blockIdx+1} · ${currentPhrases.length} phrases`;
+  document.getElementById('phrase-study-heading').textContent  = 'Study these phrases';
+
+  const quizBtn = document.getElementById('phrase-quiz-btn');
+  if (quizBtn) quizBtn.style.display = '';
 
   const cardsEl = document.getElementById('phrase-study-cards');
   cardsEl.innerHTML = '';
@@ -1956,39 +2024,29 @@ function showPhraseQuestion() {
   }
 }
 
-// ── Phase 1: Build the phrase (tap kana chunks) ───────
+// ── Phase 1: Copy with comprehension ──────────────────
+// Scenario + kana + romaji + English all shown. User types the
+// romaji back while it's visible. Low-pressure, primes Phase 3,
+// consistent across all phrase lengths.
 function renderPhase1(p, qCard, aArea, kanaHL) {
   qCard.innerHTML = `
-    <div class="pq-theme">Study this phrase</div>
+    <div class="pq-theme">Study & type this phrase</div>
     <div class="pq-scenario" style="font-size:13px;margin-bottom:6px">${p.scenario}</div>
     <div class="pq-kana">${kanaHL}</div>
     <div class="pq-romaji-hint">${p.resolvedRomaji.replace(/\|/g,' ')}</div>
     <div style="font-size:12px;color:var(--gold-light);font-style:italic;margin-top:4px">${p.resolvedEnglish || p.english}</div>`;
 
-  // Get chunks — split kana on | boundaries
-  const kanaChunks = p.resolvedKana.split('|').map(s => s.trim()).filter(Boolean);
-
-  if (kanaChunks.length <= 1) {
-    // No chunks defined — treat as single block, just ask them to tap it
-    aArea.innerHTML = `
-      <div class="chunk-hint">Tap the phrase to continue</div>
-      <div class="chunk-target" id="chunk-target"></div>
-      <div class="chunk-bank" id="chunk-bank">
-        <div class="chunk-block" onclick="tapChunk(this, true)">${p.resolvedKana}</div>
-      </div>`;
-  } else {
-    const shuffled = shuffle([...kanaChunks]);
-    aArea.innerHTML = `
-      <div class="chunk-hint">Tap the chunks in the correct order</div>
-      <div class="chunk-target" id="chunk-target"></div>
-      <div class="chunk-bank" id="chunk-bank">
-        ${shuffled.map((c,i) => `<div class="chunk-block" data-chunk="${c}" onclick="tapChunk(this,'${kanaChunks.join('|')}')">${c}</div>`).join('')}
-      </div>
-      <button class="chunk-clear-btn" onclick="clearChunks()">Clear ↺</button>`;
-  }
+  aArea.innerHTML = `
+    <div class="keyboard-hint" style="margin-bottom:10px">Type the romaji to lock it in — it's shown above</div>
+    <input class="answer-input" id="pq-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="Type the romaji…" />
+    <button class="submit-btn" onclick="submitPhraseTyped('romaji')">Submit</button>
+    <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
+  focusPQ();
 }
 
-// Chunk interaction state
+// (legacy chunk builder retained but unused)
 let builtChunks = [];
 
 function tapChunk(btn, correctOrder) {
@@ -2202,25 +2260,38 @@ function nextPhraseQuestion() {
     return;
   }
 
-  // All 5 phases done
+  // All 5 phases done — mark this BLOCK practiced
   const prog = getProgress();
-  prog[`phrases_${currentThemeId}`] = { practiced: true };
+  prog[phraseBlockKey(currentThemeId, currentBlockIdxP)] = { practiced: true };
   saveProgress(prog);
   phraseQuizComplete();
 }
 
 function phraseQuizComplete() {
-  const pct   = Math.round((phraseQCorrect / phraseQTotal) * 100);
-  const emoji = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
-  const themes = window.phraseData.themes;
-  const next   = themes[themes.findIndex(t => t.id === currentThemeId) + 1];
+  const pct    = Math.round((phraseQCorrect / phraseQTotal) * 100);
+  const emoji  = pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '📚';
+  const blocks = phraseBlocksForTheme(currentThemeId);
+  const theme  = window.phraseData.themes.find(t => t.id === currentThemeId);
+  const hasNextBlock = currentBlockIdxP + 1 < blocks.length;
+
+  // Determine next action — next block in theme, or next theme
+  let nextBtn = '';
+  if (hasNextBlock) {
+    nextBtn = `<button class="complete-btn" onclick="openPhraseBlock('${currentThemeId}', ${currentBlockIdxP+1})">Next: Block ${currentBlockIdxP+2} →</button>`;
+  } else {
+    const themes = window.phraseData.themes;
+    const nextTheme = themes[themes.findIndex(t => t.id === currentThemeId) + 1];
+    if (nextTheme) {
+      nextBtn = `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next theme: ${nextTheme.label} →</button>`;
+    }
+  }
 
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete">
       <div class="big-emoji">${emoji}</div>
       <h2>${pct===100?'Perfect!':pct>=80?'Excellent!':pct>=50?'Good work!':'Keep practising!'}</h2>
-      <p>${phraseQCorrect}/${phraseQTotal} correct — ${pct}%</p>
-      ${next ? `<button class="complete-btn" onclick="openPhraseTheme('${next.id}')">Next: ${next.label} →</button>` : ''}
+      <p>Block ${currentBlockIdxP+1} of ${theme.label}<br>${phraseQCorrect}/${phraseQTotal} correct — ${pct}%</p>
+      ${nextBtn}
       <button class="complete-btn" onclick="beginPhraseQuiz()">Practice Again ↺</button>
       <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
     </div>`;
