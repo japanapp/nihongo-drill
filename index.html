@@ -119,6 +119,7 @@
     .study-char { font-family: var(--kana-font); font-size: 30px; color: var(--paper); line-height: 1; }
     .study-rom  { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: 500; }
     .study-hint { font-size: 8px; color: var(--paper); opacity: .4; margin-top: 2px; line-height: 1.3; }
+    .block-note { background: var(--ink-soft); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--paper); line-height: 1.5; }
     .study-card-num { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
     .sn-digit { font-size: 20px; font-weight: 700; color: var(--gold); }
     .sn-jp    { font-family: 'Shippori Mincho', serif; font-size: 18px; color: var(--paper); margin-top: 3px; }
@@ -495,41 +496,102 @@ const KANA = {
   ],
 };
 
-const NUM_ITEMS = [
-  {n:1,jp:'一',rom:'ichi',hint:'one stroke'},{n:2,jp:'二',rom:'ni',hint:'two strokes'},
-  {n:3,jp:'三',rom:'san',hint:'three strokes'},{n:4,jp:'四',rom:'shi/yon',hint:'shi or yon both fine'},
-  {n:5,jp:'五',rom:'go',hint:''},{n:6,jp:'六',rom:'roku',hint:''},
-  {n:7,jp:'七',rom:'shichi/nana',hint:'shichi or nana'},{n:8,jp:'八',rom:'hachi',hint:''},
-  {n:9,jp:'九',rom:'ku/kyuu',hint:'ku or kyuu'},{n:10,jp:'十',rom:'juu',hint:'ten'},
-  {n:11,jp:'十一',rom:'juuichi',hint:'10+1'},{n:12,jp:'十二',rom:'juuni',hint:'10+2'},
-  {n:13,jp:'十三',rom:'juusan',hint:'10+3'},{n:20,jp:'二十',rom:'nijuu',hint:'2×10'},
-  {n:30,jp:'三十',rom:'sanjuu',hint:'3×10'},{n:40,jp:'四十',rom:'yonjuu',hint:'4×10'},
-  {n:50,jp:'五十',rom:'gojuu',hint:'5×10'},{n:100,jp:'百',rom:'hyaku',hint:'hundred'},
-  {n:200,jp:'二百',rom:'nihyaku',hint:''},{n:300,jp:'三百',rom:'sanbyaku',hint:'byaku! irregular'},
-  {n:400,jp:'四百',rom:'yonhyaku',hint:''},{n:500,jp:'五百',rom:'gohyaku',hint:''},
-  {n:600,jp:'六百',rom:'roppyaku',hint:'pyaku! irregular'},{n:700,jp:'七百',rom:'nanahyaku',hint:''},
-  {n:800,jp:'八百',rom:'happyaku',hint:'pyaku! irregular'},{n:900,jp:'九百',rom:'kyuuhyaku',hint:''},
-  {n:1000,jp:'千',rom:'sen',hint:'thousand'},{n:2000,jp:'二千',rom:'nisen',hint:''},
-  {n:3000,jp:'三千',rom:'sanzen',hint:'zen! irregular'},{n:8000,jp:'八千',rom:'hassen',hint:'hassen! irregular'},
-  {n:10000,jp:'一万',rom:'ichiman',hint:'ten thousand'},{n:100000,jp:'十万',rom:'juuman',hint:'100k'},
-];
+// ── NUMBERS — systematic building-block progression ──
+// Each item: n (digits shown), jp (kanji), rom (reading), hint (irregular flag/note)
 const NUM_BLOCKS = [
-  {label:'1 – 10',preview:'一',items:NUM_ITEMS.slice(0,10)},
-  {label:'Teens & Tens',preview:'十一',items:NUM_ITEMS.slice(10,18)},
-  {label:'Hundreds',preview:'百',items:NUM_ITEMS.slice(18,26)},
-  {label:'Thousands',preview:'千',items:NUM_ITEMS.slice(26,32)},
+  { label:'1 – 5', preview:'一', note:'The five building blocks. Everything starts here.', items:[
+    {n:1,jp:'一',rom:'ichi',hint:''},
+    {n:2,jp:'二',rom:'ni',hint:''},
+    {n:3,jp:'三',rom:'san',hint:''},
+    {n:4,jp:'四',rom:'yon',hint:'also "shi" — but yon is safer'},
+    {n:5,jp:'五',rom:'go',hint:''},
+  ]},
+  { label:'6 – 10', preview:'六', note:'The rest of the foundation. Now you have 1-10.', items:[
+    {n:6,jp:'六',rom:'roku',hint:''},
+    {n:7,jp:'七',rom:'nana',hint:'also "shichi" — nana is safer'},
+    {n:8,jp:'八',rom:'hachi',hint:''},
+    {n:9,jp:'九',rom:'kyuu',hint:'also "ku" — kyuu is safer'},
+    {n:10,jp:'十',rom:'juu',hint:''},
+  ]},
+  { label:'Tens 11-90', preview:'十', note:'Stack them: 20 = ni-juu (2 tens). 21 = ni-juu-ichi.', items:[
+    {n:11,jp:'十一',rom:'juuichi',hint:'10 + 1'},
+    {n:20,jp:'二十',rom:'nijuu',hint:'2 tens'},
+    {n:30,jp:'三十',rom:'sanjuu',hint:'3 tens'},
+    {n:48,jp:'四十八',rom:'yonjuuhachi',hint:'4 tens + 8'},
+    {n:90,jp:'九十',rom:'kyuujuu',hint:'9 tens'},
+  ]},
+  { label:'Hundreds', preview:'百', note:'hyaku = 100. Watch 3 irregulars: 300, 600, 800.', items:[
+    {n:100,jp:'百',rom:'hyaku',hint:''},
+    {n:200,jp:'二百',rom:'nihyaku',hint:''},
+    {n:300,jp:'三百',rom:'sanbyaku',hint:'IRREGULAR: byaku not hyaku'},
+    {n:600,jp:'六百',rom:'roppyaku',hint:'IRREGULAR: roppyaku'},
+    {n:800,jp:'八百',rom:'happyaku',hint:'IRREGULAR: happyaku'},
+  ]},
+  { label:'Thousands', preview:'千', note:'sen = 1000. Two irregulars: 3000 and 8000.', items:[
+    {n:1000,jp:'千',rom:'sen',hint:''},
+    {n:2000,jp:'二千',rom:'nisen',hint:''},
+    {n:3000,jp:'三千',rom:'sanzen',hint:'IRREGULAR: zen not sen'},
+    {n:8000,jp:'八千',rom:'hassen',hint:'IRREGULAR: hassen'},
+    {n:10000,jp:'一万',rom:'ichiman',hint:'10,000 = ichi-man (not juu-sen!)'},
+  ]},
+  { label:'Money 円', preview:'円', note:'Prices you will actually use. en = yen.', items:[
+    {n:100,jp:'百円',rom:'hyaku en',hint:'100 yen'},
+    {n:500,jp:'五百円',rom:'gohyaku en',hint:'500 yen'},
+    {n:1000,jp:'千円',rom:'sen en',hint:'1,000 yen'},
+    {n:1500,jp:'千五百円',rom:'sen gohyaku en',hint:'1,500 yen'},
+    {n:3000,jp:'三千円',rom:'sanzen en',hint:'3,000 yen'},
+  ]},
 ];
+// Flatten for distractor pools
+const NUM_ITEMS = NUM_BLOCKS.flatMap(b => b.items);
 
-const TIME_ITEMS = [1,2,3,4,5,6,7,8,9,10,11,12].map(h => {
-  const jp  = ['一時','二時','三時','四時','五時','六時','七時','八時','九時','十時','十一時','十二時'][h-1];
-  const rom = ['ichiji','niji','sanji','yoji','goji','rokuji','shichiji','hachiji','kuji','juuji','juuichiji','juuniji'][h-1];
-  return {hour:h,jp,rom};
-});
+// ── TIME — layered progression to real-world telling ──
+// Each item: digital (shown e.g. "3:00"), jp (kanji), rom (reading), hint
 const TIME_BLOCKS = [
-  {label:'1 – 4時',preview:'一時',items:TIME_ITEMS.slice(0,4)},
-  {label:'5 – 8時',preview:'五時',items:TIME_ITEMS.slice(4,8)},
-  {label:'9 – 12時',preview:'九時',items:TIME_ITEMS.slice(8,12)},
+  { label:"O'clock 1-6", preview:'時', note:'[hour] + ji. Watch 4時 (yoji) — never yonji.', items:[
+    {digital:'1:00',jp:'一時',rom:'ichiji',hint:''},
+    {digital:'2:00',jp:'二時',rom:'niji',hint:''},
+    {digital:'3:00',jp:'三時',rom:'sanji',hint:''},
+    {digital:'4:00',jp:'四時',rom:'yoji',hint:'IRREGULAR: yoji not yonji'},
+    {digital:'6:00',jp:'六時',rom:'rokuji',hint:''},
+  ]},
+  { label:"O'clock 7-12", preview:'時', note:'9時 is kuji, not kyuuji. The rest are regular.', items:[
+    {digital:'7:00',jp:'七時',rom:'shichiji',hint:'shichiji (not nanaji)'},
+    {digital:'8:00',jp:'八時',rom:'hachiji',hint:''},
+    {digital:'9:00',jp:'九時',rom:'kuji',hint:'IRREGULAR: kuji not kyuuji'},
+    {digital:'10:00',jp:'十時',rom:'juuji',hint:''},
+    {digital:'12:00',jp:'十二時',rom:'juuniji',hint:'12 = juuni + ji'},
+  ]},
+  { label:'Half past 半', preview:'半', note:'han = half past. Just add it after the hour.', items:[
+    {digital:'1:30',jp:'一時半',rom:'ichiji han',hint:'1:30'},
+    {digital:'3:30',jp:'三時半',rom:'sanji han',hint:'3:30'},
+    {digital:'4:30',jp:'四時半',rom:'yoji han',hint:'yoji + han'},
+    {digital:'7:30',jp:'七時半',rom:'shichiji han',hint:'7:30'},
+    {digital:'9:30',jp:'九時半',rom:'kuji han',hint:'kuji + han'},
+  ]},
+  { label:'Minutes 分', preview:'分', note:'[min] + fun/pun. Lots of sound changes here.', items:[
+    {digital:'X:01',jp:'一分',rom:'ippun',hint:'IRREGULAR: ippun'},
+    {digital:'X:03',jp:'三分',rom:'sanpun',hint:'IRREGULAR: sanpun'},
+    {digital:'X:04',jp:'四分',rom:'yonpun',hint:'IRREGULAR: yonpun'},
+    {digital:'X:06',jp:'六分',rom:'roppun',hint:'IRREGULAR: roppun'},
+    {digital:'X:10',jp:'十分',rom:'juppun',hint:'IRREGULAR: juppun'},
+  ]},
+  { label:'Minutes by 5', preview:'分', note:'The common ones you read off a clock.', items:[
+    {digital:'X:05',jp:'五分',rom:'gofun',hint:''},
+    {digital:'X:15',jp:'十五分',rom:'juugofun',hint:'15 min'},
+    {digital:'X:20',jp:'二十分',rom:'nijuppun',hint:'IRREGULAR: nijuppun'},
+    {digital:'X:25',jp:'二十五分',rom:'nijuugofun',hint:'25 min'},
+    {digital:'X:40',jp:'四十分',rom:'yonjuppun',hint:'40 min'},
+  ]},
+  { label:'AM / PM & full', preview:'午', note:'gozen = AM, gogo = PM. Goes before the time.', items:[
+    {digital:'AM',jp:'午前',rom:'gozen',hint:'AM / morning'},
+    {digital:'PM',jp:'午後',rom:'gogo',hint:'PM / afternoon'},
+    {digital:'9:00 AM',jp:'午前九時',rom:'gozen kuji',hint:'AM + 9:00'},
+    {digital:'3:20 PM',jp:'午後三時二十分',rom:'gogo sanji nijuppun',hint:'full time!'},
+    {digital:'7:30 PM',jp:'午後七時半',rom:'gogo shichiji han',hint:'PM + 7:30'},
+  ]},
 ];
+const TIME_ITEMS = TIME_BLOCKS.flatMap(b => b.items);
 
 // ═══════════════════════════════════════════════════════
 // CONSTANTS
@@ -923,17 +985,17 @@ function renderSectionHome(body) {
         </div>`;
       } else if (currentTab==='numbers') {
         html += `<div class="review-grid-2">
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('num-jp')"`:''}>
-            <span class="ri">123→字</span>Number → Japanese${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('jp-num')"`:''}>
-            <span class="ri">字→123</span>Japanese → Number${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('num-rom')"`:''}>
+            <span class="ri">123→ろ</span>Number → Reading${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('rom-num')"`:''}>
+            <span class="ri">ろ→123</span>Reading → Number${lEl}</button>
         </div>`;
       } else {
         html += `<div class="review-grid-2">
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('time-jp')"`:''}>
-            <span class="ri">🕐→字</span>Clock → Japanese${lEl}</button>
-          <button class="review-btn${lCls}" ${enough?`onclick="startReview('jp-time')"`:''}>
-            <span class="ri">字→ro</span>Japanese → Romaji${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('time-rom')"`:''}>
+            <span class="ri">🕐→ろ</span>Time → Reading${lEl}</button>
+          <button class="review-btn${lCls}" ${enough?`onclick="startReview('rom-time')"`:''}>
+            <span class="ri">ろ→🕐</span>Reading → Time${lEl}</button>
         </div>`;
       }
     } else {
@@ -972,8 +1034,7 @@ function renderSectionHome(body) {
   html += '<div class="section-heading">Your Blocks</div>';
   let gridCls;
   if (isFound) {
-    gridCls = (currentTab==='hiragana'||currentTab==='katakana') ? 'block-grid' :
-              currentTab==='time' ? 'block-grid-3' : 'block-grid-4';
+    gridCls = (currentTab==='hiragana'||currentTab==='katakana') ? 'block-grid' : 'block-grid-3';
   } else {
     gridCls = 'block-grid';
   }
@@ -1042,17 +1103,22 @@ function openBlock(i) {
         <div class="study-hint">${k.hint}</div>
       </div>`).join('')}</div>`;
     } else if (currentTab==='numbers') {
-      cards = `<div class="study-grid-num">${currentBlock.map(item=>`<div class="study-card-num">
+      const blockNote = NUM_BLOCKS[currentBlockIndex]?.note;
+      cards = (blockNote ? `<div class="block-note">${blockNote}</div>` : '') +
+        `<div class="study-grid-num">${currentBlock.map(item=>`<div class="study-card-num">
         <div class="sn-digit">${item.n.toLocaleString()}</div>
         <div class="sn-jp">${item.jp}</div>
         <div class="sn-rom">${item.rom}</div>
         ${item.hint?`<div class="sn-hint">${item.hint}</div>`:''}
       </div>`).join('')}</div>`;
     } else {
-      cards = `<div class="study-grid-num">${currentBlock.map(item=>`<div class="study-card-num">
-        ${clockSVG(item.hour,70)}
+      const blockNote = TIME_BLOCKS[currentBlockIndex]?.note;
+      cards = (blockNote ? `<div class="block-note">${blockNote}</div>` : '') +
+        `<div class="study-grid-num">${currentBlock.map(item=>`<div class="study-card-num">
+        <div class="sn-digit" style="font-size:18px">${item.digital}</div>
         <div class="sn-jp">${item.jp}</div>
         <div class="sn-rom">${item.rom}</div>
+        ${item.hint?`<div class="sn-hint">${item.hint}</div>`:''}
       </div>`).join('')}</div>`;
     }
   } else {
@@ -1201,26 +1267,36 @@ function buildFoundationQuestion(item) {
         `<button class="choice-btn rom" onclick="checkMC(this,${c.ok})">${c.val}</button>`
       ).join('')}</div>`;
     } else if (currentTab === 'numbers') {
-      qCard.innerHTML = `<div class="q-label">How do you say this?</div>
+      qCard.innerHTML = `<div class="q-label">How do you say this number?</div>
         <div class="q-number">${item.n.toLocaleString()}</div>
         ${hint&&item.hint?`<div class="q-hint">${item.hint}</div>`:''}`;
+      // Distractors from same block (similar magnitude) first
       const blockItems = NUM_BLOCKS[currentBlockIndex].items;
-      let pool = shuffle(blockItems.filter(x=>x.jp!==item.jp));
+      let pool = shuffle(blockItems.filter(x=>x.rom!==item.rom));
       if (pool.length < 3) {
-        const others = shuffle(NUM_ITEMS.filter(x=>x.jp!==item.jp && !blockItems.includes(x)));
-        pool = [...pool, ...others].slice(0,3);
-      } else { pool = pool.slice(0,3); }
-      const choices = shuffle([{val:item.jp,ok:true}, ...pool.map(x=>({val:x.jp,ok:false}))]);
+        const others = shuffle(NUM_ITEMS.filter(x=>x.rom!==item.rom && !blockItems.includes(x)));
+        pool = [...pool, ...others];
+      }
+      pool = pool.slice(0,3);
+      const choices = shuffle([{val:item.rom,ok:true}, ...pool.map(x=>({val:x.rom,ok:false}))]);
       aEl.innerHTML = `<div class="choices-grid">${choices.map(c=>
-        `<button class="choice-btn jpnum" onclick="checkMC(this,${c.ok})">${c.val}</button>`
+        `<button class="choice-btn rom" onclick="checkMC(this,${c.ok})">${c.val}</button>`
       ).join('')}</div>`;
     } else {
-      // time
-      qCard.innerHTML = `<div class="q-label">What time is this?</div>${clockSVG(item.hour,120)}`;
-      const pool = shuffle(TIME_ITEMS.filter(t=>t.jp!==item.jp)).slice(0,3);
-      const choices = shuffle([{val:item.jp,ok:true}, ...pool.map(t=>({val:t.jp,ok:false}))]);
+      // time — show digital, pick the romaji reading
+      qCard.innerHTML = `<div class="q-label">How do you say this time?</div>
+        <div class="q-number">${item.digital}</div>
+        ${hint&&item.hint?`<div class="q-hint">${item.hint}</div>`:''}`;
+      const blockItems = TIME_BLOCKS[currentBlockIndex].items;
+      let pool = shuffle(blockItems.filter(t=>t.rom!==item.rom));
+      if (pool.length < 3) {
+        const others = shuffle(TIME_ITEMS.filter(t=>t.rom!==item.rom && !blockItems.includes(t)));
+        pool = [...pool, ...others];
+      }
+      pool = pool.slice(0,3);
+      const choices = shuffle([{val:item.rom,ok:true}, ...pool.map(t=>({val:t.rom,ok:false}))]);
       aEl.innerHTML = `<div class="choices-grid">${choices.map(c=>
-        `<button class="choice-btn jpnum" onclick="checkMC(this,${c.ok})">${c.val}</button>`
+        `<button class="choice-btn rom" onclick="checkMC(this,${c.ok})">${c.val}</button>`
       ).join('')}</div>`;
     }
   } else {
@@ -1230,10 +1306,10 @@ function buildFoundationQuestion(item) {
       prompt = `<div class="q-label">Type the romaji</div><div class="q-kana">${item.char}</div>`;
       correct = item.rom; ph = 'Type romaji…';
     } else if (currentTab === 'numbers') {
-      prompt = `<div class="q-label">How do you read this?</div><div class="q-jp">${item.jp}</div>`;
+      prompt = `<div class="q-label">Type the reading</div><div class="q-number">${item.n.toLocaleString()}</div>`;
       correct = item.rom; ph = 'Type romaji…';
     } else {
-      prompt = `<div class="q-label">Type the Japanese reading</div>${clockSVG(item.hour,110)}`;
+      prompt = `<div class="q-label">Type the reading</div><div class="q-number">${item.digital}</div>`;
       correct = item.rom; ph = 'e.g. ichiji…';
     }
     qCard.innerHTML = prompt;
@@ -1264,7 +1340,7 @@ function checkMC(btn, ok) {
     btn.classList.add('wrong');
     markMistake();
     const item = phaseOrder[wordIndex];
-    const correctVal = quizPhase===0 ? (item.jp||item.char) : item.rom;
+    const correctVal = item.rom;
     document.querySelectorAll('#answer-area .choice-btn').forEach(b=>{
       if (b.textContent.trim() === correctVal) b.classList.add('correct');
     });
@@ -1276,8 +1352,9 @@ function checkMC(btn, ok) {
 function checkTyped(correct) {
   const inp = document.getElementById('ans-input');
   if (!inp) return;
-  const val  = inp.value.trim().toLowerCase();
-  const alts = correct.toLowerCase().split('/').map(s=>s.trim());
+  const norm = s => s.trim().toLowerCase().replace(/\s+/g,'');
+  const val  = norm(inp.value);
+  const alts = correct.toLowerCase().split('/').map(s=>norm(s));
   const ok   = alts.includes(val);
   quizTotal++;
   inp.disabled = true;
@@ -1606,33 +1683,36 @@ function showFoundationReviewQ() {
     answer = `<div class="choices-grid">${choices.map(c=>
       `<button class="choice-btn" onclick="checkRev(this,${c.ok},'${escQ(item.char)}')">${c.val}</button>`
     ).join('')}</div>`;
-  } else if (reviewType === 'num-jp') {
-    prompt = `<div class="q-label">How do you say this?</div><div class="q-number">${item.n.toLocaleString()}</div>`;
-    const pool = shuffle(reviewWords.filter(x=>x.jp!==item.jp)).slice(0,3);
-    const choices = shuffle([{val:item.jp,ok:true}, ...pool.map(x=>({val:x.jp,ok:false}))]);
+  } else if (reviewType === 'num-rom') {
+    // Digit shown → pick the romaji reading
+    prompt = `<div class="q-label">How do you say this number?</div><div class="q-number">${item.n.toLocaleString()}</div>`;
+    const pool = shuffle(reviewWords.filter(x=>x.rom!==item.rom)).slice(0,3);
+    const choices = shuffle([{val:item.rom,ok:true}, ...pool.map(x=>({val:x.rom,ok:false}))]);
     answer = `<div class="choices-grid">${choices.map(c=>
-      `<button class="choice-btn jpnum" onclick="checkRev(this,${c.ok},'${escQ(item.jp)}')">${c.val}</button>`
+      `<button class="choice-btn rom" onclick="checkRev(this,${c.ok},'${escQ(item.rom)}')">${c.val}</button>`
     ).join('')}</div>`;
-  } else if (reviewType === 'jp-num') {
-    prompt = `<div class="q-label">What number is this?</div><div class="q-jp">${item.jp}</div>`;
-    const pool = shuffle(reviewWords.filter(x=>x.n!==item.n)).slice(0,3);
-    const choices = shuffle([{val:item.n,ok:true}, ...pool.map(x=>({val:x.n,ok:false}))]);
+  } else if (reviewType === 'rom-num') {
+    // Reading shown → type the digits
+    prompt = `<div class="q-label">Type the number (digits)</div><div class="q-romaji" style="font-size:24px">${item.rom}</div>`;
+    const safe = escQ(String(item.n));
+    answer = `<input class="answer-input" id="rev-input" type="text" inputmode="numeric"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      placeholder="e.g. 325…"/>
+      <button class="submit-btn" onclick="checkRevTyped('${safe}')">Submit</button>`;
+  } else if (reviewType === 'time-rom') {
+    // Digital time shown → pick the romaji reading
+    prompt = `<div class="q-label">How do you say this time?</div><div class="q-number">${item.digital}</div>`;
+    const pool = shuffle(reviewWords.filter(t=>t.rom!==item.rom)).slice(0,3);
+    const choices = shuffle([{val:item.rom,ok:true}, ...pool.map(t=>({val:t.rom,ok:false}))]);
     answer = `<div class="choices-grid">${choices.map(c=>
-      `<button class="choice-btn num" onclick="checkRev(this,${c.ok},'${item.n}')">${c.val.toLocaleString()}</button>`
+      `<button class="choice-btn rom" onclick="checkRev(this,${c.ok},'${escQ(item.rom)}')">${c.val}</button>`
     ).join('')}</div>`;
-  } else if (reviewType === 'time-jp') {
-    prompt = `<div class="q-label">What time is this?</div>${clockSVG(item.hour,120)}`;
-    const pool = shuffle(TIME_ITEMS.filter(t=>t.jp!==item.jp)).slice(0,3);
-    const choices = shuffle([{val:item.jp,ok:true}, ...pool.map(t=>({val:t.jp,ok:false}))]);
-    answer = `<div class="choices-grid">${choices.map(c=>
-      `<button class="choice-btn jpnum" onclick="checkRev(this,${c.ok},'${escQ(item.jp)}')">${c.val}</button>`
-    ).join('')}</div>`;
-  } else { // jp-time: typed
-    prompt = `<div class="q-label">How do you read this time?</div><div class="q-jp">${item.jp}</div>`;
+  } else { // rom-time: reading shown → type romaji back (reinforce production)
+    prompt = `<div class="q-label">Type this time reading</div><div class="q-number">${item.digital}</div>`;
     const safe = escQ(item.rom);
     answer = `<input class="answer-input" id="rev-input" type="text"
       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-      placeholder="e.g. ichiji…"/>
+      placeholder="e.g. sanji nijuppun…"/>
       <button class="submit-btn" onclick="checkRevTyped('${safe}')">Submit</button>`;
   }
 
@@ -1645,7 +1725,7 @@ function showFoundationReviewQ() {
     ${answer}
     <div class="feedback-area"><div class="feedback-pill" id="rev-fb"></div></div>`;
 
-  if (reviewType === 'jp-time') {
+  if (reviewType === 'rom-num' || reviewType === 'rom-time') {
     setTimeout(()=>{
       const inp = document.getElementById('rev-input');
       if (inp) {
@@ -1712,8 +1792,9 @@ function checkRev(btn, ok, correctDisplay) {
 function checkRevTyped(correct) {
   const inp = document.getElementById('rev-input');
   if (!inp) return;
-  const val = inp.value.trim().toLowerCase();
-  const alts = correct.toLowerCase().split('/').map(s=>s.trim());
+  const norm = s => s.trim().toLowerCase().replace(/\s+/g,'');
+  const val = norm(inp.value);
+  const alts = correct.toLowerCase().split('/').map(s=>norm(s));
   const ok = alts.includes(val);
   inp.disabled = true;
   document.querySelector('#review-content .submit-btn').disabled = true;
