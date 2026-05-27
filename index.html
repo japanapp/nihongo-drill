@@ -83,7 +83,7 @@
     .block-btn:active { transform: scale(.92); }
     .block-btn.unlocked { background: var(--ink); color: var(--paper); }
     .block-btn.unlocked.complete { background: var(--green); color: var(--white); }
-    .block-btn.mastered { background: var(--gold); color: var(--ink); }
+    .block-btn.unlocked.practised { background: var(--gold); color: var(--ink); }
     .block-btn.locked { background: var(--paper-warm); color: #bbb; cursor: not-allowed; }
     .block-btn .bn { font-size: 9px; font-weight: 700; opacity: .7; }
     .block-btn .bk { font-family: 'Shippori Mincho', serif; font-size: 14px; line-height: 1.1; }
@@ -205,6 +205,13 @@
     .complete-card .big-emoji { font-size: 46px; margin-bottom: 10px; }
     .complete-card h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--gold-light); margin-bottom: 5px; }
     .complete-card p  { color: var(--paper); opacity: .7; font-size: 13px; margin-bottom: 18px; }
+    #mode-actions { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+    .test-btn { background: var(--ink); color: var(--paper); border: 2px solid var(--gold); border-radius: var(--radius); padding: 13px 14px; font-family: 'DM Sans', sans-serif; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: transform .1s; }
+    .test-btn:active { transform: scale(.97); }
+    .test-btn .tb-title { font-size: 15px; font-weight: 700; letter-spacing: .04em; }
+    .test-btn .tb-sub { font-size: 10px; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+    .test-mode-banner { background: linear-gradient(135deg, #b53b3b, #8a2828); color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; text-align: center; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(180,60,60,.25); }
+    .test-mode-banner .lives { font-size: 9px; opacity: .85; margin-top: 2px; letter-spacing: .06em; }
     .mastery-result { background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); border-radius: var(--radius-sm); padding: 11px; margin-bottom: 14px; }
     .mr-label { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px; }
     .mr-stars { display: flex; gap: 5px; justify-content: center; margin-bottom: 4px; }
@@ -353,7 +360,17 @@
       <p style="color:var(--text-soft);font-size:12px;margin-top:4px">Gold words are ones you've already learned</p>
     </div>
     <div id="phrase-study-cards"></div>
-    <button class="big-btn gold" id="phrase-quiz-btn" onclick="beginPhraseQuiz()">Practice These Phrases →</button>
+    <div id="phrase-mode-actions">
+      <button class="big-btn gold" id="phrase-quiz-btn" onclick="beginPhraseQuiz('practice')">Practice Mode</button>
+      <button class="big-btn test-btn" id="phrase-test-btn" onclick="confirmPhraseTestMode()">
+        <span class="tb-title">Test Mode</span>
+        <span class="tb-sub">Sudden Death · 100% to clear</span>
+      </button>
+    </div>
+    <p id="phrase-mode-help" style="font-size:11px;color:var(--text-soft);text-align:center;margin-top:10px;line-height:1.5">
+      <strong>Practice</strong> — work through phrases freely.<br>
+      <strong>Test</strong> — one mistake ends it. Clear to unlock the next block.
+    </p>
   </div>
 </div>
 
@@ -367,6 +384,18 @@
     </div>
   </div>
   <div class="card-area" id="phrase-quiz-area"></div>
+</div>
+
+<!-- REVISION SCREEN -->
+<div id="screen-revision" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="confirmRevisionQuit()">Quit</button>
+    <div style="text-align:right">
+      <div class="app-title">Revision</div>
+      <div class="app-subtitle">5 correct = retained</div>
+    </div>
+  </div>
+  <div class="card-area" id="revision-card-area"></div>
 </div>
 
 <!-- HOME -->
@@ -403,7 +432,17 @@
     </div>
     <div id="study-font-toggle"></div>
     <div id="study-cards"></div>
-    <button class="big-btn gold" onclick="beginQuiz()">Start Quiz →</button>
+    <div id="mode-actions">
+      <button class="big-btn gold" onclick="beginQuiz('practice')">Practice Mode</button>
+      <button class="big-btn test-btn" onclick="confirmTestMode()" id="test-mode-btn">
+        <span class="tb-title">Test Mode</span>
+        <span class="tb-sub">Sudden Death · 100% to clear</span>
+      </button>
+    </div>
+    <p id="mode-help" style="font-size:11px;color:var(--text-soft);text-align:center;margin-top:10px;line-height:1.5">
+      <strong>Practice</strong> — work through the block freely, no pass/fail.<br>
+      <strong>Test</strong> — one mistake ends it. Clear the test to unlock the next block.
+    </p>
   </div>
 </div>
 
@@ -443,58 +482,108 @@
 
 const KANA = {
   hiragana: [
-    {char:'あ',rom:'a',hint:'Looks like an "a"'},{char:'い',rom:'i',hint:'Two strokes like "ii"'},
-    {char:'う',rom:'u',hint:'Like a curled "u"'},{char:'え',rom:'e',hint:'A cross shape'},
-    {char:'お',rom:'o',hint:'"o" with extra stroke'},{char:'か',rom:'ka',hint:'Like a sword'},
-    {char:'き',rom:'ki',hint:'Looks like a key'},{char:'く',rom:'ku',hint:'A bird beak'},
-    {char:'け',rom:'ke',hint:'Tall "ke" shape'},{char:'こ',rom:'ko',hint:'Two level lines'},
-    {char:'さ',rom:'sa',hint:'Like a cross + hook'},{char:'し',rom:'shi',hint:'A fishing hook'},
-    {char:'す',rom:'su',hint:'A loop with tail'},{char:'せ',rom:'se',hint:'Like a capital "E"'},
-    {char:'そ',rom:'so',hint:'A soaring wave'},{char:'た',rom:'ta',hint:'A table top'},
-    {char:'ち',rom:'chi',hint:'A cheerful bounce'},{char:'つ',rom:'tsu',hint:'A crashing wave'},
-    {char:'て',rom:'te',hint:'An antenna'},{char:'と',rom:'to',hint:'A toe stub'},
-    {char:'な',rom:'na',hint:'Like a knotted rope'},{char:'に',rom:'ni',hint:'Needle and thread'},
-    {char:'ぬ',rom:'nu',hint:'Noodle swirl'},{char:'ね',rom:'ne',hint:'A loop with neck'},
-    {char:'の',rom:'no',hint:'A simple spiral'},{char:'は',rom:'ha',hint:'Laughing open mouth'},
-    {char:'ひ',rom:'hi',hint:'A smile saying "hee"'},{char:'ふ',rom:'fu',hint:'Mt Fuji from above'},
-    {char:'へ',rom:'he',hint:'A simple peak'},{char:'ほ',rom:'ho',hint:'Complex ho shape'},
-    {char:'ま',rom:'ma',hint:'A mama bird'},{char:'み',rom:'mi',hint:'A curly music note'},
-    {char:'む',rom:'mu',hint:'A mooing cow'},{char:'め',rom:'me',hint:'A tangled medusa'},
-    {char:'も',rom:'mo',hint:'A worm on a hook'},{char:'や',rom:'ya',hint:"A yak's horns"},
-    {char:'ゆ',rom:'yu',hint:'A "U" with a tail'},{char:'よ',rom:'yo',hint:'A yo-yo string'},
-    {char:'ら',rom:'ra',hint:'A radical stroke'},{char:'り',rom:'ri',hint:'Reeds in water'},
-    {char:'る',rom:'ru',hint:'A rooster tail'},{char:'れ',rom:'re',hint:'A reedy curve'},
-    {char:'ろ',rom:'ro',hint:'A rope coil'},{char:'わ',rom:'wa',hint:'A wave with a dip'},
-    {char:'を',rom:'wo',hint:'Particle — wo/o'},{char:'ん',rom:'n',hint:'A simple curl'},
-    {char:'が',rom:'ga',hint:'か + dakuten'},{char:'ぎ',rom:'gi',hint:'き + dakuten'},
-    {char:'ぐ',rom:'gu',hint:'く + dakuten'},{char:'げ',rom:'ge',hint:'け + dakuten'},
+    {char:'あ',rom:'a',hint:'An apple with a bite taken out'},
+    {char:'い',rom:'i',hint:'Two eels (eels = ii) swimming side by side'},
+    {char:'う',rom:'u',hint:'An ooh-ing face — eyebrow raised in surprise'},
+    {char:'え',rom:'e',hint:'An exotic bird with a fancy crest'},
+    {char:'お',rom:'o',hint:'An ostrich kicking out a leg'},
+    {char:'か',rom:'ka',hint:'A kite caught on a tree branch'},
+    {char:'き',rom:'ki',hint:'A key dangling on a ring'},
+    {char:'く',rom:'ku',hint:'A cuckoo beak open wide'},
+    {char:'け',rom:'ke',hint:'A keg leaning sideways, dripping'},
+    {char:'こ',rom:'ko',hint:'A koala curled up — two arms'},
+    {char:'さ',rom:'sa',hint:'A sock-puppet mouth saying "sa!"'},
+    {char:'し',rom:'shi',hint:'A shimmering fishing hook in water'},
+    {char:'す',rom:'su',hint:'A sumo wrestler with a topknot loop'},
+    {char:'せ',rom:'se',hint:'A set of teeth with a missing one'},
+    {char:'そ',rom:'so',hint:'A sewing machine zigzag'},
+    {char:'た',rom:'ta',hint:'A tarpaulin with a peg hammered in'},
+    {char:'ち',rom:'chi',hint:'A cheerleader doing a backflip'},
+    {char:'つ',rom:'tsu',hint:'A tsunami curling over'},
+    {char:'て',rom:'te',hint:'A telegraph pole with a wire'},
+    {char:'と',rom:'to',hint:'A toe stubbed on a nail'},
+    {char:'な',rom:'na',hint:'A knotted rope hanging from a hook'},
+    {char:'に',rom:'ni',hint:'A needle threading through fabric'},
+    {char:'ぬ',rom:'nu',hint:'Noodles tangled around chopsticks'},
+    {char:'ね',rom:'ne',hint:'A nest with a coiled snake inside'},
+    {char:'の',rom:'no',hint:'A NO sign — circle with a slash'},
+    {char:'は',rom:'ha',hint:'A ha-ha-ha laughing mouth, head thrown back'},
+    {char:'ひ',rom:'hi',hint:'A heeheeing smile — wide grin'},
+    {char:'ふ',rom:'fu',hint:'Mt Fuji with a tiny cloud above it'},
+    {char:'へ',rom:'he',hint:'A hill peak — like a tent flap'},
+    {char:'ほ',rom:'ho',hint:'A hopscotch grid — squares to jump on'},
+    {char:'ま',rom:'ma',hint:'A mother with a swaddled baby'},
+    {char:'み',rom:'mi',hint:'A meeting of three squiggly worms'},
+    {char:'む',rom:'mu',hint:'A moo-ing cow — head and horn'},
+    {char:'め',rom:'me',hint:'A medusa with tangled snake hair'},
+    {char:'も',rom:'mo',hint:'A motorcycle with two exhaust pipes'},
+    {char:'や',rom:'ya',hint:"A yak's horn jutting sideways"},
+    {char:'ゆ',rom:'yu',hint:'A unique fish with a tail fin'},
+    {char:'よ',rom:'yo',hint:'A yo-yo on a string'},
+    {char:'ら',rom:'ra',hint:'A rabbit hopping over a log'},
+    {char:'り',rom:'ri',hint:'A reed splitting in the wind'},
+    {char:'る',rom:'ru',hint:'A roo (kangaroo) tail looping around'},
+    {char:'れ',rom:'re',hint:'A reggae musician strumming a chord'},
+    {char:'ろ',rom:'ro',hint:'A road winding into a tight loop'},
+    {char:'わ',rom:'wa',hint:'A wave breaking against a cliff'},
+    {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle'},
+    {char:'ん',rom:'n',hint:'An nnn humming sound — sealed lips'},
+    {char:'が',rom:'ga',hint:'か with dakuten — turn ka into ga'},
+    {char:'ぎ',rom:'gi',hint:'き with dakuten — turn ki into gi'},
+    {char:'ぐ',rom:'gu',hint:'く with dakuten — turn ku into gu'},
+    {char:'げ',rom:'ge',hint:'け with dakuten — turn ke into ge'},
   ],
   katakana: [
-    {char:'ア',rom:'a',hint:'Like a triangle "A"'},{char:'イ',rom:'i',hint:'A leaning stroke'},
-    {char:'ウ',rom:'u',hint:'Crown shape'},{char:'エ',rom:'e',hint:'Like a capital "I"'},
-    {char:'オ',rom:'o',hint:'Cross with tail'},{char:'カ',rom:'ka',hint:'Like a katana'},
-    {char:'キ',rom:'ki',hint:'Three bars = ki'},{char:'ク',rom:'ku',hint:'A bird head'},
-    {char:'ケ',rom:'ke',hint:'Like a "K"'},{char:'コ',rom:'ko',hint:'Two sides of a square'},
-    {char:'サ',rom:'sa',hint:'Three strokes = sa'},{char:'シ',rom:'shi',hint:'Three dots + curve'},
-    {char:'ス',rom:'su',hint:'A spinning top'},{char:'セ',rom:'se',hint:'Like a "セ"'},
-    {char:'ソ',rom:'so',hint:'Two strokes = so'},{char:'タ',rom:'ta',hint:'Like a "ta" shape'},
-    {char:'チ',rom:'chi',hint:'Like a "chi" stamp'},{char:'ツ',rom:'tsu',hint:'Three dots + curve'},
-    {char:'テ',rom:'te',hint:'Like a "T"'},{char:'ト',rom:'to',hint:'A post with pin'},
-    {char:'ナ',rom:'na',hint:'Like a cross'},{char:'ニ',rom:'ni',hint:'Two lines = ni'},
-    {char:'ヌ',rom:'nu',hint:'Like a bent "nu"'},{char:'ネ',rom:'ne',hint:'A network node'},
-    {char:'ノ',rom:'no',hint:'A simple slash'},{char:'ハ',rom:'ha',hint:'Two legs = ha'},
-    {char:'ヒ',rom:'hi',hint:'Like "F" backwards'},{char:'フ',rom:'fu',hint:'Like a hook "fu"'},
-    {char:'ヘ',rom:'he',hint:'Same as hiragana!'},{char:'ホ',rom:'ho',hint:'Like a "+" sign'},
-    {char:'マ',rom:'ma',hint:'Like an angle "ma"'},{char:'ミ',rom:'mi',hint:'Three horizontal lines'},
-    {char:'ム',rom:'mu',hint:'Like a cow face'},{char:'メ',rom:'me',hint:'An "X" crossed'},
-    {char:'モ',rom:'mo',hint:'Like "mo" shape'},{char:'ヤ',rom:'ya',hint:'A "Y" shape'},
-    {char:'ユ',rom:'yu',hint:'Like a square bracket'},{char:'ヨ',rom:'yo',hint:'Three bars = yo'},
-    {char:'ラ',rom:'ra',hint:'Like a "7" shape'},{char:'リ',rom:'ri',hint:'Two strokes = ri'},
-    {char:'ル',rom:'ru',hint:'A river delta'},{char:'レ',rom:'re',hint:'Like a "V" stroke'},
-    {char:'ロ',rom:'ro',hint:'Like a square'},{char:'ワ',rom:'wa',hint:'Like a "wa" curve'},
-    {char:'ヲ',rom:'wo',hint:'Particle — wo/o'},{char:'ン',rom:'n',hint:'Like a "y" stroke'},
-    {char:'ガ',rom:'ga',hint:'カ + dakuten'},{char:'ギ',rom:'gi',hint:'キ + dakuten'},
-    {char:'グ',rom:'gu',hint:'ク + dakuten'},{char:'ゲ',rom:'ge',hint:'ケ + dakuten'},
+    {char:'ア',rom:'a',hint:'An archery target — bow drawn back'},
+    {char:'イ',rom:'i',hint:'An icicle leaning off an eave'},
+    {char:'ウ',rom:'u',hint:'An umbrella covering you from rain'},
+    {char:'エ',rom:'e',hint:'An elevator — top floor, ground floor'},
+    {char:'オ',rom:'o',hint:'An offering cross at a shrine'},
+    {char:'カ',rom:'ka',hint:'A katana sword cutting downward'},
+    {char:'キ',rom:'ki',hint:'A key with two notches'},
+    {char:'ク',rom:'ku',hint:'A cuckoo beak open, calling'},
+    {char:'ケ',rom:'ke',hint:'A keg tipped on its side, leaking'},
+    {char:'コ',rom:'ko',hint:'A corner of a frame — two sides'},
+    {char:'サ',rom:'sa',hint:'A sapling with two leaves on top'},
+    {char:'シ',rom:'shi',hint:'A shimmering swimmer doing the crawl'},
+    {char:'ス',rom:'su',hint:'A super-fast skier zigzagging down'},
+    {char:'セ',rom:'se',hint:'A serrated knife edge'},
+    {char:'ソ',rom:'so',hint:'A sewing needle stabbing a button'},
+    {char:'タ',rom:'ta',hint:'A taco folded around a filling'},
+    {char:'チ',rom:'chi',hint:'A cheeky chick poking out from an egg'},
+    {char:'ツ',rom:'tsu',hint:'A tsunami — three peaks rushing in'},
+    {char:'テ',rom:'te',hint:'A telegram pole — top, wire, post'},
+    {char:'ト',rom:'to',hint:'A totem pole with a flag'},
+    {char:'ナ',rom:'na',hint:'A nail being hammered into wood'},
+    {char:'ニ',rom:'ni',hint:'A pair of chopsticks (ni = 2)'},
+    {char:'ヌ',rom:'nu',hint:'A noodle bent around a fork'},
+    {char:'ネ',rom:'ne',hint:'A nest cradled in a branch'},
+    {char:'ノ',rom:'no',hint:'A NO slash — refusing'},
+    {char:'ハ',rom:'ha',hint:'A pair of legs jumping ha-ha-ha'},
+    {char:'ヒ',rom:'hi',hint:'A heel kicking backward'},
+    {char:'フ',rom:'fu',hint:'A flag flapping in the wind'},
+    {char:'ヘ',rom:'he',hint:'A hill peak — exactly like hiragana へ'},
+    {char:'ホ',rom:'ho',hint:'A hopeful Christmas tree — branches out'},
+    {char:'マ',rom:'ma',hint:'A magic wand with a curl on top'},
+    {char:'ミ',rom:'mi',hint:'Three steps of a mini-staircase'},
+    {char:'ム',rom:'mu',hint:'A mug tipped — drink pouring out'},
+    {char:'メ',rom:'me',hint:'A messy X — crossed mascara strokes'},
+    {char:'モ',rom:'mo',hint:'A motel sign — pole and arms'},
+    {char:'ヤ',rom:'ya',hint:'A yak with a single horn'},
+    {char:'ユ',rom:'yu',hint:'A unicycle seat from the side'},
+    {char:'ヨ',rom:'yo',hint:'A yodelling singer — three notes'},
+    {char:'ラ',rom:'ra',hint:'A radio antenna with a signal wave'},
+    {char:'リ',rom:'ri',hint:'Two reeds standing in a pond'},
+    {char:'ル',rom:'ru',hint:'A roo (kangaroo) hopping forward'},
+    {char:'レ',rom:'re',hint:'A reggae rhythm — sharp downbeat'},
+    {char:'ロ',rom:'ro',hint:'A rotunda — a square garden'},
+    {char:'ワ',rom:'wa',hint:'A waterfall curving over a ledge'},
+    {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle'},
+    {char:'ン',rom:'n',hint:'An nnn echo — short and sealed'},
+    {char:'ガ',rom:'ga',hint:'カ with dakuten — turn ka into ga'},
+    {char:'ギ',rom:'gi',hint:'キ with dakuten — turn ki into gi'},
+    {char:'グ',rom:'gu',hint:'ク with dakuten — turn ku into gu'},
+    {char:'ゲ',rom:'ge',hint:'ケ with dakuten — turn ke into ge'},
   ],
 };
 
@@ -562,6 +651,7 @@ const TIME_BLOCKS = [
     {digital:'8:00',jp:'八時',rom:'hachiji',hint:''},
     {digital:'9:00',jp:'九時',rom:'kuji',hint:'IRREGULAR: kuji not kyuuji'},
     {digital:'10:00',jp:'十時',rom:'juuji',hint:''},
+    {digital:'11:00',jp:'十一時',rom:'juuichiji',hint:'11 = juuichi + ji'},
     {digital:'12:00',jp:'十二時',rom:'juuniji',hint:'12 = juuni + ji'},
   ]},
   { label:'Half past 半', preview:'半', note:'han = half past. Just add it after the hour.', items:[
@@ -718,6 +808,7 @@ let currentBlockIndex = 0;
 let currentBlock      = [];
 
 // Quiz state
+let quizMode          = 'practice'; // 'practice' | 'test'
 let quizPhase         = 0;
 let cycleCount        = 0;
 let wordIndex         = 0;
@@ -739,26 +830,44 @@ const saveProgress = p  => localStorage.setItem('jp_app_v1', JSON.stringify(p));
 
 // Namespaced keys: `${section}_${tab}_${blockIndex}`
 function pKey(section, tab, idx) { return `${section}_${tab}_${idx}`; }
-function getMD(section, tab, idx) { return getProgress()[pKey(section,tab,idx)] || {done:false,sessions:[]}; }
-function getMAvg(section, tab, idx) {
-  const d = getMD(section,tab,idx);
-  if (!d.sessions||!d.sessions.length) return 0;
-  const r = d.sessions.slice(-MASTERY_SESSIONS);
-  return r.reduce((a,s)=>a+s,0)/r.length;
+
+// ── Block state model ─────────────────────────────────
+// Each block entry: { practised: boolean, cleared: boolean }
+// Backward compat: old { done: true } counts as cleared; old phrase
+// { practiced: true } counts as practised.
+function migrateBlock(entry) {
+  if (!entry) return null;
+  if (entry.cleared !== undefined || entry.practised !== undefined) return entry;
+  if (entry.done === true) return { practised: true, cleared: true };
+  if (entry.practiced === true) return { practised: true, cleared: false };
+  return entry;
 }
-function getML(section, tab, idx) {
-  const m = getMAvg(section,tab,idx);
-  return m>=MASTERY_T[2]?3:m>=MASTERY_T[1]?2:m>=MASTERY_T[0]?1:0;
+function getMD(section, tab, idx) {
+  return migrateBlock(getProgress()[pKey(section,tab,idx)]) || { practised:false, cleared:false };
 }
-function recordSession(section, tab, idx, acc) {
+function isBlockPractised(section, tab, idx) { return getMD(section,tab,idx).practised === true; }
+function isBlockCleared(section, tab, idx)   { return getMD(section,tab,idx).cleared === true; }
+function isBlockUnlocked(section, tab, idx) {
+  if (idx === 0) return true;
+  return isBlockCleared(section, tab, idx - 1);
+}
+function markPractised(section, tab, idx) {
   const prog = getProgress();
-  const key  = pKey(section,tab,idx);
-  if (!prog[key]) prog[key]={done:false,sessions:[]};
-  prog[key].done=true;
-  prog[key].sessions=prog[key].sessions||[];
-  prog[key].sessions.push(acc);
+  const cur = migrateBlock(prog[pKey(section,tab,idx)]) || {};
+  prog[pKey(section,tab,idx)] = { ...cur, practised: true };
   saveProgress(prog);
 }
+function markCleared(section, tab, idx) {
+  const prog = getProgress();
+  const cur = migrateBlock(prog[pKey(section,tab,idx)]) || {};
+  prog[pKey(section,tab,idx)] = { ...cur, practised: true, cleared: true };
+  saveProgress(prog);
+}
+
+// Legacy stubs — kept so any stray callers don't crash
+function getMAvg() { return 0; }
+function getML()   { return 0; }
+function recordSession() { /* obsolete — replaced by mark{Practised,Cleared} */ }
 
 // ═══════════════════════════════════════════════════════
 // HELPERS
@@ -812,10 +921,8 @@ function blocksFor(section, tab) {
 }
 
 function isUnlocked(section, tab, idx) {
-  // All modes available from the start in both sections (per user's prior preference)
-  // Within a tab, must complete block N-1 to unlock block N
-  if (idx===0) return true;
-  return !!(getProgress()[pKey(section,tab,idx-1)]?.done);
+  // Legacy alias — forwards to the new state model.
+  return isBlockUnlocked(section, tab, idx);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -919,11 +1026,14 @@ function renderSectionHome(body) {
   const n       = blocks.length;
   const prog    = getProgress();
 
-  let done=0, mastered=0;
+  let cleared = 0, practised = 0;
   for(let i=0;i<n;i++){
-    if(prog[pKey(currentSection,currentTab,i)]?.done) done++;
-    if(getML(currentSection,currentTab,i)===3) mastered++;
+    if (isBlockCleared(currentSection, currentTab, i))   cleared++;
+    else if (isBlockPractised(currentSection, currentTab, i)) practised++;
   }
+  // Backward-compat aliases for existing code paths
+  const done = cleared;
+  const mastered = 0;
 
   let totalItems = 0;
   if (isFound) {
@@ -965,24 +1075,29 @@ function renderSectionHome(body) {
     </div>`;
   }
 
+  // Revision pool banner — global, surfaces when pool has items
+  const revPool = getRevisionPool();
+  if (revPool.items.length > 0) {
+    html += `<button class="revision-banner" onclick="startRevisionQuiz()">
+      <div class="rb-left">
+        <span class="rb-icon">🔁</span>
+        <div>
+          <div class="rb-title">Revision Pool</div>
+          <div class="rb-sub">${revPool.items.length} item${revPool.items.length!==1?'s':''} to revise</div>
+        </div>
+      </div>
+      <span class="rb-arrow">→</span>
+    </button>`;
+  }
+
   // Stats
   html += `<div class="stats-bar">
-    <div class="stat-card"><div class="num">${done}</div><div class="lbl">Blocks Done</div></div>
-    <div class="stat-card"><div class="num">${mastered}</div><div class="lbl">Mastered</div></div>
-    <div class="stat-card"><div class="num">${totalItems}</div><div class="lbl">Total</div></div>
+    <div class="stat-card"><div class="num">${cleared}</div><div class="lbl">Cleared</div></div>
+    <div class="stat-card"><div class="num">${practised}</div><div class="lbl">In Practice</div></div>
+    <div class="stat-card"><div class="num">${n}</div><div class="lbl">Blocks</div></div>
   </div>`;
 
-  // Mastery banner
-  if (done > 0) {
-    const avg = Array.from({length:done},(_,i)=>getMAvg(currentSection,currentTab,i)).reduce((a,b)=>a+b,0)/done;
-    const pct = Math.round(avg*100);
-    html += `<div class="mastery-banner">
-      <h3>Mastery — ${meta.heroTitle || meta.label}</h3>
-      <div class="mastery-track"><div class="mastery-fill" style="width:${pct}%"></div></div>
-      <div class="mastery-label">${pct}% avg · ${done} block${done!==1?'s':''} done · ${mastered} mastered</div>
-      <div class="mastery-stars">${[0,1,2].map(i=>`<div class="mastery-star${mastered>i?' lit':''}"></div>`).join('')}</div>
-    </div>`;
-  }
+  // (Mastery banner removed — block state now binary: practised / cleared)
 
   // Block grid
   // For Words section — show review at top if unlocked, then blocks below
@@ -1061,11 +1176,11 @@ function renderSectionHome(body) {
   }
   html += `<div class="${gridCls}">`;
   blocks.forEach((block, i) => {
-    const isDone = !!prog[pKey(currentSection,currentTab,i)]?.done;
-    const open   = isUnlocked(currentSection, currentTab, i);
-    const ml     = isDone ? getML(currentSection,currentTab,i) : 0;
-    const cls    = `block-btn${open?' unlocked':' locked'}${ml===3?' mastered':isDone?' complete':''}${block.numeric?' numeric':''}`;
-    const icon   = ml===3?'★':isDone?'✓':open?'○':'🔒';
+    const isCleared   = isBlockCleared(currentSection, currentTab, i);
+    const isPractised = !isCleared && isBlockPractised(currentSection, currentTab, i);
+    const open        = isBlockUnlocked(currentSection, currentTab, i);
+    const cls = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''}${block.numeric?' numeric':''}`;
+    const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
 
     if (block.preview) {
       // foundation-style with preview char
@@ -1212,12 +1327,13 @@ function kanaDistractors(item, blockItems, fullKana) {
 // ═══════════════════════════════════════════════════════
 // QUIZ — FOUNDATION STYLE (MC + typed, 2 cycles, mastery tracking)
 // ═══════════════════════════════════════════════════════
-function beginQuiz() {
-  quizPhase=0; cycleCount=0; wordIndex=0;
-  quizCorrect=0; quizTotal=0;
-  cycleHasMistake=false; quizPassed=true;
-  attempts=0;
-  phaseOrder=shuffle(currentBlock);
+function beginQuiz(mode) {
+  quizMode    = mode || 'practice';
+  quizPhase   = 0; cycleCount = 0; wordIndex = 0;
+  quizCorrect = 0; quizTotal  = 0;
+  cycleHasMistake = false; quizPassed = true;
+  attempts = 0;
+  phaseOrder = shuffle(currentBlock);
 
   if (isFoundation()) {
     beginFoundationQuiz();
@@ -1226,13 +1342,20 @@ function beginQuiz() {
   }
 }
 
+// User confirmation before entering test mode — make the stakes obvious
+function confirmTestMode() {
+  const ok = confirm('TEST MODE — Sudden Death\n\nOne wrong answer ends the test instantly.\nYou must score 100% to clear this block.\n\nReady?');
+  if (ok) beginQuiz('test');
+}
+
 function beginFoundationQuiz() {
+  const isTest = quizMode === 'test';
   document.getElementById('quiz-card-area').innerHTML=`
+    ${isTest ? '<div class="test-mode-banner">⚡ TEST MODE — SUDDEN DEATH<div class="lives">One mistake ends the test</div></div>' : ''}
     <div class="quiz-meta">
-      <span class="quiz-phase-label" id="quiz-phase-label">Cycle 1</span>
+      <span class="quiz-phase-label" id="quiz-phase-label">${isTest?'Test':'Practice'}</span>
       <div style="display:flex;align-items:center;gap:8px">
-        <span id="clean-ind" style="font-size:10px;font-weight:700;letter-spacing:.08em;color:#27ae60">● CLEAN</span>
-        <div class="cycle-dots" id="cycle-dots"></div>
+        <span id="clean-ind" style="font-size:10px;font-weight:700;letter-spacing:.08em;color:${isTest?'#c0392b':'#27ae60'}">${isTest?'● TEST':'● PRACTICE'}</span>
       </div>
     </div>
     <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
@@ -1249,23 +1372,18 @@ function renderFoundationQuizFrame() {
   const blocks = blocksFor(currentSection, currentTab);
   document.getElementById('quiz-block-label').textContent = blocks[currentBlockIndex].label;
   document.getElementById('quiz-mode-label').textContent  = FOUNDATION_META[currentTab].label;
-  const dots = document.getElementById('cycle-dots');
-  dots.innerHTML = '';
-  for (let i=0; i<REQUIRED_CYCLES_FOUNDATION; i++){
-    const d = document.createElement('div');
-    d.className='cycle-dot'+(i<cycleCount?' done':i===cycleCount?' active':'');
-    dots.appendChild(d);
-  }
   showFoundationQuestion();
 }
 
 function showFoundationQuestion() {
   const item = phaseOrder[wordIndex];
-  const total = currentBlock.length * 2 * REQUIRED_CYCLES_FOUNDATION;
-  const done  = cycleCount*currentBlock.length*2 + quizPhase*currentBlock.length + wordIndex;
+  // One cycle = recognition pass + production pass (each touches every item once)
+  const total = currentBlock.length * 2;
+  const done  = quizPhase * currentBlock.length + wordIndex;
   document.getElementById('progress-fill').style.width = Math.min(done/total*100, 99) + '%';
+  const modeLabel = quizMode === 'test' ? 'TEST' : 'PRACTICE';
   document.getElementById('quiz-phase-label').textContent =
-    `Cycle ${cycleCount+1}/${REQUIRED_CYCLES_FOUNDATION} · ${cycleCount===0?'With hints':'No hints'} · ${quizPhase===0?'Recognition':'Production'}`;
+    `${modeLabel} · ${quizPhase===0?'Recognition':'Production'} · ${wordIndex+1}/${currentBlock.length}`;
   clearFeedback();
   buildFoundationQuestion(item);
 }
@@ -1376,12 +1494,17 @@ function checkMC(btn, ok) {
     btn.classList.add('wrong');
     markMistake();
     const item = phaseOrder[wordIndex];
+    addToRevisionPool(item);
     const correctVal = item.rom;
     document.querySelectorAll('#answer-area .choice-btn').forEach(b=>{
       if (b.textContent.trim() === correctVal) b.classList.add('correct');
     });
     showFeedback('reveal', '✗ '+correctVal);
-    setTimeout(nextFoundationWord, 1600);
+    if (quizMode === 'test') {
+      setTimeout(() => testModeFailed(item), 1800);
+    } else {
+      setTimeout(nextFoundationWord, 1600);
+    }
   }
 }
 
@@ -1408,8 +1531,14 @@ function checkTyped(correct) {
   } else {
     inp.className = 'answer-input wrong';
     markMistake();
+    const item = phaseOrder[wordIndex];
+    addToRevisionPool(item);
     showFeedback('reveal', '✗ '+correct);
-    setTimeout(()=>{ pqTypedLock=false; inp.readOnly=false; nextFoundationWord(); }, 1800);
+    if (quizMode === 'test') {
+      setTimeout(()=>{ pqTypedLock=false; inp.readOnly=false; testModeFailed(item); }, 1800);
+    } else {
+      setTimeout(()=>{ pqTypedLock=false; inp.readOnly=false; nextFoundationWord(); }, 1800);
+    }
   }
 }
 
@@ -1424,29 +1553,58 @@ function nextFoundationWord() {
   if (wordIndex < phaseOrder.length) { showFoundationQuestion(); return; }
   quizPhase++;
   if (quizPhase < 2) {
-    wordIndex = 0; phaseOrder = shuffle(currentBlock);
+    // Switching from recognition to production — reshuffle so the user
+    // doesn't see the same item back-to-back with the answer fresh in mind
+    wordIndex = 0;
+    phaseOrder = shuffleAvoidingRecent(currentBlock, phaseOrder);
     renderFoundationQuizFrame();
     return;
   }
-  quizPhase = 0; cycleCount++; cycleHasMistake = false;
-  if (cycleCount < REQUIRED_CYCLES_FOUNDATION) {
-    wordIndex = 0; phaseOrder = shuffle(currentBlock);
-    renderFoundationQuizFrame();
-  } else {
-    blockComplete();
+  // Done with both phases — one cycle complete
+  blockComplete();
+}
+
+// Reshuffle but ensure the FIRST item of the new order isn't the same as the LAST item
+// of the previous order (prevents "answer fresh in mind" giveaway on format switch)
+function shuffleAvoidingRecent(pool, prevOrder) {
+  const next = shuffle(pool);
+  if (prevOrder && prevOrder.length && pool.length > 1) {
+    const lastShown = prevOrder[prevOrder.length - 1];
+    if (next[0] === lastShown) {
+      // swap first two
+      [next[0], next[1]] = [next[1], next[0]];
+    }
   }
+  return next;
+}
+
+// Called when the user gets a wrong answer in test mode — instant fail
+function testModeFailed(item) {
+  const isLast = currentBlockIndex >= blocksFor(currentSection, currentTab).length - 1;
+  // Block stays at whatever state it was — practised doesn't auto-mark here.
+  // The user can retry test, or go back and practise more.
+  document.getElementById('quiz-card-area').innerHTML = `
+    <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
+      <div class="big-emoji">💥</div>
+      <h2 style="color:#fff">Test Failed</h2>
+      <p>One wrong answer ends the test in Sudden Death mode.<br>The wrong item has been added to your Revision pool.</p>
+      <button class="complete-btn" onclick="beginQuiz('test')">Retry Test ↺</button>
+      <button class="complete-btn" onclick="beginQuiz('practice')">Switch to Practice</button>
+      <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+    </div>`;
 }
 
 // ═══════════════════════════════════════════════════════
 // QUIZ — DRILL STYLE (3 phases × 3 cycles with hint escalation)
 // ═══════════════════════════════════════════════════════
 function beginDrillQuiz() {
+  const isTest = quizMode === 'test';
   document.getElementById('quiz-card-area').innerHTML = `
+    ${isTest ? '<div class="test-mode-banner">⚡ TEST MODE — SUDDEN DEATH<div class="lives">One mistake ends the test</div></div>' : ''}
     <div class="quiz-meta">
-      <span class="quiz-phase-label" id="quiz-phase-label">Phase 1</span>
+      <span class="quiz-phase-label" id="quiz-phase-label">${isTest?'Test':'Practice'}</span>
       <div style="display:flex;align-items:center;gap:8px">
-        <span id="clean-ind" style="font-size:10px;font-weight:700;letter-spacing:.08em;color:#27ae60">● CLEAN</span>
-        <div class="cycle-dots" id="cycle-dots"></div>
+        <span id="clean-ind" style="font-size:10px;font-weight:700;letter-spacing:.08em;color:${isTest?'#c0392b':'#27ae60'}">${isTest?'● TEST':'● PRACTICE'}</span>
       </div>
     </div>
     <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
@@ -1471,16 +1629,6 @@ function renderDrillQuizFrame() {
   document.getElementById('quiz-mode-label').textContent  = DRILL_META[currentTab].label;
 
   const tp = drillNumPhases();
-  const dots = document.getElementById('cycle-dots');
-  dots.innerHTML = '';
-  if (tp > 1) {
-    for (let i=0; i<REQUIRED_CYCLES_DRILL; i++){
-      const d = document.createElement('div');
-      d.className = 'cycle-dot'+(i<cycleCount?' done':i===cycleCount?' active':'');
-      dots.appendChild(d);
-    }
-  }
-
   const pills = document.getElementById('phase-pills');
   pills.innerHTML = '';
   if (tp > 1) {
@@ -1500,16 +1648,17 @@ function showDrillQuestion() {
   const w   = phaseOrder[wordIndex];
   const tp  = drillNumPhases();
 
-  const totalSteps = currentBlock.length * tp * (tp===1 ? 1 : REQUIRED_CYCLES_DRILL);
-  const doneSteps  = tp===1 ? wordIndex : cycleCount*currentBlock.length*tp + quizPhase*currentBlock.length + wordIndex;
+  const totalSteps = currentBlock.length * tp;
+  const doneSteps  = quizPhase * currentBlock.length + wordIndex;
   document.getElementById('progress-fill').style.width = Math.min(doneSteps/totalSteps*100, 99) + '%';
 
-  const cycleHints = ['Full hints', 'One hint', 'No hints'];
+  const modeLabel = quizMode === 'test' ? 'TEST' : 'PRACTICE';
   document.getElementById('quiz-phase-label').textContent = tp > 1
-    ? `Cycle ${cycleCount+1}/${REQUIRED_CYCLES_DRILL} · ${cycleHints[Math.min(cycleCount,2)]}`
-    : 'Reading Exercise';
+    ? `${modeLabel} · ${ph.label} · ${wordIndex+1}/${currentBlock.length}`
+    : `${modeLabel} · Reading · ${wordIndex+1}/${currentBlock.length}`;
 
-  const cycleIdx = Math.min(cycleCount, 2);
+  // Use cycle index 1 ("one hint") for practice and 2 ("no hints") for test
+  const cycleIdx = quizMode === 'test' ? 2 : 1;
   document.getElementById('question-card').innerHTML = ph.prompts[cycleIdx](w);
 
   document.getElementById('keyboard-hint-area').innerHTML = (ph.hint && quizPhase===2)
@@ -1541,7 +1690,9 @@ function renderAttemptDots() {
 
 function submitDrillAnswer() {
   const inp = document.getElementById('answer-input');
+  if (!inp) return;
   const val = inp.value.trim().toLowerCase();
+  if (val === '') return; // ignore empty submits
   const ph  = DRILL_PHASES[currentTab][quizPhase];
   const w   = phaseOrder[wordIndex];
   const correct = ph.answer(w).toLowerCase();
@@ -1554,12 +1705,24 @@ function submitDrillAnswer() {
     quizCorrect++;
     setTimeout(nextDrillWord, 900);
   } else {
+    // In TEST mode: any wrong answer = instant fail (no second chances)
+    if (quizMode === 'test') {
+      inp.className = 'answer-input wrong';
+      showFeedback('reveal', 'Answer: '+ph.answer(w));
+      markMistake();
+      addToRevisionPool(w);
+      setTimeout(() => testModeFailed(w), 2000);
+      return;
+    }
+
+    // PRACTICE mode: up to MAX_ATTEMPTS tries before revealing
     attempts++;
     renderAttemptDots();
     if (attempts >= MAX_ATTEMPTS) {
       inp.className = 'answer-input wrong';
       showFeedback('reveal', 'Answer: '+ph.answer(w));
       markMistake();
+      addToRevisionPool(w);
       attempts = 0;
       setTimeout(nextDrillWord, 2000);
     } else {
@@ -1582,18 +1745,15 @@ function nextDrillWord() {
 
   quizPhase++;
   if (quizPhase < tp) {
-    wordIndex = 0; phaseOrder = shuffle(currentBlock);
+    // Reshuffle, avoiding the same item back-to-back across format changes
+    wordIndex = 0;
+    phaseOrder = shuffleAvoidingRecent(currentBlock, phaseOrder);
     renderDrillQuizFrame();
     return;
   }
 
-  quizPhase = 0; cycleCount++;
-  if (cycleCount < REQUIRED_CYCLES_DRILL) {
-    wordIndex = 0; phaseOrder = shuffle(currentBlock);
-    renderDrillQuizFrame();
-  } else {
-    blockComplete();
-  }
+  // Done with all phases — one cycle complete
+  blockComplete();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1609,56 +1769,48 @@ function showFeedback(type, msg) {
 }
 
 function blockComplete() {
-  const acc = quizTotal > 0 ? quizCorrect/quizTotal : 0;
+  const acc    = quizTotal > 0 ? quizCorrect/quizTotal : 0;
   const blocks = blocksFor(currentSection, currentTab);
   const isLast = currentBlockIndex + 1 >= blocks.length;
-
   document.getElementById('progress-fill').style.width = '100%';
 
-  // For drill mode, we're more forgiving — progress if we got through the cycles even with some mistakes
-  // For foundation mode, require a clean run
-  const shouldRecord = isDrill() ? true : quizPassed;
-  const passLabel = isDrill() ? 'Block Complete!' : (quizPassed ? `${blocks[currentBlockIndex].label} cleared!` : 'Not quite!');
-
-  if (shouldRecord) {
-    recordSession(currentSection, currentTab, currentBlockIndex, acc);
-    const ml     = getML(currentSection, currentTab, currentBlockIndex);
-    const d      = getMD(currentSection, currentTab, currentBlockIndex);
-    const needed = Math.max(0, MASTERY_SESSIONS - (d.sessions||[]).length);
-    const mNote  = ml===3 ? 'Block mastered!'
-                 : needed>0 ? `${needed} more good run${needed!==1?'s':''} to unlock mastery`
-                 : `${Math.round(MASTERY_T[2]*100)}% avg needed — keep going`;
-    const nextBtn = !isLast
-      ? `<button class="complete-btn" onclick="openBlock(${currentBlockIndex+1})">Next: ${blocks[currentBlockIndex+1].label} →</button>`
-      : '';
-
-    document.getElementById('quiz-card-area').innerHTML = `
-      <div class="complete-card">
-        <div class="big-emoji">${ml===3?'🏆':'★'}</div>
-        <h2>${passLabel}</h2>
-        <p>${Math.round(acc*100)}% accuracy</p>
-        <div class="mastery-result">
-          <div class="mr-label">Mastery</div>
-          <div class="mr-stars">${[0,1,2].map(i=>`<div class="mr-star${ml>i?' lit':''}"></div>`).join('')}</div>
-          <div class="mr-note">${mNote}</div>
-        </div>
-        ${nextBtn}
-        <button class="complete-btn" onclick="beginQuiz()">Drill Again ↺</button>
-        <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
-      </div>`;
+  // In test mode reaching this function means 100% (any mistake would have triggered testModeFailed)
+  // In practice mode just mark as practised
+  if (quizMode === 'test') {
+    markCleared(currentSection, currentTab, currentBlockIndex);
   } else {
-    // Foundation mode — failed a clean run
-    const wrong = quizTotal - quizCorrect;
-    document.getElementById('quiz-card-area').innerHTML = `
-      <div class="complete-card">
-        <div class="big-emoji">📚</div>
-        <h2>Not quite!</h2>
-        <p>${wrong} mistake${wrong!==1?'s':''} — you need a perfect run to unlock the next block</p>
-        <button class="complete-btn" onclick="openBlock(${currentBlockIndex})">Study Again</button>
-        <button class="complete-btn" onclick="beginQuiz()">Retry Quiz ↺</button>
-        <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
-      </div>`;
+    markPractised(currentSection, currentTab, currentBlockIndex);
   }
+
+  const blockLabel = blocks[currentBlockIndex].label;
+  const cleared = quizMode === 'test';
+  const headline = cleared ? `${blockLabel} cleared!` : `Practice complete`;
+  const subtext  = cleared
+    ? `Perfect run — block unlocked the next one`
+    : `${Math.round(acc*100)}% (${quizCorrect}/${quizTotal}) — take the Test when you're ready to clear this block`;
+  const emoji    = cleared ? '🌟' : '📘';
+
+  // Action buttons depend on mode + state
+  let buttons = '';
+  if (cleared) {
+    if (!isLast) {
+      buttons += `<button class="complete-btn" onclick="openBlock(${currentBlockIndex+1})">Next: ${blocks[currentBlockIndex+1].label} →</button>`;
+    }
+    buttons += `<button class="complete-btn secondary" onclick="beginQuiz('practice')">Practice Again ↺</button>`;
+  } else {
+    // Practice complete — encourage them toward the test
+    buttons += `<button class="complete-btn" onclick="confirmTestMode()">Take Test →</button>`;
+    buttons += `<button class="complete-btn secondary" onclick="beginQuiz('practice')">Practice Again ↺</button>`;
+  }
+  buttons += `<button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>`;
+
+  document.getElementById('quiz-card-area').innerHTML = `
+    <div class="complete-card">
+      <div class="big-emoji">${emoji}</div>
+      <h2>${headline}</h2>
+      <p>${subtext}</p>
+      ${buttons}
+    </div>`;
 }
 
 function confirmQuit() {
@@ -1673,7 +1825,7 @@ function startReview(type) {
   const blocks = blocksFor(currentSection, currentTab);
   const pool = [];
   blocks.forEach((b,i) => {
-    if (prog[pKey(currentSection,currentTab,i)]?.done) pool.push(...b.items);
+    if (isBlockCleared(currentSection, currentTab, i) || isBlockPractised(currentSection, currentTab, i)) pool.push(...b.items);
   });
 
   const minNeeded = isDrill() ? 10 : 4;
@@ -1902,12 +2054,31 @@ function phraseBlocksForTheme(themeId) {
 
 // Progress key for a phrase block
 function phraseBlockKey(themeId, blockIdx) { return `phrases_${themeId}_${blockIdx}`; }
-function phraseBlockDone(themeId, blockIdx) {
-  return !!(getProgress()[phraseBlockKey(themeId, blockIdx)]?.practiced);
+
+function getPhraseBlockEntry(themeId, blockIdx) {
+  return migrateBlock(getProgress()[phraseBlockKey(themeId, blockIdx)]) || { practised:false, cleared:false };
 }
+function isPhraseBlockPractised(themeId, blockIdx) { return getPhraseBlockEntry(themeId, blockIdx).practised === true; }
+function isPhraseBlockCleared(themeId, blockIdx)   { return getPhraseBlockEntry(themeId, blockIdx).cleared === true; }
 function isPhraseBlockUnlocked(themeId, blockIdx) {
   if (blockIdx === 0) return true;
-  return phraseBlockDone(themeId, blockIdx - 1);
+  return isPhraseBlockCleared(themeId, blockIdx - 1);
+}
+function markPhraseBlockPractised(themeId, blockIdx) {
+  const prog = getProgress();
+  const cur = migrateBlock(prog[phraseBlockKey(themeId, blockIdx)]) || {};
+  prog[phraseBlockKey(themeId, blockIdx)] = { ...cur, practised: true };
+  saveProgress(prog);
+}
+function markPhraseBlockCleared(themeId, blockIdx) {
+  const prog = getProgress();
+  const cur = migrateBlock(prog[phraseBlockKey(themeId, blockIdx)]) || {};
+  prog[phraseBlockKey(themeId, blockIdx)] = { ...cur, practised: true, cleared: true };
+  saveProgress(prog);
+}
+// Legacy alias — some old code may still call this
+function phraseBlockDone(themeId, blockIdx) {
+  return isPhraseBlockCleared(themeId, blockIdx);
 }
 
 const PQ_PHASES = [
@@ -1924,9 +2095,9 @@ function getUnlockedForTag(tag) {
   return window.vocabData.filter((w, idx) => {
     if (!w.tags || !w.tags.includes(tag)) return false;
     const bi = Math.floor(idx / BLOCK_SIZE);
-    return !!prog[pKey('drill','hiragana',bi)]?.done
-        || !!prog[pKey('drill','katakana',bi)]?.done
-        || !!prog[pKey('drill','kanji',bi)]?.done;
+    return isBlockPractised('drill','hiragana',bi) || isBlockCleared('drill','hiragana',bi)
+        || isBlockPractised('drill','katakana',bi) || isBlockCleared('drill','katakana',bi)
+        || isBlockPractised('drill','kanji',bi)    || isBlockCleared('drill','kanji',bi);
   });
 }
 
@@ -1972,8 +2143,8 @@ function knownWordsInPhrase(phrase) {
   return window.vocabData.filter((w, idx) => {
     if (!phrase.romaji.toLowerCase().includes(w.romaji.toLowerCase())) return false;
     const bi = Math.floor(idx / BLOCK_SIZE);
-    return !!prog[pKey('drill','hiragana',bi)]?.done
-        || !!prog[pKey('drill','katakana',bi)]?.done;
+    return isBlockPractised('drill','hiragana',bi) || isBlockCleared('drill','hiragana',bi)
+        || isBlockPractised('drill','katakana',bi) || isBlockCleared('drill','katakana',bi);
   });
 }
 
@@ -2064,9 +2235,11 @@ function openPhraseTheme(themeId) {
   document.getElementById('phrase-study-subtitle').textContent = blocks.length + ' blocks';
   document.getElementById('phrase-study-heading').textContent  = 'Choose a block';
 
-  // Hide the "practice" button on the picker view
-  const quizBtn = document.getElementById('phrase-quiz-btn');
-  if (quizBtn) quizBtn.style.display = 'none';
+  // Hide the quiz buttons + help on the picker view
+  ['phrase-mode-actions','phrase-mode-help'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
 
   const cardsEl = document.getElementById('phrase-study-cards');
   cardsEl.innerHTML = '';
@@ -2075,11 +2248,12 @@ function openPhraseTheme(themeId) {
   const grid = document.createElement('div');
   grid.className = 'block-grid';
   blocks.forEach((blockPhrases, i) => {
-    const isDone = phraseBlockDone(themeId, i);
-    const open   = isPhraseBlockUnlocked(themeId, i);
+    const isCleared = isPhraseBlockCleared(themeId, i);
+    const isPractised = !isCleared && isPhraseBlockPractised(themeId, i);
+    const open = isPhraseBlockUnlocked(themeId, i);
     const btn = document.createElement('button');
-    btn.className = `block-btn numeric ${open?'unlocked':'locked'} ${isDone?'complete':''}`;
-    btn.innerHTML = `<span class="bn">${i+1}</span><span class="bs">${isDone?'✓':open?'○':'🔒'}</span>`;
+    btn.className = `block-btn numeric ${open?'unlocked':'locked'}${isCleared?' complete':isPractised?' practised':''}`;
+    btn.innerHTML = `<span class="bn">${i+1}</span><span class="bs">${isCleared?'✓':isPractised?'●':open?'○':'🔒'}</span>`;
     btn.disabled = !open;
     if (open) btn.onclick = () => openPhraseBlock(themeId, i);
     grid.appendChild(btn);
@@ -2101,8 +2275,10 @@ function openPhraseBlock(themeId, blockIdx) {
   document.getElementById('phrase-study-subtitle').textContent = `Block ${blockIdx+1} · ${currentPhrases.length} phrases`;
   document.getElementById('phrase-study-heading').textContent  = 'Study these phrases';
 
-  const quizBtn = document.getElementById('phrase-quiz-btn');
-  if (quizBtn) quizBtn.style.display = '';
+  ['phrase-mode-actions','phrase-mode-help'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  });
 
   const cardsEl = document.getElementById('phrase-study-cards');
   cardsEl.innerHTML = '';
@@ -2149,7 +2325,8 @@ function openPhraseBlock(themeId, blockIdx) {
 // ═══════════════════════════════════════════════════════
 // QUIZ ENGINE
 // ═══════════════════════════════════════════════════════
-function beginPhraseQuiz() {
+function beginPhraseQuiz(mode) {
+  quizMode       = mode || 'practice';
   phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
   phraseQIndex   = 0;
   phraseQPhase   = 1;
@@ -2159,11 +2336,16 @@ function beginPhraseQuiz() {
 
   const theme = window.phraseData.themes.find(t => t.id === currentThemeId);
   document.getElementById('phrase-quiz-title').textContent    = theme.label;
-  document.getElementById('phrase-quiz-subtitle').textContent = 'Phase 1 / 5';
+  document.getElementById('phrase-quiz-subtitle').textContent = quizMode === 'test' ? 'TEST MODE · Phase 1 / 5' : 'Practice · Phase 1 / 5';
 
   buildPhraseQuizShell();
   showScreen('phrase-quiz');
   showPhraseQuestion();
+}
+
+function confirmPhraseTestMode() {
+  const ok = confirm('TEST MODE — Sudden Death\n\nOne wrong answer ends the test instantly.\nYou must complete all 5 phases without a mistake to clear this block.\n\nReady?');
+  if (ok) beginPhraseQuiz('test');
 }
 
 function buildPhraseQuizShell() {
@@ -2401,12 +2583,17 @@ function checkPhraseMC(btn, correct, display) {
     setTimeout(nextPhraseQuestion, 900);
   } else {
     btn.classList.add('wrong');
-    // Highlight correct
     document.querySelectorAll('#pq-answer-area .mc-btn').forEach(b => {
       if (b.textContent.trim() === display) b.classList.add('correct');
     });
     showPQFeedback('reveal', 'Correct: ' + display.substring(0,60) + (display.length>60?'…':''));
-    setTimeout(nextPhraseQuestion, 2500);
+    const p = phraseQuizList[phraseQIndex];
+    addToRevisionPool(p, 'phrase');
+    if (quizMode === 'test') {
+      setTimeout(() => phraseTestModeFailed(p), 2500);
+    } else {
+      setTimeout(nextPhraseQuestion, 2500);
+    }
   }
 }
 
@@ -2444,10 +2631,21 @@ function submitPhraseTyped(mode) {
   } else {
     pqAttempts++;
     document.querySelectorAll('#pq-attempts .attempt-dot').forEach((d,i)=>{ if(i<pqAttempts) d.classList.add('used'); });
+    // TEST mode: no retry — first mistake reveals and fails
+    if (quizMode === 'test') {
+      inp.className = 'answer-input wrong';
+      const hwNote = phraseQuizList[phraseQIndex].haWaNote ? ' (tip: ends in は not わ)' : '';
+      showPQFeedback('reveal', 'Answer: ' + correct.replace(/\|/g,' ') + (mode === 'kana' ? hwNote : ''));
+      const failedItem = phraseQuizList[phraseQIndex];
+      addToRevisionPool(failedItem, 'phrase');
+      setTimeout(() => phraseTestModeFailed(failedItem), 2500);
+      return;
+    }
     if (pqAttempts >= MAX_ATTEMPTS) {
       inp.className = 'answer-input wrong';
       const hwNote = phraseQuizList[phraseQIndex].haWaNote ? ' (tip: ends in は not わ)' : '';
       showPQFeedback('reveal', 'Answer: ' + correct.replace(/\|/g,' ') + (mode === 'kana' ? hwNote : ''));
+      addToRevisionPool(phraseQuizList[phraseQIndex], 'phrase');
       pqAttempts = 0;
       setTimeout(nextPhraseQuestion, 2500);
     } else {
@@ -2484,47 +2682,62 @@ function nextPhraseQuestion() {
     return;
   }
 
-  // All 5 phases done — mark this BLOCK practiced
-  const prog = getProgress();
-  prog[phraseBlockKey(currentThemeId, currentBlockIdxP)] = { practiced: true };
-  saveProgress(prog);
+  // All 5 phases done — mark block based on mode
+  if (quizMode === 'test') {
+    // Reaching here in test mode = flawless 5-phase run (any mistake would have triggered phraseTestModeFailed)
+    markPhraseBlockCleared(currentThemeId, currentBlockIdxP);
+  } else {
+    markPhraseBlockPractised(currentThemeId, currentBlockIdxP);
+  }
   phraseQuizComplete();
 }
 
 function phraseQuizComplete() {
-  const pct    = Math.round((phraseQCorrect / phraseQTotal) * 100);
-  const passed = pct >= 80;
-  const emoji  = pct === 100 ? '🌟' : pct >= 80 ? '⭐' : pct >= 50 ? '👍' : '📚';
-  const blocks = phraseBlocksForTheme(currentThemeId);
-  const theme  = window.phraseData.themes.find(t => t.id === currentThemeId);
+  const cleared = quizMode === 'test';
+  const blocks  = phraseBlocksForTheme(currentThemeId);
   const hasNextBlock = currentBlockIdxP + 1 < blocks.length;
+  const headline = cleared ? 'Block cleared!' : 'Practice complete';
+  const emoji    = cleared ? '🌟' : '📘';
+  const subtext  = cleared
+    ? `Flawless run across all 5 phases — next block unlocked.`
+    : `${phraseQCorrect}/${phraseQTotal} correct. Take the Test to clear this block.`;
 
-  // Only show next block / next theme if 80% passed
-  let nextBtn = '';
-  if (passed) {
+  let buttons = '';
+  if (cleared) {
     if (hasNextBlock) {
-      nextBtn = `<button class="complete-btn" onclick="openPhraseBlock('${currentThemeId}', ${currentBlockIdxP+1})">Next: Block ${currentBlockIdxP+2} →</button>`;
+      buttons += `<button class="complete-btn" onclick="openPhraseBlock('${currentThemeId}', ${currentBlockIdxP+1})">Next: Block ${currentBlockIdxP+2} →</button>`;
     } else {
       const themes = window.phraseData.themes;
       const nextTheme = themes[themes.findIndex(t => t.id === currentThemeId) + 1];
       if (nextTheme) {
-        nextBtn = `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next theme: ${nextTheme.label} →</button>`;
+        buttons += `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next theme: ${nextTheme.label} →</button>`;
       }
     }
+    buttons += `<button class="complete-btn secondary" onclick="beginPhraseQuiz('practice')">Practice Again ↺</button>`;
+  } else {
+    buttons += `<button class="complete-btn" onclick="confirmPhraseTestMode()">Take Test →</button>`;
+    buttons += `<button class="complete-btn secondary" onclick="beginPhraseQuiz('practice')">Practice Again ↺</button>`;
   }
-
-  const heading = pct === 100 ? 'Perfect!' : pct >= 80 ? 'Block complete!' : pct >= 50 ? 'Not quite!' : 'Keep practising!';
-  const subtext = passed
-    ? `Block ${currentBlockIdxP+1} cleared · ${phraseQCorrect}/${phraseQTotal} correct — ${pct}%`
-    : `${phraseQCorrect}/${phraseQTotal} correct — ${pct}% · Need 80% to unlock the next block`;
+  buttons += `<button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>`;
 
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete">
       <div class="big-emoji">${emoji}</div>
-      <h2>${heading}</h2>
+      <h2>${headline}</h2>
       <p>${subtext}</p>
-      ${nextBtn}
-      <button class="complete-btn ${passed?'secondary':''}" onclick="beginPhraseQuiz()">Practice Again ↺</button>
+      ${buttons}
+    </div>`;
+}
+
+// Sudden-death failure in phrase test mode
+function phraseTestModeFailed(item) {
+  document.getElementById('phrase-quiz-area').innerHTML = `
+    <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
+      <div class="big-emoji">💥</div>
+      <h2 style="color:#fff">Test Failed</h2>
+      <p>One wrong answer ends the test in Sudden Death mode.<br>The phrase has been added to your Revision pool.</p>
+      <button class="complete-btn" onclick="beginPhraseQuiz('test')">Retry Test ↺</button>
+      <button class="complete-btn" onclick="beginPhraseQuiz('practice')">Switch to Practice</button>
       <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
     </div>`;
 }
@@ -2544,30 +2757,25 @@ function toggleDevUnlock() {
   const btn = document.getElementById('dev-unlock-btn');
 
   if (devUnlocked) {
-    // Mark everything as done in localStorage
+    // Mark every block as cleared (uses new state model)
     const prog = getProgress();
 
-    // Foundation — hiragana, katakana, numbers, time
     ['hiragana','katakana'].forEach(tab => {
       const n = Math.ceil(KANA[tab].length / BLOCK_SIZE);
-      for (let i = 0; i < n; i++) prog[pKey('foundation', tab, i)] = { done:true, sessions:[0.9,0.9,0.9] };
+      for (let i = 0; i < n; i++) prog[pKey('foundation', tab, i)] = { practised:true, cleared:true };
     });
     [NUM_BLOCKS, TIME_BLOCKS].forEach((blocks, bi) => {
       const tab = bi === 0 ? 'numbers' : 'time';
-      for (let i = 0; i < blocks.length; i++) prog[pKey('foundation', tab, i)] = { done:true, sessions:[0.9,0.9,0.9] };
+      for (let i = 0; i < blocks.length; i++) prog[pKey('foundation', tab, i)] = { practised:true, cleared:true };
     });
-
-    // Words — hiragana, katakana, kanji
     ['hiragana','katakana','kanji'].forEach(tab => {
       const v = vocabForDrill(tab);
       const n = Math.ceil(v.length / BLOCK_SIZE);
-      for (let i = 0; i < n; i++) prog[pKey('drill', tab, i)] = { done:true, sessions:[0.9,0.9,0.9] };
+      for (let i = 0; i < n; i++) prog[pKey('drill', tab, i)] = { practised:true, cleared:true };
     });
-
-    // Phrases — all themes, all blocks
     window.phraseData.themes.forEach(t => {
       const blocks = phraseBlocksForTheme(t.id);
-      blocks.forEach((_, i) => { prog[phraseBlockKey(t.id, i)] = { practiced:true }; });
+      blocks.forEach((_, i) => { prog[phraseBlockKey(t.id, i)] = { practised:true, cleared:true }; });
     });
 
     saveProgress(prog);
@@ -2575,14 +2783,277 @@ function toggleDevUnlock() {
     btn.style.color = '#27ae60';
     btn.style.borderColor = 'rgba(39,174,96,.4)';
   } else {
-    // Clear all progress
+    // Clear all progress + revision pool
     localStorage.removeItem('jp_app_v1');
+    localStorage.removeItem(REVISION_KEY);
     btn.textContent = 'DEV';
     btn.style.color = 'var(--gold)';
     btn.style.borderColor = 'rgba(201,168,76,.4)';
   }
 
   renderHome();
+}
+
+// ═══════════════════════════════════════════════════════
+// REVISION POOL — long-term retention across all sections
+// ═══════════════════════════════════════════════════════
+// Storage shape (jp_revision_v1):
+//   { items: [{ poolType, key, streak, label, data }, ...] }
+// poolType: 'kana' | 'number' | 'time' | 'vocab' | 'phrase'
+// key: unique id (romaji for kana/vocab, n+jp for numbers, digital+rom for times, phrase id)
+// streak: 0-5 — five correct in a row in revision mode removes the item
+// label: short human-readable for the pool list
+// data: enough to reconstruct a quiz question
+
+const REVISION_KEY = 'jp_revision_v1';
+const REVISION_MASTERY = 5;
+
+function getRevisionPool() {
+  try { return JSON.parse(localStorage.getItem(REVISION_KEY)) || { items: [] }; }
+  catch { return { items: [] }; }
+}
+function saveRevisionPool(pool) {
+  localStorage.setItem(REVISION_KEY, JSON.stringify(pool));
+}
+
+// Infer pool type from the current quiz context if not provided
+function inferPoolType(item, explicitType) {
+  if (explicitType) return explicitType;
+  if (isFoundation()) {
+    if (currentTab === 'hiragana' || currentTab === 'katakana') return 'kana';
+    if (currentTab === 'numbers') return 'number';
+    if (currentTab === 'time') return 'time';
+  }
+  if (isDrill()) return 'vocab';
+  return 'unknown';
+}
+
+// Build a stable unique key + display label for any item
+function revisionItemKey(item, type) {
+  if (type === 'kana')   return 'kana:'+item.rom+':'+item.char;
+  if (type === 'number') return 'num:'+item.n+':'+item.rom;
+  if (type === 'time')   return 'time:'+item.digital+':'+item.rom;
+  if (type === 'vocab')  return 'vocab:'+item.romaji+':'+(item.hasKanji?'k':'h');
+  if (type === 'phrase') return 'phrase:'+item.id;
+  return 'unknown:'+(item.rom||item.romaji||item.id||JSON.stringify(item).slice(0,40));
+}
+function revisionItemLabel(item, type) {
+  if (type === 'kana')   return item.char + ' → ' + item.rom;
+  if (type === 'number') return item.n + ' → ' + item.rom;
+  if (type === 'time')   return item.digital + ' → ' + item.rom;
+  if (type === 'vocab')  return (item.hiragana||item.kanji) + ' → ' + item.romaji + ' (' + item.english + ')';
+  if (type === 'phrase') return (item.resolvedKana || item.kana || '').replace(/\|/g,' ').trim() + ' — ' + (item.english||'');
+  return '';
+}
+
+// Add an item to the revision pool (called from wrong-answer paths)
+function addToRevisionPool(item, explicitType) {
+  if (!item) return;
+  const type = inferPoolType(item, explicitType);
+  const key  = revisionItemKey(item, type);
+  const pool = getRevisionPool();
+  const existing = pool.items.find(x => x.key === key);
+  if (existing) {
+    // Already in pool — reset streak (mistake undoes progress)
+    existing.streak = 0;
+  } else {
+    pool.items.push({
+      poolType: type,
+      key,
+      streak: 0,
+      label: revisionItemLabel(item, type),
+      data: storeItemData(item, type),
+    });
+  }
+  saveRevisionPool(pool);
+}
+
+// Snapshot enough of an item to reconstruct a revision question
+function storeItemData(item, type) {
+  if (type === 'kana')   return { char: item.char, rom: item.rom, hint: item.hint || '' };
+  if (type === 'number') return { n: item.n, jp: item.jp, rom: item.rom, hint: item.hint || '' };
+  if (type === 'time')   return { digital: item.digital, jp: item.jp, rom: item.rom, hint: item.hint || '' };
+  if (type === 'vocab')  return {
+    hiragana: item.hiragana, katakana: item.katakana, kanji: item.kanji,
+    romaji: item.romaji, english: item.english, hasKanji: !!item.hasKanji,
+    isLoanword: !!item.isLoanword,
+  };
+  if (type === 'phrase') return {
+    id: item.id,
+    scenario: item.scenario,
+    english: item.english,
+    romaji: item.romaji || item.resolvedRomaji,
+    kana:   item.kana   || item.resolvedKana,
+  };
+  return {};
+}
+
+// Record a correct answer on a revision item — bumps streak, removes at MASTERY
+function recordRevisionCorrect(key) {
+  const pool = getRevisionPool();
+  const item = pool.items.find(x => x.key === key);
+  if (!item) return false;
+  item.streak = (item.streak || 0) + 1;
+  let removed = false;
+  if (item.streak >= REVISION_MASTERY) {
+    pool.items = pool.items.filter(x => x.key !== key);
+    removed = true;
+  }
+  saveRevisionPool(pool);
+  return removed;
+}
+function recordRevisionMistake(key) {
+  const pool = getRevisionPool();
+  const item = pool.items.find(x => x.key === key);
+  if (!item) return;
+  item.streak = 0;
+  saveRevisionPool(pool);
+}
+
+// ═══════════════════════════════════════════════════════
+// REVISION QUIZ
+// ═══════════════════════════════════════════════════════
+let revisionQueue = []; // current session order
+let revisionIndex = 0;
+let revisionCorrect = 0;
+let revisionTotal = 0;
+let revisionRemoved = 0;
+
+function startRevisionQuiz() {
+  const pool = getRevisionPool();
+  if (pool.items.length === 0) {
+    alert('Your Revision pool is empty.\n\nItems land here automatically when you get them wrong in practice or test mode.');
+    return;
+  }
+  revisionQueue   = shuffle(pool.items);
+  revisionIndex   = 0;
+  revisionCorrect = 0;
+  revisionTotal   = 0;
+  revisionRemoved = 0;
+  showScreen('revision');
+  renderRevisionFrame();
+  showRevisionQuestion();
+}
+
+function renderRevisionFrame() {
+  document.getElementById('revision-card-area').innerHTML = `
+    <div class="quiz-meta">
+      <span class="quiz-phase-label" id="rev-phase-label">Revision</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="rev-streak-ind" style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--gold)"></span>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="rev-progress-fill" style="width:0%"></div></div>
+    <div class="question-card" id="rev-question-card"></div>
+    <div id="rev-answer-area"></div>
+    <div class="feedback-area"><div class="feedback-pill" id="rev-feedback-pill"></div></div>`;
+}
+
+function showRevisionQuestion() {
+  const total = revisionQueue.length;
+  if (revisionIndex >= total) { revisionComplete(); return; }
+  const entry = revisionQueue[revisionIndex];
+  const data  = entry.data || {};
+  const type  = entry.poolType;
+  const streakLeft = Math.max(0, REVISION_MASTERY - (entry.streak || 0));
+  document.getElementById('rev-progress-fill').style.width = Math.min(revisionIndex/total*100, 99) + '%';
+  document.getElementById('rev-phase-label').textContent = `Revision · ${revisionIndex+1}/${total}`;
+  document.getElementById('rev-streak-ind').textContent = `${streakLeft} more to retain`;
+
+  const qCard = document.getElementById('rev-question-card');
+  const aArea = document.getElementById('rev-answer-area');
+
+  // Pick a question format based on item type — keep it simple: produce romaji
+  let prompt, correct, placeholder;
+  if (type === 'kana') {
+    prompt = `<div class="q-label">What is the reading?</div><div class="q-kana">${data.char}</div>`;
+    correct = data.rom; placeholder = 'Type romaji…';
+  } else if (type === 'number') {
+    prompt = `<div class="q-label">How do you say this number?</div><div class="q-number">${Number(data.n).toLocaleString()}</div>`;
+    correct = data.rom; placeholder = 'Type romaji…';
+  } else if (type === 'time') {
+    prompt = `<div class="q-label">How do you say this time?</div><div class="q-number">${data.digital}</div>`;
+    correct = data.rom; placeholder = 'Type romaji…';
+  } else if (type === 'vocab') {
+    const shown = data.hasKanji ? data.kanji : data.hiragana;
+    prompt = `<div class="q-label">What does this mean?</div><div class="q-kana">${shown}</div>`;
+    correct = data.romaji; placeholder = 'Type romaji…';
+  } else if (type === 'phrase') {
+    prompt = `<div class="q-label">Type the romaji for this phrase</div><div class="pq-scenario">${data.scenario || ''}</div>`;
+    correct = (data.romaji || '').replace(/\|/g,' ').trim();
+    placeholder = 'Type romaji…';
+  } else {
+    prompt = `<div class="q-label">Item</div><div class="q-kana">${entry.label}</div>`;
+    correct = ''; placeholder = '';
+  }
+
+  qCard.innerHTML = prompt;
+  aArea.innerHTML = `
+    <input class="answer-input" id="rev-input" type="text"
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="${placeholder}" />
+    <button class="submit-btn" id="rev-submit">Submit</button>`;
+  const inp = document.getElementById('rev-input');
+  const btn = document.getElementById('rev-submit');
+  inp.dataset.answer = correct;
+  inp.dataset.key = entry.key;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitRevisionAnswer(); });
+  btn.addEventListener('click', submitRevisionAnswer);
+  setTimeout(() => inp.focus(), 60);
+}
+
+let revisionLock = false;
+function submitRevisionAnswer() {
+  const inp = document.getElementById('rev-input');
+  if (!inp || revisionLock) return;
+  const val = (inp.value || '').trim();
+  if (!val) return;
+  revisionLock = true;
+  const correct = (inp.dataset.answer || '').trim();
+  const key     = inp.dataset.key;
+  const norm = s => s.toLowerCase().replace(/\s+/g,'').replace(/\|/g,'');
+  const ok = norm(val) === norm(correct);
+  revisionTotal++;
+  if (ok) {
+    revisionCorrect++;
+    inp.className = 'answer-input correct';
+    const removed = recordRevisionCorrect(key);
+    if (removed) revisionRemoved++;
+    showRevisionFeedback('correct', removed ? '✓ Retained! (5 in a row — removed from pool)' : '✓ Correct!');
+  } else {
+    inp.className = 'answer-input wrong';
+    recordRevisionMistake(key);
+    showRevisionFeedback('reveal', '✗ Answer: ' + correct);
+  }
+  setTimeout(() => {
+    revisionLock = false;
+    revisionIndex++;
+    showRevisionQuestion();
+  }, ok ? 900 : 1800);
+}
+
+function showRevisionFeedback(type, msg) {
+  const p = document.getElementById('rev-feedback-pill');
+  if (p) { p.className = 'feedback-pill ' + type + ' show'; p.textContent = msg; }
+}
+
+function revisionComplete() {
+  const pool = getRevisionPool();
+  const remaining = pool.items.length;
+  const pct = revisionTotal > 0 ? Math.round(revisionCorrect/revisionTotal*100) : 0;
+  document.getElementById('revision-card-area').innerHTML = `
+    <div class="complete-card">
+      <div class="big-emoji">${pct === 100 ? '🌟' : pct >= 70 ? '👍' : '📘'}</div>
+      <h2>Revision session complete</h2>
+      <p>${revisionCorrect}/${revisionTotal} correct — ${pct}%${revisionRemoved>0 ? `<br><span style="color:var(--green)">${revisionRemoved} item${revisionRemoved!==1?'s':''} retained and removed from the pool</span>` : ''}</p>
+      <p style="font-size:11px;color:var(--text-soft);margin-top:6px">${remaining} item${remaining!==1?'s':''} still in your pool</p>
+      ${remaining > 0 ? '<button class="complete-btn" onclick="startRevisionQuiz()">Revise More ↺</button>' : ''}
+      <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+    </div>`;
+}
+
+function confirmRevisionQuit() {
+  if (confirm('Quit this revision session?')) showScreen('home');
 }
 
 // ═══════════════════════════════════════════════════════
