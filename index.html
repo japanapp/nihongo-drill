@@ -83,6 +83,20 @@
     .tier-heading:first-of-type { margin-top: 4px; }
     .tier-heading .th-name { font-size: 12px; font-weight: 700; color: var(--gold); letter-spacing: .04em; }
     .tier-heading .th-desc { font-size: 10px; color: var(--text-soft); margin-top: 1px; }
+    .revision-banner {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      background: var(--ink); color: var(--paper); border: 2px solid var(--gold);
+      border-radius: var(--radius); padding: 13px 16px; margin-bottom: 14px;
+      cursor: pointer; font-family: 'DM Sans',sans-serif;
+      transition: transform .12s; box-shadow: 0 2px 12px rgba(201,168,76,.18);
+      text-align: left;
+    }
+    .revision-banner:active { transform: scale(.97); }
+    .revision-banner .rb-left { display: flex; align-items: center; gap: 12px; }
+    .revision-banner .rb-icon { font-size: 26px; line-height: 1; }
+    .revision-banner .rb-title { font-size: 14px; font-weight: 700; color: var(--gold-light); letter-spacing: .02em; }
+    .revision-banner .rb-sub { font-size: 11px; color: var(--paper); opacity: .7; margin-top: 2px; }
+    .revision-banner .rb-arrow { font-size: 22px; color: var(--gold); font-weight: 300; }
     .block-btn { aspect-ratio: 1; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: transform .12s; }
     .block-btn:active { transform: scale(.92); }
     .block-btn.unlocked { background: var(--ink); color: var(--paper); }
@@ -532,6 +546,7 @@ const KANA = {
     {char:'わ',rom:'wa',hint:'A wave breaking against a cliff',tier:'basic'},
     {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle',tier:'basic'},
     {char:'ん',rom:'n',hint:'An nnn humming sound — sealed lips',tier:'basic'},
+    {char:'っ',rom:'double',hint:'Small tsu — doubles the next consonant: がっこう (gakkou), きって (kitte), ちょっと (chotto)',tier:'basic'},
     {char:'が',rom:'ga',hint:'か with dakuten — voiced "ka" becomes "ga"',tier:'dakuten'},
     {char:'ぎ',rom:'gi',hint:'き with dakuten — "ki" becomes "gi"',tier:'dakuten'},
     {char:'ぐ',rom:'gu',hint:'く with dakuten — "ku" becomes "gu"',tier:'dakuten'},
@@ -638,6 +653,8 @@ const KANA = {
     {char:'ワ',rom:'wa',hint:'A waterfall curving over a ledge',tier:'basic'},
     {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle',tier:'basic'},
     {char:'ン',rom:'n',hint:'An nnn echo — short and sealed',tier:'basic'},
+    {char:'ッ',rom:'double',hint:'Small tsu — doubles the next consonant: キット (kitto), マッサージ (massaaji), ベッド (beddo)',tier:'basic'},
+    {char:'ー',rom:'longvowel',hint:'Long vowel mark — extends the previous vowel: コーヒー (koohii), ラーメン (raamen), ビール (biiru)',tier:'basic'},
     {char:'ガ',rom:'ga',hint:'カ with dakuten — "ka" becomes "ga"',tier:'dakuten'},
     {char:'ギ',rom:'gi',hint:'キ with dakuten — "ki" becomes "gi"',tier:'dakuten'},
     {char:'グ',rom:'gu',hint:'ク with dakuten — "ku" becomes "gu"',tier:'dakuten'},
@@ -695,7 +712,19 @@ const KANA = {
     {char:'ビョ',rom:'byo',hint:'ビ + small ョ — voiced "byo"',tier:'yoon'},
     {char:'ピャ',rom:'pya',hint:'ピ + small ャ — "pya"',tier:'yoon'},
     {char:'ピュ',rom:'pyu',hint:'ピ + small ュ — "pyu"',tier:'yoon'},
-    {char:'ピョ',rom:'pyo',hint:'ピ + small ョ — "pyo"',tier:'yoon'}
+    {char:'ピョ',rom:'pyo',hint:'ピ + small ョ — "pyo"',tier:'yoon'},
+    {char:'ファ',rom:'fa',hint:'フ + small ァ — F sound: ファン (fan), ファッション (fashion)',tier:'extended'},
+    {char:'フィ',rom:'fi',hint:'フ + small ィ — fi: フィルム (film), フィンランド (Finland)',tier:'extended'},
+    {char:'フェ',rom:'fe',hint:'フ + small ェ — fe: フェリー (ferry), フェア (fair)',tier:'extended'},
+    {char:'フォ',rom:'fo',hint:'フ + small ォ — fo: フォーク (fork), フォーム (form)',tier:'extended'},
+    {char:'ティ',rom:'ti',hint:'テ + small ィ — ti: パーティー (party), ティッシュ (tissue)',tier:'extended'},
+    {char:'ディ',rom:'di',hint:'デ + small ィ — di: ディスコ (disco), ディスプレイ (display)',tier:'extended'},
+    {char:'ウィ',rom:'wi',hint:'ウ + small ィ — wi: ウィスキー (whisky), ウィンドウ (window)',tier:'extended'},
+    {char:'ウェ',rom:'we',hint:'ウ + small ェ — we: ウェブ (web), ウェイター (waiter)',tier:'extended'},
+    {char:'ウォ',rom:'wo2',hint:'ウ + small ォ — wo: ウォーター (water), ウォーキング (walking)',tier:'extended'},
+    {char:'チェ',rom:'che',hint:'チ + small ェ — che: チェック (check), チェックイン (check-in)',tier:'extended'},
+    {char:'ジェ',rom:'je',hint:'ジ + small ェ — je: ジェット (jet), ジェスチャー (gesture)',tier:'extended'},
+    {char:'ヴ',rom:'vu',hint:'ウ with dakuten — V sound: ヴァイオリン (violin), ヴィラ (villa)',tier:'extended'}
   ],
 };
 
@@ -1009,7 +1038,7 @@ function vocabForDrill(tab) {
 }
 
 // Get blocks list for any (section, tab) combo
-const KANA_TIER_LABELS = { basic:'Basic', dakuten:'Dakuten', yoon:'Combo (Yoon)' };
+const KANA_TIER_LABELS = { basic:'Basic', dakuten:'Dakuten', yoon:'Combo (Yoon)', extended:'Extended' };
 
 function blocksFor(section, tab) {
   if (section==='foundation') {
@@ -1227,10 +1256,10 @@ function renderSectionHome(body) {
         <span class="rb-icon">🔁</span>
         <div>
           <div class="rb-title">Revision Pool</div>
-          <div class="rb-sub">${revPool.items.length} item${revPool.items.length!==1?'s':''} to revise</div>
+          <div class="rb-sub">${revPool.items.length} item${revPool.items.length!==1?'s':''} · 5 correct in a row to retain</div>
         </div>
       </div>
-      <span class="rb-arrow">→</span>
+      <span class="rb-arrow">›</span>
     </button>`;
   }
 
@@ -1324,7 +1353,8 @@ function renderSectionHome(body) {
         const tierName = KANA_TIER_LABELS[block.tier] || 'Basic';
         const tierDesc = block.tier === 'basic' ? 'The core 46 sounds'
                        : block.tier === 'dakuten' ? 'Voiced sounds (゛) and (゜)'
-                       : 'Blended combo sounds (small ya/yu/yo)';
+                       : block.tier === 'yoon' ? 'Blended combo sounds (small ya/yu/yo)'
+                       : 'Foreign sounds used in loanwords';
         html += `<div class="tier-heading"><span class="th-name">${tierName}</span><span class="th-desc">${tierDesc}</span></div>`;
         html += `<div class="${gridCls}">`;
         lastTier = block.tier;
