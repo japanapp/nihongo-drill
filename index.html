@@ -219,6 +219,7 @@
     .ftbtn:first-child { border-right: 1px solid rgba(26,26,46,.2); }
 
     /* COMPLETE */
+    .mascot-img { display: block; width: 220px; max-width: 80%; margin: 0 auto 12px; border-radius: 12px; }
     .complete-card { background: var(--ink); border-radius: 24px; padding: 30px 20px; text-align: center; color: var(--paper); box-shadow: var(--shadow-lg); }
     .complete-card .big-emoji { font-size: 46px; margin-bottom: 10px; }
     .complete-card h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--gold-light); margin-bottom: 5px; }
@@ -1231,7 +1232,11 @@ function renderSectionHome(body) {
     }).join('') + '</div>';
 
   // Hero
+  const heroMascot = cleared === 0 && !practised
+    ? `<img src="images/states/welcome.jpg" class="mascot-img" style="width:180px;margin-bottom:8px" alt="Welcome!">`
+    : '';
   html += `<div class="home-hero">
+    ${heroMascot}
     <div class="kanji-bg">${meta.heroBg}</div>
     <h2>${meta.heroTitle}</h2>
     <p>${meta.heroSub || 'Build your skills block by block'}</p>
@@ -1789,7 +1794,7 @@ function testModeFailed(item) {
   // The user can retry test, or go back and practise more.
   document.getElementById('quiz-card-area').innerHTML = `
     <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
-      <div class="big-emoji">💥</div>
+      <img src="images/states/test-failed.jpg" class="mascot-img" alt="Test failed">
       <h2 style="color:#fff">Test Failed</h2>
       <p>One wrong answer ends the test in Sudden Death mode.<br>The wrong item has been added to your Revision pool.</p>
       <button class="complete-btn" onclick="beginQuiz('test')">Retry Test ↺</button>
@@ -2010,7 +2015,7 @@ function blockComplete() {
 
   document.getElementById('quiz-card-area').innerHTML = `
     <div class="complete-card">
-      <div class="big-emoji">${emoji}</div>
+      ${mascot}
       <h2>${headline}</h2>
       <p>${subtext}</p>
       ${buttons}
@@ -2901,7 +2906,11 @@ function phraseQuizComplete() {
   const blocks  = phraseBlocksForTheme(currentThemeId);
   const hasNextBlock = currentBlockIdxP + 1 < blocks.length;
   const headline = cleared ? 'Block cleared!' : 'Practice complete';
-  const emoji    = cleared ? '🌟' : '📘';
+  const mascot   = cleared && isLast
+    ? `<img src="images/states/all-cleared.jpg" class="mascot-img" alt="All cleared!">`
+    : cleared
+    ? `<img src="images/states/test-cleared.jpg" class="mascot-img" alt="Test cleared!">`
+    : `<img src="images/states/practice-complete.jpg" class="mascot-img" alt="Practice complete">`;
   const subtext  = cleared
     ? `Flawless run across all 5 phases — next block unlocked.`
     : `${phraseQCorrect}/${phraseQTotal} correct. Take the Test to clear this block.`;
@@ -2926,7 +2935,7 @@ function phraseQuizComplete() {
 
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete">
-      <div class="big-emoji">${emoji}</div>
+      <img src="images/states/test-cleared.jpg" class="mascot-img" alt="${headline}">
       <h2>${headline}</h2>
       <p>${subtext}</p>
       ${buttons}
@@ -2937,7 +2946,7 @@ function phraseQuizComplete() {
 function phraseTestModeFailed(item) {
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
-      <div class="big-emoji">💥</div>
+      <img src="images/states/test-failed.jpg" class="mascot-img" alt="Test failed">
       <h2 style="color:#fff">Test Failed</h2>
       <p>One wrong answer ends the test in Sudden Death mode.<br>The phrase has been added to your Revision pool.</p>
       <button class="complete-btn" onclick="beginPhraseQuiz('test')">Retry Test ↺</button>
@@ -3121,7 +3130,17 @@ let revisionRemoved = 0;
 function startRevisionQuiz() {
   const pool = getRevisionPool();
   if (pool.items.length === 0) {
-    alert('Your Revision pool is empty.\n\nItems land here automatically when you get them wrong in practice or test mode.');
+    // Show empty state inline rather than an alert
+    showScreen('revision');
+    document.getElementById('revision-card-area').innerHTML = `
+      <div class="complete-card">
+        <img src="images/states/empty-revision.jpg" class="mascot-img" alt="Nothing to revise">
+        <h2>All caught up!</h2>
+        <p style="color:var(--paper);opacity:.75;font-size:13px;margin-bottom:20px">
+          Your revision pool is empty — items land here when you get them wrong in practice or test mode.
+        </p>
+        <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+      </div>`;
     return;
   }
   revisionQueue   = shuffle(pool.items);
@@ -3242,7 +3261,7 @@ function revisionComplete() {
   const pct = revisionTotal > 0 ? Math.round(revisionCorrect/revisionTotal*100) : 0;
   document.getElementById('revision-card-area').innerHTML = `
     <div class="complete-card">
-      <div class="big-emoji">${pct === 100 ? '🌟' : pct >= 70 ? '👍' : '📘'}</div>
+      <img src="images/states/revision-time.jpg" class="mascot-img" alt="Revision complete">
       <h2>Revision session complete</h2>
       <p>${revisionCorrect}/${revisionTotal} correct — ${pct}%${revisionRemoved>0 ? `<br><span style="color:var(--green)">${revisionRemoved} item${revisionRemoved!==1?'s':''} retained and removed from the pool</span>` : ''}</p>
       <p style="font-size:11px;color:var(--text-soft);margin-top:6px">${remaining} item${remaining!==1?'s':''} still in your pool</p>
