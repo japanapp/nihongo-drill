@@ -219,7 +219,7 @@
     .ftbtn:first-child { border-right: 1px solid rgba(26,26,46,.2); }
 
     /* COMPLETE */
-    .mascot-img { display: block; width: 220px; max-width: 80%; margin: 0 auto 12px; border-radius: 12px; }
+    .mascot-img { display: block; width: 220px; max-width: 80%; margin: 0 auto 12px; border-radius: 12px; mix-blend-mode: multiply; }
     .complete-card { background: var(--ink); border-radius: 24px; padding: 30px 20px; text-align: center; color: var(--paper); box-shadow: var(--shadow-lg); }
     .complete-card .big-emoji { font-size: 46px; margin-bottom: 10px; }
     .complete-card h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--gold-light); margin-bottom: 5px; }
@@ -229,8 +229,8 @@
     .test-btn:active { transform: scale(.97); }
     .test-btn .tb-title { font-size: 15px; font-weight: 700; letter-spacing: .04em; }
     .test-btn .tb-sub { font-size: 10px; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
-    .test-mode-banner { background: linear-gradient(135deg, #b53b3b, #8a2828); color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; text-align: center; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(180,60,60,.25); }
-    .test-mode-banner .lives { font-size: 9px; opacity: .85; margin-top: 2px; letter-spacing: .06em; }
+    .test-mode-banner { background: var(--ink); border: 2px solid var(--gold); color: var(--gold-light); padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-align: center; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(201,168,76,.15); }
+    .test-mode-banner .lives { font-size: 10px; color: var(--paper); opacity: .7; margin-top: 3px; letter-spacing: .04em; font-weight: 400; text-transform: none; }
     .mastery-result { background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); border-radius: var(--radius-sm); padding: 11px; margin-bottom: 14px; }
     .mr-label { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px; }
     .mr-stars { display: flex; gap: 5px; justify-content: center; margin-bottom: 4px; }
@@ -539,15 +539,15 @@ const KANA = {
     {char:'や',rom:'ya',hint:'A yak\'s horn jutting sideways',tier:'basic'},
     {char:'ゆ',rom:'yu',hint:'A unique fish with a tail fin',tier:'basic'},
     {char:'よ',rom:'yo',hint:'A yo-yo on a string',tier:'basic'},
+    {char:'わ',rom:'wa',hint:'A wave breaking against a cliff',tier:'basic'},
+    {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle',tier:'basic'},
     {char:'ら',rom:'ra',hint:'A rabbit hopping over a log',tier:'basic'},
     {char:'り',rom:'ri',hint:'A reed splitting in the wind',tier:'basic'},
     {char:'る',rom:'ru',hint:'A roo (kangaroo) tail looping around',tier:'basic'},
     {char:'れ',rom:'re',hint:'A reggae musician strumming a chord',tier:'basic'},
     {char:'ろ',rom:'ro',hint:'A road winding into a tight loop',tier:'basic'},
-    {char:'わ',rom:'wa',hint:'A wave breaking against a cliff',tier:'basic'},
-    {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle',tier:'basic'},
     {char:'ん',rom:'n',hint:'An nnn humming sound — sealed lips',tier:'basic'},
-    {char:'っ',rom:'double',hint:'Small tsu — doubles the next consonant: がっこう (gakkou), きって (kitte), ちょっと (chotto)',tier:'basic'},
+    {char:'っ',rom:'double',hint:'っ (sokuon 促音) — doubles the next consonant: がっこう (gakkou), きって (kitte), ちょっと (chotto)',tier:'basic'},
     {char:'が',rom:'ga',hint:'か with dakuten — voiced "ka" becomes "ga"',tier:'dakuten'},
     {char:'ぎ',rom:'gi',hint:'き with dakuten — "ki" becomes "gi"',tier:'dakuten'},
     {char:'ぐ',rom:'gu',hint:'く with dakuten — "ku" becomes "gu"',tier:'dakuten'},
@@ -646,16 +646,16 @@ const KANA = {
     {char:'ヤ',rom:'ya',hint:'A yak with a single horn',tier:'basic'},
     {char:'ユ',rom:'yu',hint:'A unicycle seat from the side',tier:'basic'},
     {char:'ヨ',rom:'yo',hint:'A yodelling singer — three notes',tier:'basic'},
+    {char:'ワ',rom:'wa',hint:'A waterfall curving over a ledge',tier:'basic'},
+    {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle',tier:'basic'},
     {char:'ラ',rom:'ra',hint:'A radio antenna with a signal wave',tier:'basic'},
     {char:'リ',rom:'ri',hint:'Two reeds standing in a pond',tier:'basic'},
     {char:'ル',rom:'ru',hint:'A roo (kangaroo) hopping forward',tier:'basic'},
     {char:'レ',rom:'re',hint:'A reggae rhythm — sharp downbeat',tier:'basic'},
     {char:'ロ',rom:'ro',hint:'A rotunda — a square garden',tier:'basic'},
-    {char:'ワ',rom:'wa',hint:'A waterfall curving over a ledge',tier:'basic'},
-    {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle',tier:'basic'},
     {char:'ン',rom:'n',hint:'An nnn echo — short and sealed',tier:'basic'},
-    {char:'ッ',rom:'double',hint:'Small tsu — doubles the next consonant: キット (kitto), マッサージ (massaaji), ベッド (beddo)',tier:'basic'},
-    {char:'ー',rom:'longvowel',hint:'Long vowel mark — extends the previous vowel: コーヒー (koohii), ラーメン (raamen), ビール (biiru)',tier:'basic'},
+    {char:'ッ',rom:'double',hint:'ッ (sokuon 促音) — doubles the next consonant: キット (kitto), マッサージ (massaaji), ベッド (beddo)',tier:'basic'},
+    {char:'ー',rom:'long vowel',hint:'ー (choonpu 長音符) — extends the previous vowel: コーヒー (koohii), ラーメン (raamen), ビール (biiru)',tier:'basic'},
     {char:'ガ',rom:'ga',hint:'カ with dakuten — "ka" becomes "ga"',tier:'dakuten'},
     {char:'ギ',rom:'gi',hint:'キ with dakuten — "ki" becomes "gi"',tier:'dakuten'},
     {char:'グ',rom:'gu',hint:'ク with dakuten — "ku" becomes "gu"',tier:'dakuten'},
@@ -1553,14 +1553,19 @@ function beginQuiz(mode) {
 
 // User confirmation before entering test mode — make the stakes obvious
 function confirmTestMode() {
-  const ok = confirm('TEST MODE — Sudden Death\n\nOne wrong answer ends the test instantly.\nYou must score 100% to clear this block.\n\nReady?');
-  if (ok) beginQuiz('test');
+  showModal(
+    '✦',
+    'Test Mode',
+    'This is sudden death — one wrong answer ends the test instantly. You need 100% to clear the block.',
+    'Ready — go!',
+    () => beginQuiz('test')
+  );
 }
 
 function beginFoundationQuiz() {
   const isTest = quizMode === 'test';
   document.getElementById('quiz-card-area').innerHTML=`
-    ${isTest ? '<div class="test-mode-banner">⚡ TEST MODE — SUDDEN DEATH<div class="lives">One mistake ends the test</div></div>' : ''}
+    ${isTest ? '<div class="test-mode-banner">✦ TEST MODE ✦<div class="lives">Sudden death · one mistake ends it</div></div>' : ''}
     <div class="quiz-meta">
       <span class="quiz-phase-label" id="quiz-phase-label">${isTest?'Test':'Practice'}</span>
       <div style="display:flex;align-items:center;gap:8px">
@@ -1600,7 +1605,7 @@ function showFoundationQuestion() {
 function buildFoundationQuestion(item) {
   const qCard = document.getElementById('question-card');
   const aEl   = document.getElementById('answer-area');
-  const hint  = cycleCount === 0;
+  const hint  = quizMode !== 'test' && cycleCount === 0; // never show hints in test mode
 
   if (quizPhase === 0) {
     // Recognition — MC
@@ -1809,7 +1814,7 @@ function testModeFailed(item) {
 function beginDrillQuiz() {
   const isTest = quizMode === 'test';
   document.getElementById('quiz-card-area').innerHTML = `
-    ${isTest ? '<div class="test-mode-banner">⚡ TEST MODE — SUDDEN DEATH<div class="lives">One mistake ends the test</div></div>' : ''}
+    ${isTest ? '<div class="test-mode-banner">✦ TEST MODE ✦<div class="lives">Sudden death · one mistake ends it</div></div>' : ''}
     <div class="quiz-meta">
       <span class="quiz-phase-label" id="quiz-phase-label">${isTest?'Test':'Practice'}</span>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2023,7 +2028,7 @@ function blockComplete() {
 }
 
 function confirmQuit() {
-  if (confirm('Quit this quiz? Progress in this session will be lost.')) showScreen('home');
+  showModal('🐾', 'Quit quiz?', 'Your progress in this session will be lost.', 'Yes, quit', () => showScreen('home'));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2553,8 +2558,13 @@ function beginPhraseQuiz(mode) {
 }
 
 function confirmPhraseTestMode() {
-  const ok = confirm('TEST MODE — Sudden Death\n\nOne wrong answer ends the test instantly.\nYou must complete all 5 phases without a mistake to clear this block.\n\nReady?');
-  if (ok) beginPhraseQuiz('test');
+  showModal(
+    '✦',
+    'Test Mode',
+    'Sudden death across all 5 phases. One wrong answer anywhere ends the test. You need a flawless run to clear this block.',
+    'Ready — go!',
+    () => beginPhraseQuiz('test')
+  );
 }
 
 function buildPhraseQuizShell() {
@@ -2956,7 +2966,7 @@ function phraseTestModeFailed(item) {
 }
 
 function confirmPhraseQuit() {
-  if (confirm('Quit this practice session?')) showScreen('home');
+  showModal('🐾', 'Quit phrases?', 'Your progress in this session will be lost.', 'Yes, quit', () => showScreen('home'));
 }
 
 
@@ -3274,6 +3284,22 @@ function confirmRevisionQuit() {
   if (confirm('Quit this revision session?')) showScreen('home');
 }
 
+// ── Custom confirm modal ─────────────────────────────
+function showModal(emoji, title, body, confirmLabel, onConfirm) {
+  const overlay = document.getElementById('modal-overlay');
+  document.getElementById('modal-emoji').textContent = emoji;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  const confirmBtn = document.getElementById('modal-confirm');
+  const cancelBtn  = document.getElementById('modal-cancel');
+  confirmBtn.textContent = confirmLabel || 'Ready →';
+  overlay.style.display = 'flex';
+  const close = () => { overlay.style.display = 'none'; };
+  confirmBtn.onclick = () => { close(); onConfirm(); };
+  cancelBtn.onclick  = close;
+  overlay.onclick    = e => { if (e.target === overlay) close(); };
+}
+
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
@@ -3287,6 +3313,20 @@ window.addEventListener('DOMContentLoaded', ()=>{
     });
   }
 });
+
 </script>
+
+<!-- CUSTOM CONFIRM MODAL -->
+<div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--ink); border:2px solid var(--gold); border-radius:20px; padding:28px 22px; max-width:320px; width:100%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.4);">
+    <div id="modal-emoji" style="font-size:36px; margin-bottom:10px;"></div>
+    <h3 id="modal-title" style="font-family:'Shippori Mincho',serif; font-size:20px; color:var(--gold-light); margin-bottom:8px;"></h3>
+    <p id="modal-body" style="font-size:13px; color:var(--paper); opacity:.8; line-height:1.6; margin-bottom:20px;"></p>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button id="modal-confirm" style="background:var(--gold); color:var(--ink); border:none; border-radius:12px; padding:13px; font-size:14px; font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer;">Ready →</button>
+      <button id="modal-cancel" style="background:transparent; color:var(--paper); border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:11px; font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; opacity:.7;">Not yet</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
