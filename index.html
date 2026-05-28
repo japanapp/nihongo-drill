@@ -79,6 +79,10 @@
     .block-grid   { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; }
     .block-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
     .block-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+    .tier-heading { display: flex; flex-direction: column; margin: 16px 0 8px; }
+    .tier-heading:first-of-type { margin-top: 4px; }
+    .tier-heading .th-name { font-size: 12px; font-weight: 700; color: var(--gold); letter-spacing: .04em; }
+    .tier-heading .th-desc { font-size: 10px; color: var(--text-soft); margin-top: 1px; }
     .block-btn { aspect-ratio: 1; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: transform .12s; }
     .block-btn:active { transform: scale(.92); }
     .block-btn.unlocked { background: var(--ink); color: var(--paper); }
@@ -482,108 +486,216 @@
 
 const KANA = {
   hiragana: [
-    {char:'あ',rom:'a',hint:'An apple with a bite taken out'},
-    {char:'い',rom:'i',hint:'Two eels (eels = ii) swimming side by side'},
-    {char:'う',rom:'u',hint:'An ooh-ing face — eyebrow raised in surprise'},
-    {char:'え',rom:'e',hint:'An exotic bird with a fancy crest'},
-    {char:'お',rom:'o',hint:'An ostrich kicking out a leg'},
-    {char:'か',rom:'ka',hint:'A kite caught on a tree branch'},
-    {char:'き',rom:'ki',hint:'A key dangling on a ring'},
-    {char:'く',rom:'ku',hint:'A cuckoo beak open wide'},
-    {char:'け',rom:'ke',hint:'A keg leaning sideways, dripping'},
-    {char:'こ',rom:'ko',hint:'A koala curled up — two arms'},
-    {char:'さ',rom:'sa',hint:'A sock-puppet mouth saying "sa!"'},
-    {char:'し',rom:'shi',hint:'A shimmering fishing hook in water'},
-    {char:'す',rom:'su',hint:'A sumo wrestler with a topknot loop'},
-    {char:'せ',rom:'se',hint:'A set of teeth with a missing one'},
-    {char:'そ',rom:'so',hint:'A sewing machine zigzag'},
-    {char:'た',rom:'ta',hint:'A tarpaulin with a peg hammered in'},
-    {char:'ち',rom:'chi',hint:'A cheerleader doing a backflip'},
-    {char:'つ',rom:'tsu',hint:'A tsunami curling over'},
-    {char:'て',rom:'te',hint:'A telegraph pole with a wire'},
-    {char:'と',rom:'to',hint:'A toe stubbed on a nail'},
-    {char:'な',rom:'na',hint:'A knotted rope hanging from a hook'},
-    {char:'に',rom:'ni',hint:'A needle threading through fabric'},
-    {char:'ぬ',rom:'nu',hint:'Noodles tangled around chopsticks'},
-    {char:'ね',rom:'ne',hint:'A nest with a coiled snake inside'},
-    {char:'の',rom:'no',hint:'A NO sign — circle with a slash'},
-    {char:'は',rom:'ha',hint:'A ha-ha-ha laughing mouth, head thrown back'},
-    {char:'ひ',rom:'hi',hint:'A heeheeing smile — wide grin'},
-    {char:'ふ',rom:'fu',hint:'Mt Fuji with a tiny cloud above it'},
-    {char:'へ',rom:'he',hint:'A hill peak — like a tent flap'},
-    {char:'ほ',rom:'ho',hint:'A hopscotch grid — squares to jump on'},
-    {char:'ま',rom:'ma',hint:'A mother with a swaddled baby'},
-    {char:'み',rom:'mi',hint:'A meeting of three squiggly worms'},
-    {char:'む',rom:'mu',hint:'A moo-ing cow — head and horn'},
-    {char:'め',rom:'me',hint:'A medusa with tangled snake hair'},
-    {char:'も',rom:'mo',hint:'A motorcycle with two exhaust pipes'},
-    {char:'や',rom:'ya',hint:"A yak's horn jutting sideways"},
-    {char:'ゆ',rom:'yu',hint:'A unique fish with a tail fin'},
-    {char:'よ',rom:'yo',hint:'A yo-yo on a string'},
-    {char:'ら',rom:'ra',hint:'A rabbit hopping over a log'},
-    {char:'り',rom:'ri',hint:'A reed splitting in the wind'},
-    {char:'る',rom:'ru',hint:'A roo (kangaroo) tail looping around'},
-    {char:'れ',rom:'re',hint:'A reggae musician strumming a chord'},
-    {char:'ろ',rom:'ro',hint:'A road winding into a tight loop'},
-    {char:'わ',rom:'wa',hint:'A wave breaking against a cliff'},
-    {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle'},
-    {char:'ん',rom:'n',hint:'An nnn humming sound — sealed lips'},
-    {char:'が',rom:'ga',hint:'か with dakuten — turn ka into ga'},
-    {char:'ぎ',rom:'gi',hint:'き with dakuten — turn ki into gi'},
-    {char:'ぐ',rom:'gu',hint:'く with dakuten — turn ku into gu'},
-    {char:'げ',rom:'ge',hint:'け with dakuten — turn ke into ge'},
+    {char:'あ',rom:'a',hint:'An apple with a bite taken out',tier:'basic'},
+    {char:'い',rom:'i',hint:'Two eels (eels = ii) swimming side by side',tier:'basic'},
+    {char:'う',rom:'u',hint:'An ooh-ing face — eyebrow raised in surprise',tier:'basic'},
+    {char:'え',rom:'e',hint:'An exotic bird with a fancy crest',tier:'basic'},
+    {char:'お',rom:'o',hint:'An ostrich kicking out a leg',tier:'basic'},
+    {char:'か',rom:'ka',hint:'A kite caught on a tree branch',tier:'basic'},
+    {char:'き',rom:'ki',hint:'A key dangling on a ring',tier:'basic'},
+    {char:'く',rom:'ku',hint:'A cuckoo beak open wide',tier:'basic'},
+    {char:'け',rom:'ke',hint:'A keg leaning sideways, dripping',tier:'basic'},
+    {char:'こ',rom:'ko',hint:'A koala curled up — two arms',tier:'basic'},
+    {char:'さ',rom:'sa',hint:'A sock-puppet mouth saying "sa!"',tier:'basic'},
+    {char:'し',rom:'shi',hint:'A shimmering fishing hook in water',tier:'basic'},
+    {char:'す',rom:'su',hint:'A sumo wrestler with a topknot loop',tier:'basic'},
+    {char:'せ',rom:'se',hint:'A set of teeth with a missing one',tier:'basic'},
+    {char:'そ',rom:'so',hint:'A sewing machine zigzag',tier:'basic'},
+    {char:'た',rom:'ta',hint:'A tarpaulin with a peg hammered in',tier:'basic'},
+    {char:'ち',rom:'chi',hint:'A cheerleader doing a backflip',tier:'basic'},
+    {char:'つ',rom:'tsu',hint:'A tsunami curling over',tier:'basic'},
+    {char:'て',rom:'te',hint:'A telegraph pole with a wire',tier:'basic'},
+    {char:'と',rom:'to',hint:'A toe stubbed on a nail',tier:'basic'},
+    {char:'な',rom:'na',hint:'A knotted rope hanging from a hook',tier:'basic'},
+    {char:'に',rom:'ni',hint:'A needle threading through fabric',tier:'basic'},
+    {char:'ぬ',rom:'nu',hint:'Noodles tangled around chopsticks',tier:'basic'},
+    {char:'ね',rom:'ne',hint:'A nest with a coiled snake inside',tier:'basic'},
+    {char:'の',rom:'no',hint:'A NO sign — circle with a slash',tier:'basic'},
+    {char:'は',rom:'ha',hint:'A ha-ha-ha laughing mouth, head back',tier:'basic'},
+    {char:'ひ',rom:'hi',hint:'A heeheeing smile — wide grin',tier:'basic'},
+    {char:'ふ',rom:'fu',hint:'Mt Fuji with a tiny cloud above it',tier:'basic'},
+    {char:'へ',rom:'he',hint:'A hill peak — like a tent flap',tier:'basic'},
+    {char:'ほ',rom:'ho',hint:'A hopscotch grid — squares to jump on',tier:'basic'},
+    {char:'ま',rom:'ma',hint:'A mother with a swaddled baby',tier:'basic'},
+    {char:'み',rom:'mi',hint:'A meeting of three squiggly worms',tier:'basic'},
+    {char:'む',rom:'mu',hint:'A moo-ing cow — head and horn',tier:'basic'},
+    {char:'め',rom:'me',hint:'A medusa with tangled snake hair',tier:'basic'},
+    {char:'も',rom:'mo',hint:'A motorcycle with two exhaust pipes',tier:'basic'},
+    {char:'や',rom:'ya',hint:'A yak\'s horn jutting sideways',tier:'basic'},
+    {char:'ゆ',rom:'yu',hint:'A unique fish with a tail fin',tier:'basic'},
+    {char:'よ',rom:'yo',hint:'A yo-yo on a string',tier:'basic'},
+    {char:'ら',rom:'ra',hint:'A rabbit hopping over a log',tier:'basic'},
+    {char:'り',rom:'ri',hint:'A reed splitting in the wind',tier:'basic'},
+    {char:'る',rom:'ru',hint:'A roo (kangaroo) tail looping around',tier:'basic'},
+    {char:'れ',rom:'re',hint:'A reggae musician strumming a chord',tier:'basic'},
+    {char:'ろ',rom:'ro',hint:'A road winding into a tight loop',tier:'basic'},
+    {char:'わ',rom:'wa',hint:'A wave breaking against a cliff',tier:'basic'},
+    {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle',tier:'basic'},
+    {char:'ん',rom:'n',hint:'An nnn humming sound — sealed lips',tier:'basic'},
+    {char:'が',rom:'ga',hint:'か with dakuten — voiced "ka" becomes "ga"',tier:'dakuten'},
+    {char:'ぎ',rom:'gi',hint:'き with dakuten — "ki" becomes "gi"',tier:'dakuten'},
+    {char:'ぐ',rom:'gu',hint:'く with dakuten — "ku" becomes "gu"',tier:'dakuten'},
+    {char:'げ',rom:'ge',hint:'け with dakuten — "ke" becomes "ge"',tier:'dakuten'},
+    {char:'ご',rom:'go',hint:'こ with dakuten — "ko" becomes "go"',tier:'dakuten'},
+    {char:'ざ',rom:'za',hint:'さ with dakuten — "sa" becomes "za"',tier:'dakuten'},
+    {char:'じ',rom:'ji',hint:'し with dakuten — "shi" becomes "ji"',tier:'dakuten'},
+    {char:'ず',rom:'zu',hint:'す with dakuten — "su" becomes "zu"',tier:'dakuten'},
+    {char:'ぜ',rom:'ze',hint:'せ with dakuten — "se" becomes "ze"',tier:'dakuten'},
+    {char:'ぞ',rom:'zo',hint:'そ with dakuten — "so" becomes "zo"',tier:'dakuten'},
+    {char:'だ',rom:'da',hint:'た with dakuten — "ta" becomes "da"',tier:'dakuten'},
+    {char:'ぢ',rom:'ji',hint:'ち with dakuten — rare "ji" (di)',tier:'dakuten'},
+    {char:'づ',rom:'zu',hint:'つ with dakuten — rare "zu" (du)',tier:'dakuten'},
+    {char:'で',rom:'de',hint:'て with dakuten — "te" becomes "de"',tier:'dakuten'},
+    {char:'ど',rom:'do',hint:'と with dakuten — "to" becomes "do"',tier:'dakuten'},
+    {char:'ば',rom:'ba',hint:'は with dakuten — "ha" becomes "ba"',tier:'dakuten'},
+    {char:'び',rom:'bi',hint:'ひ with dakuten — "hi" becomes "bi"',tier:'dakuten'},
+    {char:'ぶ',rom:'bu',hint:'ふ with dakuten — "fu" becomes "bu"',tier:'dakuten'},
+    {char:'べ',rom:'be',hint:'へ with dakuten — "he" becomes "be"',tier:'dakuten'},
+    {char:'ぼ',rom:'bo',hint:'ほ with dakuten — "ho" becomes "bo"',tier:'dakuten'},
+    {char:'ぱ',rom:'pa',hint:'は with handakuten (°) — "ha" becomes "pa"',tier:'dakuten'},
+    {char:'ぴ',rom:'pi',hint:'ひ with handakuten — "hi" becomes "pi"',tier:'dakuten'},
+    {char:'ぷ',rom:'pu',hint:'ふ with handakuten — "fu" becomes "pu"',tier:'dakuten'},
+    {char:'ぺ',rom:'pe',hint:'へ with handakuten — "he" becomes "pe"',tier:'dakuten'},
+    {char:'ぽ',rom:'po',hint:'ほ with handakuten — "ho" becomes "po"',tier:'dakuten'},
+    {char:'きゃ',rom:'kya',hint:'き + small や — blends to "kya"',tier:'yoon'},
+    {char:'きゅ',rom:'kyu',hint:'き + small ゆ — blends to "kyu"',tier:'yoon'},
+    {char:'きょ',rom:'kyo',hint:'き + small よ — blends to "kyo"',tier:'yoon'},
+    {char:'しゃ',rom:'sha',hint:'し + small や — blends to "sha"',tier:'yoon'},
+    {char:'しゅ',rom:'shu',hint:'し + small ゆ — blends to "shu"',tier:'yoon'},
+    {char:'しょ',rom:'sho',hint:'し + small よ — blends to "sho"',tier:'yoon'},
+    {char:'ちゃ',rom:'cha',hint:'ち + small や — blends to "cha"',tier:'yoon'},
+    {char:'ちゅ',rom:'chu',hint:'ち + small ゆ — blends to "chu"',tier:'yoon'},
+    {char:'ちょ',rom:'cho',hint:'ち + small よ — blends to "cho"',tier:'yoon'},
+    {char:'にゃ',rom:'nya',hint:'に + small や — blends to "nya"',tier:'yoon'},
+    {char:'にゅ',rom:'nyu',hint:'に + small ゆ — blends to "nyu"',tier:'yoon'},
+    {char:'にょ',rom:'nyo',hint:'に + small よ — blends to "nyo"',tier:'yoon'},
+    {char:'ひゃ',rom:'hya',hint:'ひ + small や — blends to "hya"',tier:'yoon'},
+    {char:'ひゅ',rom:'hyu',hint:'ひ + small ゆ — blends to "hyu"',tier:'yoon'},
+    {char:'ひょ',rom:'hyo',hint:'ひ + small よ — blends to "hyo"',tier:'yoon'},
+    {char:'みゃ',rom:'mya',hint:'み + small や — blends to "mya"',tier:'yoon'},
+    {char:'みゅ',rom:'myu',hint:'み + small ゆ — blends to "myu"',tier:'yoon'},
+    {char:'みょ',rom:'myo',hint:'み + small よ — blends to "myo"',tier:'yoon'},
+    {char:'りゃ',rom:'rya',hint:'り + small や — blends to "rya"',tier:'yoon'},
+    {char:'りゅ',rom:'ryu',hint:'り + small ゆ — blends to "ryu"',tier:'yoon'},
+    {char:'りょ',rom:'ryo',hint:'り + small よ — blends to "ryo"',tier:'yoon'},
+    {char:'ぎゃ',rom:'gya',hint:'ぎ + small や — voiced "gya"',tier:'yoon'},
+    {char:'ぎゅ',rom:'gyu',hint:'ぎ + small ゆ — voiced "gyu"',tier:'yoon'},
+    {char:'ぎょ',rom:'gyo',hint:'ぎ + small よ — voiced "gyo"',tier:'yoon'},
+    {char:'じゃ',rom:'ja',hint:'じ + small や — blends to "ja"',tier:'yoon'},
+    {char:'じゅ',rom:'ju',hint:'じ + small ゆ — blends to "ju"',tier:'yoon'},
+    {char:'じょ',rom:'jo',hint:'じ + small よ — blends to "jo"',tier:'yoon'},
+    {char:'びゃ',rom:'bya',hint:'び + small や — voiced "bya"',tier:'yoon'},
+    {char:'びゅ',rom:'byu',hint:'び + small ゆ — voiced "byu"',tier:'yoon'},
+    {char:'びょ',rom:'byo',hint:'び + small よ — voiced "byo"',tier:'yoon'},
+    {char:'ぴゃ',rom:'pya',hint:'ぴ + small や — "pya"',tier:'yoon'},
+    {char:'ぴゅ',rom:'pyu',hint:'ぴ + small ゆ — "pyu"',tier:'yoon'},
+    {char:'ぴょ',rom:'pyo',hint:'ぴ + small よ — "pyo"',tier:'yoon'}
   ],
   katakana: [
-    {char:'ア',rom:'a',hint:'An archery target — bow drawn back'},
-    {char:'イ',rom:'i',hint:'An icicle leaning off an eave'},
-    {char:'ウ',rom:'u',hint:'An umbrella covering you from rain'},
-    {char:'エ',rom:'e',hint:'An elevator — top floor, ground floor'},
-    {char:'オ',rom:'o',hint:'An offering cross at a shrine'},
-    {char:'カ',rom:'ka',hint:'A katana sword cutting downward'},
-    {char:'キ',rom:'ki',hint:'A key with two notches'},
-    {char:'ク',rom:'ku',hint:'A cuckoo beak open, calling'},
-    {char:'ケ',rom:'ke',hint:'A keg tipped on its side, leaking'},
-    {char:'コ',rom:'ko',hint:'A corner of a frame — two sides'},
-    {char:'サ',rom:'sa',hint:'A sapling with two leaves on top'},
-    {char:'シ',rom:'shi',hint:'A shimmering swimmer doing the crawl'},
-    {char:'ス',rom:'su',hint:'A super-fast skier zigzagging down'},
-    {char:'セ',rom:'se',hint:'A serrated knife edge'},
-    {char:'ソ',rom:'so',hint:'A sewing needle stabbing a button'},
-    {char:'タ',rom:'ta',hint:'A taco folded around a filling'},
-    {char:'チ',rom:'chi',hint:'A cheeky chick poking out from an egg'},
-    {char:'ツ',rom:'tsu',hint:'A tsunami — three peaks rushing in'},
-    {char:'テ',rom:'te',hint:'A telegram pole — top, wire, post'},
-    {char:'ト',rom:'to',hint:'A totem pole with a flag'},
-    {char:'ナ',rom:'na',hint:'A nail being hammered into wood'},
-    {char:'ニ',rom:'ni',hint:'A pair of chopsticks (ni = 2)'},
-    {char:'ヌ',rom:'nu',hint:'A noodle bent around a fork'},
-    {char:'ネ',rom:'ne',hint:'A nest cradled in a branch'},
-    {char:'ノ',rom:'no',hint:'A NO slash — refusing'},
-    {char:'ハ',rom:'ha',hint:'A pair of legs jumping ha-ha-ha'},
-    {char:'ヒ',rom:'hi',hint:'A heel kicking backward'},
-    {char:'フ',rom:'fu',hint:'A flag flapping in the wind'},
-    {char:'ヘ',rom:'he',hint:'A hill peak — exactly like hiragana へ'},
-    {char:'ホ',rom:'ho',hint:'A hopeful Christmas tree — branches out'},
-    {char:'マ',rom:'ma',hint:'A magic wand with a curl on top'},
-    {char:'ミ',rom:'mi',hint:'Three steps of a mini-staircase'},
-    {char:'ム',rom:'mu',hint:'A mug tipped — drink pouring out'},
-    {char:'メ',rom:'me',hint:'A messy X — crossed mascara strokes'},
-    {char:'モ',rom:'mo',hint:'A motel sign — pole and arms'},
-    {char:'ヤ',rom:'ya',hint:'A yak with a single horn'},
-    {char:'ユ',rom:'yu',hint:'A unicycle seat from the side'},
-    {char:'ヨ',rom:'yo',hint:'A yodelling singer — three notes'},
-    {char:'ラ',rom:'ra',hint:'A radio antenna with a signal wave'},
-    {char:'リ',rom:'ri',hint:'Two reeds standing in a pond'},
-    {char:'ル',rom:'ru',hint:'A roo (kangaroo) hopping forward'},
-    {char:'レ',rom:'re',hint:'A reggae rhythm — sharp downbeat'},
-    {char:'ロ',rom:'ro',hint:'A rotunda — a square garden'},
-    {char:'ワ',rom:'wa',hint:'A waterfall curving over a ledge'},
-    {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle'},
-    {char:'ン',rom:'n',hint:'An nnn echo — short and sealed'},
-    {char:'ガ',rom:'ga',hint:'カ with dakuten — turn ka into ga'},
-    {char:'ギ',rom:'gi',hint:'キ with dakuten — turn ki into gi'},
-    {char:'グ',rom:'gu',hint:'ク with dakuten — turn ku into gu'},
-    {char:'ゲ',rom:'ge',hint:'ケ with dakuten — turn ke into ge'},
+    {char:'ア',rom:'a',hint:'An archery target — bow drawn back',tier:'basic'},
+    {char:'イ',rom:'i',hint:'An icicle leaning off an eave',tier:'basic'},
+    {char:'ウ',rom:'u',hint:'An umbrella covering you from rain',tier:'basic'},
+    {char:'エ',rom:'e',hint:'An elevator — top floor, ground floor',tier:'basic'},
+    {char:'オ',rom:'o',hint:'An offering cross at a shrine',tier:'basic'},
+    {char:'カ',rom:'ka',hint:'A katana sword cutting downward',tier:'basic'},
+    {char:'キ',rom:'ki',hint:'A key with two notches',tier:'basic'},
+    {char:'ク',rom:'ku',hint:'A cuckoo beak open, calling',tier:'basic'},
+    {char:'ケ',rom:'ke',hint:'A keg tipped on its side, leaking',tier:'basic'},
+    {char:'コ',rom:'ko',hint:'A corner of a frame — two sides',tier:'basic'},
+    {char:'サ',rom:'sa',hint:'A sapling with two leaves on top',tier:'basic'},
+    {char:'シ',rom:'shi',hint:'A shimmering swimmer doing the crawl',tier:'basic'},
+    {char:'ス',rom:'su',hint:'A super-fast skier zigzagging down',tier:'basic'},
+    {char:'セ',rom:'se',hint:'A serrated knife edge',tier:'basic'},
+    {char:'ソ',rom:'so',hint:'A sewing needle stabbing a button',tier:'basic'},
+    {char:'タ',rom:'ta',hint:'A taco folded around a filling',tier:'basic'},
+    {char:'チ',rom:'chi',hint:'A cheeky chick poking out from an egg',tier:'basic'},
+    {char:'ツ',rom:'tsu',hint:'A tsunami — three peaks rushing in',tier:'basic'},
+    {char:'テ',rom:'te',hint:'A telegram pole — top, wire, post',tier:'basic'},
+    {char:'ト',rom:'to',hint:'A totem pole with a flag',tier:'basic'},
+    {char:'ナ',rom:'na',hint:'A nail being hammered into wood',tier:'basic'},
+    {char:'ニ',rom:'ni',hint:'A pair of chopsticks (ni = 2)',tier:'basic'},
+    {char:'ヌ',rom:'nu',hint:'A noodle bent around a fork',tier:'basic'},
+    {char:'ネ',rom:'ne',hint:'A nest cradled in a branch',tier:'basic'},
+    {char:'ノ',rom:'no',hint:'A NO slash — refusing',tier:'basic'},
+    {char:'ハ',rom:'ha',hint:'A pair of legs jumping ha-ha-ha',tier:'basic'},
+    {char:'ヒ',rom:'hi',hint:'A heel kicking backward',tier:'basic'},
+    {char:'フ',rom:'fu',hint:'A flag flapping in the wind',tier:'basic'},
+    {char:'ヘ',rom:'he',hint:'A hill peak — exactly like hiragana へ',tier:'basic'},
+    {char:'ホ',rom:'ho',hint:'A hopeful Christmas tree — branches out',tier:'basic'},
+    {char:'マ',rom:'ma',hint:'A magic wand with a curl on top',tier:'basic'},
+    {char:'ミ',rom:'mi',hint:'Three steps of a mini-staircase',tier:'basic'},
+    {char:'ム',rom:'mu',hint:'A mug tipped — drink pouring out',tier:'basic'},
+    {char:'メ',rom:'me',hint:'A messy X — crossed mascara strokes',tier:'basic'},
+    {char:'モ',rom:'mo',hint:'A motel sign — pole and arms',tier:'basic'},
+    {char:'ヤ',rom:'ya',hint:'A yak with a single horn',tier:'basic'},
+    {char:'ユ',rom:'yu',hint:'A unicycle seat from the side',tier:'basic'},
+    {char:'ヨ',rom:'yo',hint:'A yodelling singer — three notes',tier:'basic'},
+    {char:'ラ',rom:'ra',hint:'A radio antenna with a signal wave',tier:'basic'},
+    {char:'リ',rom:'ri',hint:'Two reeds standing in a pond',tier:'basic'},
+    {char:'ル',rom:'ru',hint:'A roo (kangaroo) hopping forward',tier:'basic'},
+    {char:'レ',rom:'re',hint:'A reggae rhythm — sharp downbeat',tier:'basic'},
+    {char:'ロ',rom:'ro',hint:'A rotunda — a square garden',tier:'basic'},
+    {char:'ワ',rom:'wa',hint:'A waterfall curving over a ledge',tier:'basic'},
+    {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle',tier:'basic'},
+    {char:'ン',rom:'n',hint:'An nnn echo — short and sealed',tier:'basic'},
+    {char:'ガ',rom:'ga',hint:'カ with dakuten — "ka" becomes "ga"',tier:'dakuten'},
+    {char:'ギ',rom:'gi',hint:'キ with dakuten — "ki" becomes "gi"',tier:'dakuten'},
+    {char:'グ',rom:'gu',hint:'ク with dakuten — "ku" becomes "gu"',tier:'dakuten'},
+    {char:'ゲ',rom:'ge',hint:'ケ with dakuten — "ke" becomes "ge"',tier:'dakuten'},
+    {char:'ゴ',rom:'go',hint:'コ with dakuten — "ko" becomes "go"',tier:'dakuten'},
+    {char:'ザ',rom:'za',hint:'サ with dakuten — "sa" becomes "za"',tier:'dakuten'},
+    {char:'ジ',rom:'ji',hint:'シ with dakuten — "shi" becomes "ji"',tier:'dakuten'},
+    {char:'ズ',rom:'zu',hint:'ス with dakuten — "su" becomes "zu"',tier:'dakuten'},
+    {char:'ゼ',rom:'ze',hint:'セ with dakuten — "se" becomes "ze"',tier:'dakuten'},
+    {char:'ゾ',rom:'zo',hint:'ソ with dakuten — "so" becomes "zo"',tier:'dakuten'},
+    {char:'ダ',rom:'da',hint:'タ with dakuten — "ta" becomes "da"',tier:'dakuten'},
+    {char:'ヂ',rom:'ji',hint:'チ with dakuten — rare "ji" (di)',tier:'dakuten'},
+    {char:'ヅ',rom:'zu',hint:'ツ with dakuten — rare "zu" (du)',tier:'dakuten'},
+    {char:'デ',rom:'de',hint:'テ with dakuten — "te" becomes "de"',tier:'dakuten'},
+    {char:'ド',rom:'do',hint:'ト with dakuten — "to" becomes "do"',tier:'dakuten'},
+    {char:'バ',rom:'ba',hint:'ハ with dakuten — "ha" becomes "ba"',tier:'dakuten'},
+    {char:'ビ',rom:'bi',hint:'ヒ with dakuten — "hi" becomes "bi"',tier:'dakuten'},
+    {char:'ブ',rom:'bu',hint:'フ with dakuten — "fu" becomes "bu"',tier:'dakuten'},
+    {char:'ベ',rom:'be',hint:'ヘ with dakuten — "he" becomes "be"',tier:'dakuten'},
+    {char:'ボ',rom:'bo',hint:'ホ with dakuten — "ho" becomes "bo"',tier:'dakuten'},
+    {char:'パ',rom:'pa',hint:'ハ with handakuten (°) — "ha" becomes "pa"',tier:'dakuten'},
+    {char:'ピ',rom:'pi',hint:'ヒ with handakuten — "hi" becomes "pi"',tier:'dakuten'},
+    {char:'プ',rom:'pu',hint:'フ with handakuten — "fu" becomes "pu"',tier:'dakuten'},
+    {char:'ペ',rom:'pe',hint:'ヘ with handakuten — "he" becomes "pe"',tier:'dakuten'},
+    {char:'ポ',rom:'po',hint:'ホ with handakuten — "ho" becomes "po"',tier:'dakuten'},
+    {char:'キャ',rom:'kya',hint:'キ + small ャ — "kya"',tier:'yoon'},
+    {char:'キュ',rom:'kyu',hint:'キ + small ュ — "kyu"',tier:'yoon'},
+    {char:'キョ',rom:'kyo',hint:'キ + small ョ — "kyo"',tier:'yoon'},
+    {char:'シャ',rom:'sha',hint:'シ + small ャ — "sha"',tier:'yoon'},
+    {char:'シュ',rom:'shu',hint:'シ + small ュ — "shu"',tier:'yoon'},
+    {char:'ショ',rom:'sho',hint:'シ + small ョ — "sho"',tier:'yoon'},
+    {char:'チャ',rom:'cha',hint:'チ + small ャ — "cha"',tier:'yoon'},
+    {char:'チュ',rom:'chu',hint:'チ + small ュ — "chu"',tier:'yoon'},
+    {char:'チョ',rom:'cho',hint:'チ + small ョ — "cho"',tier:'yoon'},
+    {char:'ニャ',rom:'nya',hint:'ニ + small ャ — "nya"',tier:'yoon'},
+    {char:'ニュ',rom:'nyu',hint:'ニ + small ュ — "nyu"',tier:'yoon'},
+    {char:'ニョ',rom:'nyo',hint:'ニ + small ョ — "nyo"',tier:'yoon'},
+    {char:'ヒャ',rom:'hya',hint:'ヒ + small ャ — "hya"',tier:'yoon'},
+    {char:'ヒュ',rom:'hyu',hint:'ヒ + small ュ — "hyu"',tier:'yoon'},
+    {char:'ヒョ',rom:'hyo',hint:'ヒ + small ョ — "hyo"',tier:'yoon'},
+    {char:'ミャ',rom:'mya',hint:'ミ + small ャ — "mya"',tier:'yoon'},
+    {char:'ミュ',rom:'myu',hint:'ミ + small ュ — "myu"',tier:'yoon'},
+    {char:'ミョ',rom:'myo',hint:'ミ + small ョ — "myo"',tier:'yoon'},
+    {char:'リャ',rom:'rya',hint:'リ + small ャ — "rya"',tier:'yoon'},
+    {char:'リュ',rom:'ryu',hint:'リ + small ュ — "ryu"',tier:'yoon'},
+    {char:'リョ',rom:'ryo',hint:'リ + small ョ — "ryo"',tier:'yoon'},
+    {char:'ギャ',rom:'gya',hint:'ギ + small ャ — voiced "gya"',tier:'yoon'},
+    {char:'ギュ',rom:'gyu',hint:'ギ + small ュ — voiced "gyu"',tier:'yoon'},
+    {char:'ギョ',rom:'gyo',hint:'ギ + small ョ — voiced "gyo"',tier:'yoon'},
+    {char:'ジャ',rom:'ja',hint:'ジ + small ャ — "ja"',tier:'yoon'},
+    {char:'ジュ',rom:'ju',hint:'ジ + small ュ — "ju"',tier:'yoon'},
+    {char:'ジョ',rom:'jo',hint:'ジ + small ョ — "jo"',tier:'yoon'},
+    {char:'ビャ',rom:'bya',hint:'ビ + small ャ — voiced "bya"',tier:'yoon'},
+    {char:'ビュ',rom:'byu',hint:'ビ + small ュ — voiced "byu"',tier:'yoon'},
+    {char:'ビョ',rom:'byo',hint:'ビ + small ョ — voiced "byo"',tier:'yoon'},
+    {char:'ピャ',rom:'pya',hint:'ピ + small ャ — "pya"',tier:'yoon'},
+    {char:'ピュ',rom:'pyu',hint:'ピ + small ュ — "pyu"',tier:'yoon'},
+    {char:'ピョ',rom:'pyo',hint:'ピ + small ョ — "pyo"',tier:'yoon'}
   ],
 };
 
@@ -897,14 +1009,33 @@ function vocabForDrill(tab) {
 }
 
 // Get blocks list for any (section, tab) combo
+const KANA_TIER_LABELS = { basic:'Basic', dakuten:'Dakuten', yoon:'Combo (Yoon)' };
+
 function blocksFor(section, tab) {
   if (section==='foundation') {
     if (tab==='hiragana'||tab==='katakana') {
-      const k=KANA[tab], n=Math.ceil(k.length/BLOCK_SIZE);
-      return Array.from({length:n},(_,i)=>({
-        label:`Block ${i+1}`, preview:k[i*BLOCK_SIZE].char,
-        items:k.slice(i*BLOCK_SIZE,(i+1)*BLOCK_SIZE), numeric:false
-      }));
+      // Group into blocks of 5, but never let a block straddle two tiers.
+      // This keeps Basic / Dakuten / Combo blocks cleanly separated.
+      const k = KANA[tab];
+      const blocks = [];
+      let i = 0;
+      while (i < k.length) {
+        const tier = k[i].tier || 'basic';
+        // Take up to BLOCK_SIZE consecutive items of the SAME tier
+        const chunk = [];
+        while (i < k.length && chunk.length < BLOCK_SIZE && (k[i].tier||'basic') === tier) {
+          chunk.push(k[i]); i++;
+        }
+        const tierLabel = KANA_TIER_LABELS[tier] || 'Basic';
+        blocks.push({ label: tierLabel, preview: chunk[0].char, items: chunk, numeric:false, tier });
+      }
+      // Number the blocks within each tier (Basic 1, Basic 2, ... Dakuten 1, ...)
+      const tierCounts = {};
+      blocks.forEach(b => {
+        tierCounts[b.tier] = (tierCounts[b.tier]||0) + 1;
+        b.label = `${KANA_TIER_LABELS[b.tier]} ${tierCounts[b.tier]}`;
+      });
+      return blocks;
     }
     if (tab==='numbers') return NUM_BLOCKS.map(b=>({...b, numeric:false}));
     if (tab==='time')    return TIME_BLOCKS.map(b=>({...b, numeric:false}));
@@ -923,6 +1054,19 @@ function blocksFor(section, tab) {
 function isUnlocked(section, tab, idx) {
   // Legacy alias — forwards to the new state model.
   return isBlockUnlocked(section, tab, idx);
+}
+
+// Render a single kana block button (used by the tier-grouped grid)
+function kanaBlockButton(block, i) {
+  const isCleared   = isBlockCleared(currentSection, currentTab, i);
+  const isPractised = !isCleared && isBlockPractised(currentSection, currentTab, i);
+  const open        = isBlockUnlocked(currentSection, currentTab, i);
+  const cls  = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''}`;
+  const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
+  return `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+    <span class="bk">${block.preview}</span>
+    <span class="bs">${icon}</span>
+  </button>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1168,36 +1312,49 @@ function renderSectionHome(body) {
   }
 
   html += '<div class="section-heading">Your Blocks</div>';
-  let gridCls;
-  if (isFound) {
-    gridCls = (currentTab==='hiragana'||currentTab==='katakana') ? 'block-grid' : 'block-grid-3';
-  } else {
-    gridCls = 'block-grid';
-  }
-  html += `<div class="${gridCls}">`;
-  blocks.forEach((block, i) => {
-    const isCleared   = isBlockCleared(currentSection, currentTab, i);
-    const isPractised = !isCleared && isBlockPractised(currentSection, currentTab, i);
-    const open        = isBlockUnlocked(currentSection, currentTab, i);
-    const cls = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''}${block.numeric?' numeric':''}`;
-    const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
+  const isKana = (currentTab==='hiragana'||currentTab==='katakana');
+  const gridCls = isFound ? (isKana ? 'block-grid' : 'block-grid-3') : 'block-grid';
 
-    if (block.preview) {
-      // foundation-style with preview char
-      html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
-        <span class="bn">${block.label}</span>
-        <span class="bk">${block.preview}</span>
-        <span class="bs">${icon}</span>
-      </button>`;
-    } else {
-      // drill-style — just number + state
-      html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
-        <span class="bn">${i+1}</span>
-        <span class="bs">${icon}</span>
-      </button>`;
-    }
-  });
-  html += '</div>';
+  // For kana tabs, group blocks under tier sub-headings (Basic / Dakuten / Combo)
+  let lastTier = null;
+  if (isKana) {
+    blocks.forEach((block, i) => {
+      if (block.tier !== lastTier) {
+        if (lastTier !== null) html += '</div>';
+        const tierName = KANA_TIER_LABELS[block.tier] || 'Basic';
+        const tierDesc = block.tier === 'basic' ? 'The core 46 sounds'
+                       : block.tier === 'dakuten' ? 'Voiced sounds (゛) and (゜)'
+                       : 'Blended combo sounds (small ya/yu/yo)';
+        html += `<div class="tier-heading"><span class="th-name">${tierName}</span><span class="th-desc">${tierDesc}</span></div>`;
+        html += `<div class="${gridCls}">`;
+        lastTier = block.tier;
+      }
+      html += kanaBlockButton(block, i);
+    });
+    html += '</div>';
+  } else {
+    html += `<div class="${gridCls}">`;
+    blocks.forEach((block, i) => {
+      const isCleared   = isBlockCleared(currentSection, currentTab, i);
+      const isPractised = !isCleared && isBlockPractised(currentSection, currentTab, i);
+      const open        = isBlockUnlocked(currentSection, currentTab, i);
+      const cls = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''}${block.numeric?' numeric':''}`;
+      const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
+      if (block.preview) {
+        html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+          <span class="bn">${block.label}</span>
+          <span class="bk">${block.preview}</span>
+          <span class="bs">${icon}</span>
+        </button>`;
+      } else {
+        html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+          <span class="bn">${i+1}</span>
+          <span class="bs">${icon}</span>
+        </button>`;
+      }
+    });
+    html += '</div>';
+  }
 
 
 
@@ -1293,7 +1450,24 @@ const KANA_ROWS = [
   ['ya','yu','yo'],
   ['ra','ri','ru','re','ro'],
   ['wa','wo','n'],
+  // dakuten / handakuten rows
   ['ga','gi','gu','ge','go'],
+  ['za','ji','zu','ze','zo'],
+  ['da','de','do'],
+  ['ba','bi','bu','be','bo'],
+  ['pa','pi','pu','pe','po'],
+  // yoon rows (grouped by consonant)
+  ['kya','kyu','kyo'],
+  ['sha','shu','sho'],
+  ['cha','chu','cho'],
+  ['nya','nyu','nyo'],
+  ['hya','hyu','hyo'],
+  ['mya','myu','myo'],
+  ['rya','ryu','ryo'],
+  ['gya','gyu','gyo'],
+  ['ja','ju','jo'],
+  ['bya','byu','byo'],
+  ['pya','pyu','pyo'],
 ];
 
 function kanaDistractors(item, blockItems, fullKana) {
@@ -2760,17 +2934,12 @@ function toggleDevUnlock() {
     // Mark every block as cleared (uses new state model)
     const prog = getProgress();
 
-    ['hiragana','katakana'].forEach(tab => {
-      const n = Math.ceil(KANA[tab].length / BLOCK_SIZE);
+    ['hiragana','katakana','numbers','time'].forEach(tab => {
+      const n = blocksFor('foundation', tab).length;
       for (let i = 0; i < n; i++) prog[pKey('foundation', tab, i)] = { practised:true, cleared:true };
     });
-    [NUM_BLOCKS, TIME_BLOCKS].forEach((blocks, bi) => {
-      const tab = bi === 0 ? 'numbers' : 'time';
-      for (let i = 0; i < blocks.length; i++) prog[pKey('foundation', tab, i)] = { practised:true, cleared:true };
-    });
     ['hiragana','katakana','kanji'].forEach(tab => {
-      const v = vocabForDrill(tab);
-      const n = Math.ceil(v.length / BLOCK_SIZE);
+      const n = blocksFor('drill', tab).length;
       for (let i = 0; i < n; i++) prog[pKey('drill', tab, i)] = { practised:true, cleared:true };
     });
     window.phraseData.themes.forEach(t => {
