@@ -1986,10 +1986,12 @@ function blockComplete() {
   const acc    = quizTotal > 0 ? quizCorrect/quizTotal : 0;
   const blocks = blocksFor(currentSection, currentTab);
   const isLast = currentBlockIndex + 1 >= blocks.length;
-  document.getElementById('progress-fill').style.width = '100%';
 
-  // In test mode reaching this function means 100% (any mistake would have triggered testModeFailed)
-  // In practice mode just mark as practised
+  // Safe progress bar update — guard against null
+  const pf = document.getElementById('progress-fill');
+  if (pf) pf.style.width = '100%';
+
+  // Mark progress based on mode
   if (quizMode === 'test') {
     markCleared(currentSection, currentTab, currentBlockIndex);
   } else {
@@ -1997,12 +1999,18 @@ function blockComplete() {
   }
 
   const blockLabel = blocks[currentBlockIndex].label;
-  const cleared = quizMode === 'test';
-  const headline = cleared ? `${blockLabel} cleared!` : `Practice complete`;
-  const subtext  = cleared
+  const cleared    = quizMode === 'test';
+  const headline   = cleared ? `${blockLabel} cleared!` : `Practice complete`;
+  const subtext    = cleared
     ? `Perfect run — block unlocked the next one`
     : `${Math.round(acc*100)}% (${quizCorrect}/${quizTotal}) — take the Test when you're ready to clear this block`;
-  const emoji    = cleared ? '🌟' : '📘';
+
+  // Mascot image — different for last block, cleared, or practice
+  const mascot = cleared && isLast
+    ? `<img src="images/states/all-cleared.jpg" class="mascot-img" alt="All cleared!">`
+    : cleared
+    ? `<img src="images/states/test-cleared.jpg" class="mascot-img" alt="Test cleared!">`
+    : `<img src="images/states/practice-complete.jpg" class="mascot-img" alt="Practice complete">`;
 
   // Action buttons depend on mode + state
   let buttons = '';
@@ -2912,11 +2920,12 @@ function nextPhraseQuestion() {
 }
 
 function phraseQuizComplete() {
-  const cleared = quizMode === 'test';
-  const blocks  = phraseBlocksForTheme(currentThemeId);
+  const cleared      = quizMode === 'test';
+  const blocks       = phraseBlocksForTheme(currentThemeId);
   const hasNextBlock = currentBlockIdxP + 1 < blocks.length;
-  const headline = cleared ? 'Block cleared!' : 'Practice complete';
-  const mascot   = cleared && isLast
+  const isLastBlock  = !hasNextBlock;
+  const headline     = cleared ? 'Block cleared!' : 'Practice complete';
+  const mascot       = cleared && isLastBlock
     ? `<img src="images/states/all-cleared.jpg" class="mascot-img" alt="All cleared!">`
     : cleared
     ? `<img src="images/states/test-cleared.jpg" class="mascot-img" alt="Test cleared!">`
