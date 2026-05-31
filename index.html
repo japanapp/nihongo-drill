@@ -41,7 +41,7 @@
 
     .app-header { background: var(--ink); padding: 12px 20px 14px; padding-top: max(env(safe-area-inset-top,12px),12px); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .app-title { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--paper); letter-spacing: .04em; }
-    .app-subtitle { font-size: 10px; color: var(--gold); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
+    .app-subtitle { font-size: 12px; color: var(--gold); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
     .header-back { background: none; border: none; color: var(--gold); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; padding: 8px 0; display: flex; align-items: center; gap: 6px; }
     .header-back::before { content: '←'; font-size: 18px; }
 
@@ -49,16 +49,16 @@
 
     /* ── SECTION NAV (top level — Foundation / Drill / Phrases) ── */
     .section-nav { display: flex; gap: 6px; margin-bottom: 16px; background: var(--paper-warm); border-radius: 14px; padding: 5px; }
-    .section-btn { flex: 1; border: none; border-radius: 10px; padding: 11px 6px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; background: transparent; color: var(--text-soft); transition: all .2s; display: flex; flex-direction: column; align-items: center; gap: 3px; line-height: 1.2; position: relative; }
-    .section-btn .sec-icon { font-family: 'Shippori Mincho', serif; font-size: 20px; }
+    .section-btn { flex: 1; border: none; border-radius: 10px; padding: 12px 6px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; background: transparent; color: var(--text-soft); transition: all .2s; display: flex; flex-direction: column; align-items: center; gap: 3px; line-height: 1.2; position: relative; }
+    .section-btn .sec-icon { font-family: 'Shippori Mincho', serif; font-size: 24px; }
     .section-btn.active { background: var(--ink); color: var(--paper); box-shadow: 0 2px 8px rgba(0,0,0,.15); }
     .section-btn.active .sec-icon { color: var(--gold); }
     .section-btn .soon-pill { position: absolute; top: -4px; right: -2px; background: var(--gold); color: var(--ink); font-size: 7px; font-weight: 700; padding: 2px 5px; border-radius: 6px; letter-spacing: .05em; }
 
     /* ── SUB TABS (within a section — Hiragana / Katakana / Numbers / Time etc) ── */
     .sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; background: rgba(26,26,46,0.06); border-radius: 11px; padding: 4px; }
-    .sub-tab { flex: 1; border: none; border-radius: 8px; padding: 8px 3px; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; cursor: pointer; text-align: center; background: transparent; color: var(--text-soft); transition: all .18s; display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.2; }
-    .sub-tab .st-icon { font-family: 'Shippori Mincho', serif; font-size: 15px; }
+    .sub-tab { flex: 1; border: none; border-radius: 8px; padding: 10px 3px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; background: transparent; color: var(--text-soft); transition: all .18s; display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.2; }
+    .sub-tab .st-icon { font-family: 'Shippori Mincho', serif; font-size: 18px; }
     .sub-tab.active { background: var(--ink); color: var(--paper); }
     .sub-tab.active .st-icon { color: var(--gold); }
 
@@ -71,18 +71,18 @@
     .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; }
     .stat-card { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
     .stat-card .num { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--gold); line-height: 1; }
-    .stat-card .lbl { font-size: 9px; color: var(--paper-warm); margin-top: 3px; opacity: .7; text-transform: uppercase; letter-spacing: .08em; }
+    .stat-card .lbl { font-size: 11px; color: var(--paper-warm); margin-top: 3px; opacity: .7; text-transform: uppercase; letter-spacing: .08em; }
 
-    .section-heading { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--text-soft); margin: 14px 0 8px; }
+    .section-heading { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-soft); margin: 14px 0 8px; }
 
     /* ── BLOCK GRIDS ── */
-    .block-grid   { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; }
+    .block-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
     .block-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
     .block-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
     .tier-heading { display: flex; flex-direction: column; margin: 16px 0 8px; }
     .tier-heading:first-of-type { margin-top: 4px; }
-    .tier-heading .th-name { font-size: 12px; font-weight: 700; color: var(--gold); letter-spacing: .04em; }
-    .tier-heading .th-desc { font-size: 10px; color: var(--text-soft); margin-top: 1px; }
+    .tier-heading .th-name { font-size: 15px; font-weight: 700; color: var(--gold); letter-spacing: .02em; }
+    .tier-heading .th-desc { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
     .revision-banner {
       width: 100%; display: flex; justify-content: space-between; align-items: center;
       background: var(--ink); color: var(--paper); border: 2px solid var(--gold);
@@ -97,15 +97,15 @@
     .revision-banner .rb-title { font-size: 14px; font-weight: 700; color: var(--gold-light); letter-spacing: .02em; }
     .revision-banner .rb-sub { font-size: 11px; color: var(--paper); opacity: .7; margin-top: 2px; }
     .revision-banner .rb-arrow { font-size: 22px; color: var(--gold); font-weight: 300; }
-    .block-btn { aspect-ratio: 1; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: transform .12s; }
+    .block-btn { aspect-ratio: 1; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; transition: transform .12s; }
     .block-btn:active { transform: scale(.92); }
     .block-btn.unlocked { background: var(--ink); color: var(--paper); }
     .block-btn.unlocked.complete { background: var(--green); color: var(--white); }
     .block-btn.unlocked.practised { background: var(--gold); color: var(--ink); }
     .block-btn.locked { background: var(--paper-warm); color: #bbb; cursor: not-allowed; }
-    .block-btn .bn { font-size: 9px; font-weight: 700; opacity: .7; }
-    .block-btn .bk { font-family: 'Shippori Mincho', serif; font-size: 14px; line-height: 1.1; }
-    .block-btn .bs { font-size: 9px; }
+    .block-btn .bn { font-size: 10px; font-weight: 700; opacity: .7; }
+    .block-btn .bk { font-family: 'Shippori Mincho', serif; font-size: 22px; line-height: 1.1; }
+    .block-btn .bs { font-size: 11px; }
 
     /* Word drill blocks don't have preview char — keep them numbered */
     .block-btn.numeric .bn { font-size: 13px; font-weight: 700; opacity: 1; }
@@ -118,7 +118,7 @@
     .review-btn:active { transform: scale(.96); }
     .review-btn .ri { font-size: 15px; font-family: 'Shippori Mincho', serif; }
     .review-btn-locked { opacity: .55; cursor: not-allowed; border-style: dashed; }
-    .review-lock { font-size: 9px; color: var(--text-soft); margin-top: 2px; font-weight: 400; }
+    .review-lock { font-size: 11px; color: var(--text-soft); margin-top: 2px; font-weight: 400; }
 
     /* ── MASTERY BANNER ── */
     .mastery-banner { background: var(--ink-soft); border: 2px solid var(--gold); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; }
@@ -131,20 +131,22 @@
     .mastery-star.lit { background: var(--gold); border-color: var(--gold); }
 
     /* ── STUDY ── */
-    .study-grid     { display: grid; grid-template-columns: repeat(5,1fr); gap: 7px; margin-bottom: 18px; }
-    .study-grid-num { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 18px; }
-    .study-card { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 4px 10px; text-align: center; }
-    .study-char { font-family: var(--kana-font); font-size: 30px; color: var(--paper); line-height: 1; }
-    .study-rom  { font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: 500; }
-    .study-hint { font-size: 8px; color: var(--paper); opacity: .4; margin-top: 2px; line-height: 1.3; }
+    .study-grid     { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .study-grid-num { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .study-card { background: var(--ink); border-radius: var(--radius-sm); padding: 16px 18px; display: flex; flex-direction: row; align-items: center; gap: 18px; }
+    .study-text { display: flex; flex-direction: column; flex: 1; }
+    .study-char { font-family: var(--kana-font); font-size: 52px; color: var(--paper); line-height: 1; min-width: 60px; text-align: center; flex-shrink: 0; }
+    .study-rom  { font-size: 16px; color: var(--gold); font-weight: 600; }
+    .study-hint { font-size: 12px; color: var(--paper); opacity: .55; margin-top: 4px; line-height: 1.4; }
     .kanji-info-card { background: var(--ink); color: var(--paper); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 11.5px; line-height: 1.6; opacity: .92; }
     .kanji-info-card i { color: var(--gold); margin-right: 4px; }
     .block-note { background: var(--ink-soft); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--paper); line-height: 1.5; }
-    .study-card-num { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
-    .sn-digit { font-size: 20px; font-weight: 700; color: var(--gold); }
-    .sn-jp    { font-family: 'Shippori Mincho', serif; font-size: 18px; color: var(--paper); margin-top: 3px; }
-    .sn-rom   { font-size: 10px; color: var(--paper); opacity: .5; margin-top: 2px; }
-    .sn-hint  { font-size: 8px; color: var(--paper); opacity: .35; margin-top: 2px; line-height: 1.3; }
+    .study-card-num { background: var(--ink); border-radius: var(--radius-sm); padding: 16px 18px; display: flex; flex-direction: row; align-items: center; gap: 18px; }
+    .sn-text  { display: flex; flex-direction: column; flex: 1; }
+    .sn-digit { font-size: 32px; font-weight: 700; color: var(--gold); min-width: 80px; text-align: center; flex-shrink: 0; }
+    .sn-jp    { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--paper); }
+    .sn-rom   { font-size: 14px; color: var(--paper); opacity: .6; margin-top: 2px; }
+    .sn-hint  { font-size: 11px; color: var(--paper); opacity: .45; margin-top: 3px; line-height: 1.4; }
 
     /* Word drill study cards */
     .word-card { background: var(--white); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 9px; display: grid; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
@@ -169,7 +171,7 @@
     .phase-pill.pp-done { background: var(--green); color: var(--white); border-color: var(--green); }
 
     .question-card { background: var(--ink); border-radius: 24px; padding: 24px 20px; text-align: center; margin-bottom: 14px; box-shadow: var(--shadow-lg); min-height: 155px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-    .q-label  { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--gold); opacity: .7; }
+    .q-label  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); opacity: .7; }
     .q-kana   { font-family: var(--kana-font); font-size: 58px; font-weight: 700; color: var(--paper); line-height: 1; }
     .q-kana-word { font-family: 'Shippori Mincho', serif; font-size: 50px; font-weight: 800; color: var(--paper); line-height: 1; letter-spacing: .04em; }
     .q-romaji { font-size: 17px; font-weight: 400; color: var(--paper); opacity: .75; }
@@ -1427,26 +1429,32 @@ function openBlock(i) {
     if (currentTab==='hiragana'||currentTab==='katakana') {
       cards = `<div class="study-grid">${currentBlock.map(k=>`<div class="study-card">
         <div class="study-char">${k.char}</div>
-        <div class="study-rom">${k.rom}</div>
-        <div class="study-hint">${k.hint}</div>
+        <div class="study-text">
+          <div class="study-rom">${k.rom}</div>
+          <div class="study-hint">${k.hint}</div>
+        </div>
       </div>`).join('')}</div>`;
     } else if (currentTab==='numbers') {
       const blockNote = NUM_BLOCKS[currentBlockIndex]?.note;
       cards = (blockNote ? `<div class="block-note">${blockNote}</div>` : '') +
         `<div class="study-grid-num">${currentBlock.map(item=>`<div class="study-card-num">
         <div class="sn-digit">${item.n.toLocaleString()}</div>
-        <div class="sn-jp">${item.jp}</div>
-        <div class="sn-rom">${item.rom}</div>
-        ${item.hint?`<div class="sn-hint">${item.hint}</div>`:''}
+        <div class="sn-text">
+          <div class="sn-jp">${item.jp}</div>
+          <div class="sn-rom">${item.rom}</div>
+          ${item.hint?`<div class="sn-hint">${item.hint}</div>`:''}
+        </div>
       </div>`).join('')}</div>`;
     } else {
       const blockNote = TIME_BLOCKS[currentBlockIndex]?.note;
       cards = (blockNote ? `<div class="block-note">${blockNote}</div>` : '') +
         `<div class="study-grid-num">${currentBlock.map(item=>`<div class="study-card-num">
-        <div class="sn-digit" style="font-size:18px">${item.digital}</div>
-        <div class="sn-jp">${item.jp}</div>
-        <div class="sn-rom">${item.rom}</div>
-        ${item.hint?`<div class="sn-hint">${item.hint}</div>`:''}
+        <div class="sn-digit" style="font-size:22px">${item.digital}</div>
+        <div class="sn-text">
+          <div class="sn-jp">${item.jp}</div>
+          <div class="sn-rom">${item.rom}</div>
+          ${item.hint?`<div class="sn-hint">${item.hint}</div>`:''}
+        </div>
       </div>`).join('')}</div>`;
     }
   } else {
