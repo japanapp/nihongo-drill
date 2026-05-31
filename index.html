@@ -1599,13 +1599,18 @@ function renderFoundationQuizFrame() {
 
 function showFoundationQuestion() {
   const item = phaseOrder[wordIndex];
-  // One cycle = recognition pass + production pass (each touches every item once)
-  const total = currentBlock.length * 2;
-  const done  = quizPhase * currentBlock.length + wordIndex;
-  document.getElementById('progress-fill').style.width = Math.min(done/total*100, 99) + '%';
-  const modeLabel = quizMode === 'test' ? 'TEST' : 'PRACTICE';
-  document.getElementById('quiz-phase-label').textContent =
-    `${modeLabel} · ${quizPhase===0?'Recognition':'Production'} · ${wordIndex+1}/${currentBlock.length}`;
+  // Practice: 2 cycles × 2 phases = 4 passes total
+  // Test: 1 cycle × 2 phases = 2 passes
+  const cycles = quizMode === 'test' ? 1 : 2;
+  const total  = currentBlock.length * 2 * cycles;
+  const done   = cycleCount * currentBlock.length * 2 + quizPhase * currentBlock.length + wordIndex;
+  const pf = document.getElementById('progress-fill');
+  if (pf) pf.style.width = Math.min(done/total*100, 99) + '%';
+
+  const modeLabel  = quizMode === 'test' ? 'TEST' : `PRACTICE · Pass ${cycleCount+1}/2`;
+  const phaseLabel = quizPhase === 0 ? 'Recognition' : 'Production';
+  const el = document.getElementById('quiz-phase-label');
+  if (el) el.textContent = `${modeLabel} · ${phaseLabel} · ${wordIndex+1}/${currentBlock.length}`;
   clearFeedback();
   buildFoundationQuestion(item);
 }
@@ -1773,16 +1778,30 @@ function markMistake() {
 function nextFoundationWord() {
   wordIndex++;
   if (wordIndex < phaseOrder.length) { showFoundationQuestion(); return; }
+
+  // End of a phase — move to next phase
   quizPhase++;
   if (quizPhase < 2) {
-    // Switching from recognition to production — reshuffle so the user
-    // doesn't see the same item back-to-back with the answer fresh in mind
+    // MC done → Production. Reshuffle to avoid back-to-back giveaway.
     wordIndex = 0;
     phaseOrder = shuffleAvoidingRecent(currentBlock, phaseOrder);
     renderFoundationQuizFrame();
     return;
   }
-  // Done with both phases — one cycle complete
+
+  // Both phases done — end of one cycle
+  quizPhase = 0;
+  cycleCount++;
+  const requiredCycles = quizMode === 'test' ? 1 : 2;
+  if (cycleCount < requiredCycles) {
+    // Start next cycle — reshuffle for fresh ordering
+    wordIndex = 0;
+    phaseOrder = shuffle(currentBlock);
+    renderFoundationQuizFrame();
+    return;
+  }
+
+  // All cycles complete
   blockComplete();
 }
 
