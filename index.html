@@ -1598,17 +1598,17 @@ function renderFoundationQuizFrame() {
 }
 
 function showFoundationQuestion() {
-  const item = phaseOrder[wordIndex];
-  // Practice: 2 cycles × 2 phases = 4 passes total
-  // Test: 1 cycle × 2 phases = 2 passes
+  const item   = phaseOrder[wordIndex];
+  const phases = foundationPhaseCount();
   const cycles = quizMode === 'test' ? 1 : 2;
-  const total  = currentBlock.length * 2 * cycles;
-  const done   = cycleCount * currentBlock.length * 2 + quizPhase * currentBlock.length + wordIndex;
+  const total  = currentBlock.length * phases * cycles;
+  const done   = cycleCount * currentBlock.length * phases + quizPhase * currentBlock.length + wordIndex;
   const pf = document.getElementById('progress-fill');
   if (pf) pf.style.width = Math.min(done/total*100, 99) + '%';
 
   const modeLabel  = quizMode === 'test' ? 'TEST' : `PRACTICE · Pass ${cycleCount+1}/2`;
-  const phaseLabel = quizPhase === 0 ? 'Recognition' : 'Production';
+  const phaseLabels = ['Recognition', 'Read kanji', 'Write reading'];
+  const phaseLabel  = phaseLabels[quizPhase] || 'Production';
   const el = document.getElementById('quiz-phase-label');
   if (el) el.textContent = `${modeLabel} · ${phaseLabel} · ${wordIndex+1}/${currentBlock.length}`;
   clearFeedback();
@@ -1621,7 +1621,8 @@ function buildFoundationQuestion(item) {
   const hint  = quizMode !== 'test' && cycleCount === 0; // never show hints in test mode
 
   if (quizPhase === 0) {
-    // Recognition — MC
+    // Recognition — MC. Clear any typed input from previous cycle.
+    aEl.innerHTML = '';
     if (isKanaTab()) {
       qCard.innerHTML = `<div class="q-label">What is the reading?</div>
         <div class="q-kana">${item.char}</div>
@@ -1665,18 +1666,57 @@ function buildFoundationQuestion(item) {
         `<button class="choice-btn rom" onclick="checkMC(this,${c.ok})">${c.val}</button>`
       ).join('')}</div>`;
     }
+  } else if (quizPhase === 1 && (currentTab === 'numbers' || currentTab === 'time')) {
+    // ── Phase 1 (numbers/time only): show kanji/jp → pick digit/digital ──
+    // This teaches recognition of the written Japanese form
+    if (currentTab === 'numbers') {
+      qCard.innerHTML = `<div class="q-label">What number is this?</div>
+        <div class="q-kana" style="font-size:36px">${item.jp}</div>`;
+      const blockItems = NUM_BLOCKS[currentBlockIndex].items;
+      let pool = shuffle(blockItems.filter(x=>x.n!==item.n));
+      if (pool.length < 3) {
+        const others = shuffle(NUM_ITEMS.filter(x=>x.n!==item.n && !blockItems.includes(x)));
+        pool = [...pool, ...others];
+      }
+      pool = pool.slice(0,3);
+      const choices = shuffle([{val:item.n,ok:true}, ...pool.map(x=>({val:x.n,ok:false}))]);
+      aEl.innerHTML = `<div class="choices-grid">${choices.map(c=>
+        `<button class="choice-btn rom" onclick="checkMC(this,${c.ok})">${Number(c.val).toLocaleString()}</button>`
+      ).join('')}</div>`;
+    } else {
+      // time — show jp form, pick digital time
+      qCard.innerHTML = `<div class="q-label">What time is this?</div>
+        <div class="q-kana" style="font-size:28px">${item.jp}</div>`;
+      const blockItems = TIME_BLOCKS[currentBlockIndex].items;
+      let pool = shuffle(blockItems.filter(t=>t.digital!==item.digital));
+      if (pool.length < 3) {
+        const others = shuffle(TIME_ITEMS.filter(t=>t.digital!==item.digital && !blockItems.includes(t)));
+        pool = [...pool, ...others];
+      }
+      pool = pool.slice(0,3);
+      const choices = shuffle([{val:item.digital,ok:true}, ...pool.map(t=>({val:t.digital,ok:false}))]);
+      aEl.innerHTML = `<div class="choices-grid">${choices.map(c=>
+        `<button class="choice-btn rom" onclick="checkMC(this,${c.ok})">${c.val}</button>`
+      ).join('')}</div>`;
+    }
+    // Clear any stale typed input from the previous cycle's typed phase
+    aEl.innerHTML = '';
+
   } else {
-    // Production — typed
+    // ── Phase 1 (kana) or Phase 2 (numbers/time): typed production ──
+    // For numbers/time phase 2: show kanji/jp form (not digit) so user must recall the reading
     let prompt='', correct='', ph='';
     if (isKanaTab()) {
       prompt = `<div class="q-label">Type the romaji</div><div class="q-kana">${item.char}</div>`;
       correct = item.rom; ph = 'Type romaji…';
     } else if (currentTab === 'numbers') {
-      prompt = `<div class="q-label">Type the reading</div><div class="q-number">${item.n.toLocaleString()}</div>`;
+      // Show the kanji form — harder, must recall reading from written form
+      prompt = `<div class="q-label">Type the reading</div><div class="q-kana" style="font-size:36px">${item.jp}</div>`;
       correct = item.rom; ph = 'Type romaji…';
     } else {
-      prompt = `<div class="q-label">Type the reading</div><div class="q-number">${item.digital}</div>`;
-      correct = item.rom; ph = 'e.g. ichiji…';
+      // Time — show jp form
+      prompt = `<div class="q-label">Type the reading</div><div class="q-kana" style="font-size:26px">${item.jp}</div>`;
+      correct = item.rom; ph = 'e.g. sanji han…';
     }
     qCard.innerHTML = prompt;
     const safe = escQ(correct);
@@ -1722,7 +1762,10 @@ function checkMC(btn, ok) {
     markMistake();
     const item = phaseOrder[wordIndex];
     addToRevisionPool(item);
-    const correctVal = item.rom;
+    // For numbers/time phase 1 (kanji→digit), the correct display is the digit
+    const correctVal = (quizPhase === 1 && (currentTab==='numbers'||currentTab==='time'))
+      ? (currentTab==='numbers' ? Number(item.n).toLocaleString() : item.digital)
+      : item.rom;
     document.querySelectorAll('#answer-area .choice-btn').forEach(b=>{
       if (b.textContent.trim() === correctVal) b.classList.add('correct');
     });
@@ -1781,7 +1824,7 @@ function nextFoundationWord() {
 
   // End of a phase — move to next phase
   quizPhase++;
-  if (quizPhase < 2) {
+  if (quizPhase < foundationPhaseCount()) {
     // MC done → Production. Reshuffle to avoid back-to-back giveaway.
     wordIndex = 0;
     phaseOrder = shuffleAvoidingRecent(currentBlock, phaseOrder);
@@ -1789,7 +1832,7 @@ function nextFoundationWord() {
     return;
   }
 
-  // Both phases done — end of one cycle
+  // All phases done — end of one cycle
   quizPhase = 0;
   cycleCount++;
   const requiredCycles = quizMode === 'test' ? 1 : 2;
@@ -1803,6 +1846,11 @@ function nextFoundationWord() {
 
   // All cycles complete
   blockComplete();
+}
+
+// Phase count — kana uses 2 phases, numbers/time uses 3
+function foundationPhaseCount() {
+  return (currentTab === 'numbers' || currentTab === 'time') ? 3 : 2;
 }
 
 // Reshuffle but ensure the FIRST item of the new order isn't the same as the LAST item
