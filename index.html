@@ -2640,7 +2640,9 @@ function beginPhraseQuiz(mode) {
   quizMode       = mode || 'practice';
   phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
   phraseQIndex   = 0;
-  phraseQPhase   = 1;
+  // Test mode skips Phase 1 (Study & type) — that phase shows the answer.
+  // Test starts at Phase 2 (MC pick romaji) — 4 phases total.
+  phraseQPhase   = quizMode === 'test' ? 2 : 1;
   phraseQCorrect = 0;
   phraseQTotal   = 0;
   pqAttempts     = 0;
@@ -2670,7 +2672,12 @@ function buildPhraseQuizShell() {
     <div class="phrase-quiz-meta">
       <span class="pq-type-label" id="pq-phase-label">Phase ${phraseQPhase}/5 · ${ph.label}</span>
       <div class="pq-type-dots">
-        ${PQ_PHASES.map((_,i) => `<div class="pq-dot ${i+1<phraseQPhase?'done':i+1===phraseQPhase?'active':''}"></div>`).join('')}
+        ${PQ_PHASES
+          .filter((_,i) => quizMode !== 'test' || i > 0)
+          .map((_, ii) => {
+            const n = quizMode === 'test' ? ii + 2 : ii + 1;
+            return `<div class="pq-dot ${n<phraseQPhase?'done':n===phraseQPhase?'active':''}"></div>`;
+          }).join('')}
       </div>
     </div>
     <div class="progress-track"><div class="progress-fill" id="pq-progress" style="width:0%"></div></div>
@@ -2686,7 +2693,9 @@ function showPhraseQuestion() {
   const pct   = Math.min((phraseQIndex / total) * 100, 99);
 
   document.getElementById('pq-progress').style.width = pct + '%';
-  document.getElementById('pq-phase-label').textContent = `Phase ${phraseQPhase}/5 · ${PQ_PHASES[phraseQPhase-1].label}`;
+  const totalPhases = quizMode === 'test' ? 4 : 5;
+  const displayPhase = quizMode === 'test' ? phraseQPhase - 1 : phraseQPhase;
+  document.getElementById('pq-phase-label').textContent = `Phase ${displayPhase}/${totalPhases} · ${PQ_PHASES[phraseQPhase-1].label}`;
   clearPQFeedback();
   pqAttempts = 0;
 
@@ -2987,12 +2996,19 @@ function nextPhraseQuestion() {
 
   // Move to next phase
   phraseQPhase++;
+  // Reshuffle phrase order when moving between phases so the same phrase
+  // isn't first in Phase 3 immediately after being answered in Phase 2 (giveaway)
+  if (phraseQIndex === phraseQuizList.length) {
+    phraseQuizList = shuffle(phraseQuizList);
+  }
   if (phraseQPhase <= 5) {
     phraseQIndex   = 0;
     phraseQuizList = shuffle(currentPhrases).map(p => resolvePhrase(p));
     pqAttempts     = 0;
     builtChunks    = [];
-    document.getElementById('phrase-quiz-subtitle').textContent = `Phase ${phraseQPhase} / 5`;
+    const _tot = quizMode === 'test' ? 4 : 5;
+    const _disp = quizMode === 'test' ? phraseQPhase - 1 : phraseQPhase;
+    document.getElementById('phrase-quiz-subtitle').textContent = `Phase ${_disp} / ${_tot}`;
     buildPhraseQuizShell();
     showPhraseQuestion();
     return;
