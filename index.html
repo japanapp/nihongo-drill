@@ -63,10 +63,10 @@
     .sub-tab.active .st-icon { color: var(--gold); }
 
     /* ── HOME ── */
-    .home-hero { text-align: center; padding: 4px 0 14px; }
-    .kanji-bg { font-family: 'Shippori Mincho', serif; font-size: 64px; color: var(--ink); opacity: .07; line-height: 1; user-select: none; letter-spacing: -4px; }
-    .home-hero h2 { font-family: 'Shippori Mincho', serif; font-size: 20px; font-weight: 800; color: var(--ink); margin-top: -16px; }
-    .home-hero p { color: var(--text-soft); font-size: 12px; margin-top: 4px; }
+    .home-hero { text-align: center; padding: 4px 0 14px; position: relative; }
+    .kanji-bg { font-family: 'Shippori Mincho', serif; font-size: 38px; color: var(--ink); opacity: .08; line-height: 1; user-select: none; letter-spacing: -2px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; z-index: 0; }
+    .home-hero h2 { font-family: 'Shippori Mincho', serif; font-size: 20px; font-weight: 800; color: var(--ink); position: relative; z-index: 1; margin-top: 0; }
+    .home-hero p { color: var(--text-soft); font-size: 12px; margin-top: 4px; position: relative; z-index: 1; }
 
     .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; }
     .stat-card { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
@@ -149,6 +149,7 @@
     .sn-hint  { font-size: 11px; color: var(--paper); opacity: .45; margin-top: 3px; line-height: 1.4; }
 
     /* Word drill study cards */
+    .furigana { font-family: var(--kana-font); font-size: 13px; color: var(--gold); opacity: .8; margin-top: -4px; margin-bottom: 2px; letter-spacing: .02em; }
     .word-card { background: var(--white); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 9px; display: grid; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
     .word-card .kana { font-family: 'Shippori Mincho', serif; font-size: 26px; font-weight: 600; color: var(--ink); }
     .word-card .romaji { font-size: 13px; color: var(--text-soft); }
@@ -221,7 +222,7 @@
     .ftbtn:first-child { border-right: 1px solid rgba(26,26,46,.2); }
 
     /* COMPLETE */
-    .mascot-img { display: block; width: 220px; max-width: 80%; margin: 0 auto 12px; border-radius: 12px; }
+    .mascot-img { display: block; width: 280px; max-width: 90%; margin: 0 auto 16px; border-radius: 14px; }
     .complete-card { background: var(--ink); border-radius: 24px; padding: 30px 20px; text-align: center; color: var(--paper); box-shadow: var(--shadow-lg); }
     .complete-card .big-emoji { font-size: 46px; margin-bottom: 10px; }
     .complete-card h2 { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--gold-light); margin-bottom: 5px; }
@@ -1234,9 +1235,8 @@ function renderSectionHome(body) {
     }).join('') + '</div>';
 
   // Hero
-  const heroMascot = cleared === 0 && !practised
-    ? `<img src="images/states/welcome.png" class="mascot-img" style="width:180px;margin-bottom:8px" alt="Welcome!">`
-    : '';
+  // Show welcome mascot always on Foundation home — they guide the learner
+  const heroMascot = `<img src="images/states/welcome.png" class="mascot-img" style="width:260px;margin-bottom:8px" alt="Luna and Bentley">`;
   html += `<div class="home-hero">
     ${heroMascot}
     <div class="kanji-bg">${meta.heroBg}</div>
@@ -1348,7 +1348,8 @@ function renderSectionHome(body) {
   }
 
   html += '<div class="section-heading">Your Blocks</div>';
-  const isKana = (currentTab==='hiragana'||currentTab==='katakana');
+  // isKana only applies when we're in the Foundation section (not the Words drill)
+  const isKana  = isFound && (currentTab==='hiragana'||currentTab==='katakana');
   const gridCls = isFound ? (isKana ? 'block-grid' : 'block-grid-3') : 'block-grid';
 
   // For kana tabs, group blocks under tier sub-headings (Basic / Dakuten / Combo)
@@ -1461,12 +1462,15 @@ function openBlock(i) {
     // Drill section — word cards
     cards = currentBlock.map(w => {
       const script = currentTab==='hiragana'?w.hiragana:currentTab==='katakana'?w.katakana:w.kanji;
-      // For katakana loanwords, show the katakana prominently with a note
       const loanNote = (currentTab==='katakana')
         ? `<div style="font-size:9px;color:var(--text-soft);margin-top:2px;letter-spacing:.06em;text-transform:uppercase">loanword</div>`
         : '';
+      // Kanji tab: show kanji large + hiragana reading below so user knows how to sound it out
+      const furigana = (currentTab==='kanji' && w.hiragana)
+        ? `<div class="furigana">${w.hiragana}</div>` : '';
       return `<div class="word-card">
         <div class="kana">${script}</div>
+        ${furigana}
         <div class="romaji">${w.romaji}</div>
         <div class="english">${w.english}</div>
         ${loanNote}
