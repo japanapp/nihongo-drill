@@ -63,10 +63,11 @@
     .sub-tab.active .st-icon { color: var(--gold); }
 
     /* ── HOME ── */
-    .home-hero { text-align: center; padding: 4px 0 14px; position: relative; }
+    .home-hero { text-align: center; padding: 4px 0 14px; }
+    .hero-title-wrap { position: relative; display: inline-block; width: 100%; margin-top: 8px; }
     .kanji-bg { font-family: 'Shippori Mincho', serif; font-size: 38px; color: var(--ink); opacity: .08; line-height: 1; user-select: none; letter-spacing: -2px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; z-index: 0; }
-    .home-hero h2 { font-family: 'Shippori Mincho', serif; font-size: 20px; font-weight: 800; color: var(--ink); position: relative; z-index: 1; margin-top: 0; }
-    .home-hero p { color: var(--text-soft); font-size: 12px; margin-top: 4px; position: relative; z-index: 1; }
+    .home-hero h2 { font-family: 'Shippori Mincho', serif; font-size: 20px; font-weight: 800; color: var(--ink); position: relative; z-index: 1; margin: 0; }
+    .home-hero p { color: var(--text-soft); font-size: 12px; margin-top: 4px; }
 
     .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; }
     .stat-card { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
@@ -1239,9 +1240,11 @@ function renderSectionHome(body) {
   const heroMascot = `<img src="images/states/welcome.png" class="mascot-img" style="width:260px;margin-bottom:8px" alt="Luna and Bentley">`;
   html += `<div class="home-hero">
     ${heroMascot}
-    <div class="kanji-bg">${meta.heroBg}</div>
-    <h2>${meta.heroTitle}</h2>
-    <p>${meta.heroSub || 'Build your skills block by block'}</p>
+    <div class="hero-title-wrap">
+      <div class="kanji-bg">${meta.heroBg}</div>
+      <h2>${meta.heroTitle}</h2>
+      <p>${meta.heroSub || 'Build your skills block by block'}</p>
+    </div>
   </div>`;
 
   // Kanji section explainer — sets expectations about the real-world approach
