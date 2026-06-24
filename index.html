@@ -976,7 +976,7 @@ const DRILL_PHASES = {
         w=>`<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
       ], answer:w=>w.romaji, placeholder:'Type romaji…', hint:null },
     { label:'English', prompts:[
-        w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${w.hiragana}</div><div class="q-romaji">${w.romaji}</div>`,
+        w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${w.hiragana}</div><div class="q-romaji">${displayRomaji(w.romaji)}</div>`,
         w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:26px">${w.romaji}</div>`,
         w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${w.hiragana}</div>`,
       ], answer:w=>w.english, placeholder:'Type English meaning…', hint:null },
@@ -994,7 +994,7 @@ const DRILL_PHASES = {
         w=>`<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
       ], answer:w=>w.romaji, placeholder:'Type romaji…', hint:null },
     { label:'English', prompts:[
-        w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${w.katakana}</div><div class="q-romaji">${w.romaji}</div>`,
+        w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${w.katakana}</div><div class="q-romaji">${displayRomaji(w.romaji)}</div>`,
         w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:26px">${w.romaji}</div>`,
         w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${w.katakana}</div>`,
       ], answer:w=>w.english, placeholder:'Type English meaning…', hint:null },
@@ -1299,7 +1299,7 @@ function runDictionarySearch(raw) {
       const reading = w.hasKanji ? `<span class="dict-reading">${w.hiragana}</span>` : '';
       html += `<div class="dict-card">
         <div class="dict-jp">${jp}${reading}</div>
-        <div class="dict-rom">${w.romaji}</div>
+        <div class="dict-rom">${displayRomaji(w.romaji)}</div>
         <div class="dict-en">${escapeHtml(w.english)}</div>
       </div>`;
     });
@@ -1336,6 +1336,7 @@ function escQ(s){return (s||'').toString().replace(/\\/g,'\\\\').replace(/'/g,"\
 // 'ei' is deliberately NOT collapsed (sensei vs sense changes meaning).
 function romajiSkeleton(s) {
   let t = (s||'').toString().trim().toLowerCase();
+  t = t.replace(/_[a-z]+$/, '');      // strip disambiguation suffix (koshou_pepper -> koshou)
   t = t.replace(/[\s|・]/g, '');      // strip spaces, pipes, middots
   t = t.replace(/-/g, '');            // strip hyphens (hyaku-en vs hyakuen)
   t = t.replace(/ou/g, 'o');          // arigatou -> arigato
@@ -1349,6 +1350,9 @@ function romajiSkeleton(s) {
   t = t.replace(/m([bpm])/g, 'n$1');
   return t;
 }
+// Clean romaji for DISPLAY — strips any internal disambiguation suffix so the
+// learner always sees natural romaji (e.g. "koshou", never "koshou_pepper").
+function displayRomaji(s){ return (s||'').toString().replace(/_[a-z]+$/,''); }
 // True if a typed romaji answer matches the correct one, leniently.
 // `correct` may contain '/' separated acceptable alternates.
 function romajiMatch(userInput, correct) {
@@ -1824,7 +1828,7 @@ function openBlock(i) {
       return `<div class="word-card">
         <div class="kana">${script}</div>
         ${furigana}
-        <div class="romaji">${w.romaji}</div>
+        <div class="romaji">${displayRomaji(w.romaji)}</div>
         <div class="english">${w.english}</div>
         ${loanNote}
       </div>`;
@@ -2782,14 +2786,14 @@ const PQ_PHASES = [
 // Words still must be STUDIED before they appear (see slotCandidates).
 const SLOT_POOLS = {
   'body-part':   ['atama','onaka','te','ashi','me','mimi','kuchi','nodo','ha','kubi','mune','senaka','ude','yubi','kata','hiza','hada','kao'],
-  'place':       ['eki','toire','byouin','yakkyoku','ginkou','kouban','konbini','depaato','resutoran','hoteru','kouen','otearai','yuubinkyoku','kuukou','mise','daigaku','gakkou'],
+  'place':       ['eki','toire','byouin','yakkyoku','ginkou','kouban','konbini','suupaa','depaato','resutoran','hoteru','kouen','otearai','yuubinkyoku','kuukou','mise','daigaku','gakkou','otera','jinja','hakubutsukan','bijutsukan','taishikan'],
   'room':        ['heya','daidokoro','ofuro','furoba','toire','genkan','kaidan'],
   'transport':   ['densha','basu','takushii','chikatetsu','shinkansen','jitensha','hikouki','kuruma','baiku'],
-  'food':        ['sushi','raamen','tempura','udon','soba','karee','piza','keeki','pan','tamago','niku','sakana','yasai','gohan','ringo','ichigo','okashi'],
-  'drink':       ['mizu','ocha','koohii','koucha','biiru','wain','juusu','gyuunyuu','osake'],
+  'food':        ['sushi','raamen','tempura','udon','soba','karee','piza','keeki','pan','tamago','niku','sakana','yasai','gohan','ringo','ichigo','okashi','tako','ebi','ika','kani','maguro','saamon','toufu','sarada','suupu','ninniku','komugi','daizu','piinattsu','nattsu','goma'],
+  'drink':       ['mizu','ocha','koohii','koucha','biiru','wain','juusu','gyuunyuu','osake','sooda','koora'],
   'colour':      ['aka','ao','shiro','kuro','midori','kiiro','chairo','murasaki','pinku','orenji'],
   'country':     ['oosutoraria','nihon','amerika','igirisu','furansu','doitsu','itaria','kanada','chuugoku','kankoku','indo','supein','tai'],
-  'object':      ['hon','kasa','kagi','megane','saifu','kitte','hagaki','chizu','kusuri','denwa','keitai','kamera'],
+  'object':      ['hon','kasa','kagi','megane','saifu','kitte','hagaki','chizu','kusuri','denwa','keitai','kamera','taoru','sekken','shanpuu','haburashi','itamidome','bansoukou','kaado','genkin'],
   'weather':     ['ame','yuki','hare','kumori','atsui','samui','atatakai'],
 };
 
@@ -3025,7 +3029,7 @@ function openPhraseBlock(themeId, blockIdx) {
       ? `<span class="psc-badge template">${resolved.candidates.length} words available</span>`
       : '';
     const knownChips = known.length
-      ? `<div class="psc-words"><span style="font-size:9px;color:var(--text-soft);margin-right:3px">You know:</span>${known.map(w=>`<span class="psc-word-chip known">${w.romaji}</span>`).join('')}</div>`
+      ? `<div class="psc-words"><span style="font-size:9px;color:var(--text-soft);margin-right:3px">You know:</span>${known.map(w=>`<span class="psc-word-chip known">${displayRomaji(w.romaji)}</span>`).join('')}</div>`
       : '';
 
     const card = document.createElement('div');
