@@ -10,6 +10,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Japan Start</title>
+  <meta name="description" content="Kana and survival Japanese for travellers. Learn to read signs, count, tell the time, and handle real situations in shops, restaurants and stations before your trip to Japan." />
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -98,6 +99,19 @@
     .revision-banner .rb-title { font-size: 14px; font-weight: 700; color: var(--gold-light); letter-spacing: .02em; }
     .revision-banner .rb-sub { font-size: 11px; color: var(--paper); opacity: .7; margin-top: 2px; }
     .revision-banner .rb-arrow { font-size: 22px; color: var(--gold); font-weight: 300; }
+    .mastery-cta {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(135deg, var(--ink), var(--ink-soft)); color: var(--paper);
+      border: 2px solid var(--red-light); border-radius: var(--radius); padding: 13px 16px;
+      margin: 4px 0 14px; cursor: pointer; font-family: 'DM Sans',sans-serif;
+      transition: transform .12s; box-shadow: 0 2px 12px rgba(231,76,60,.2); text-align: left;
+    }
+    .mastery-cta:active { transform: scale(.97); }
+    .mastery-cta .mc-left { display: flex; align-items: center; gap: 12px; }
+    .mastery-cta .mc-icon { font-size: 26px; line-height: 1; }
+    .mastery-cta .mc-title { font-size: 14px; font-weight: 700; color: var(--gold-light); letter-spacing: .02em; }
+    .mastery-cta .mc-sub { font-size: 11px; color: var(--paper); opacity: .75; margin-top: 2px; }
+    .mastery-cta .mc-arrow { font-size: 22px; color: var(--red-light); font-weight: 300; }
     .block-btn { aspect-ratio: 1; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: transform .12s; }
     .block-btn:active { transform: scale(.92); }
     .block-btn.unlocked { background: var(--ink); color: var(--paper); }
@@ -142,6 +156,13 @@
     .kanji-info-card { background: var(--ink); color: var(--paper); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 11.5px; line-height: 1.6; opacity: .92; }
     .kanji-info-card i { color: var(--gold); margin-right: 4px; }
     .block-note { background: var(--ink-soft); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--paper); line-height: 1.5; }
+    .backup-footer { margin-top: 28px; padding: 16px 16px 18px; border-radius: var(--radius); background: var(--paper-warm); border: 1px dashed rgba(26,26,46,.18); }
+    .backup-title { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); }
+    .backup-sub { font-size: 12px; color: var(--text-soft); line-height: 1.5; margin: 5px 0 12px; }
+    .backup-row { display: flex; gap: 8px; }
+    .backup-btn { flex: 1; border: none; border-radius: var(--radius-sm); padding: 11px 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--ink); color: var(--paper); transition: transform .12s; }
+    .backup-btn:active { transform: scale(.96); }
+    .backup-btn.secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
     .study-card-num { background: var(--ink); border-radius: var(--radius-sm); padding: 16px 18px; display: flex; flex-direction: row; align-items: center; gap: 18px; }
     .sn-text  { display: flex; flex-direction: column; flex: 1; }
     .sn-digit { font-size: 32px; font-weight: 700; color: var(--gold); min-width: 80px; text-align: center; flex-shrink: 0; }
@@ -428,10 +449,6 @@
       <div class="app-title">Japan Start</div>
       <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
     </div>
-    <button id="dev-unlock-btn" onclick="toggleDevUnlock()"
-      style="font-size:10px;font-weight:700;padding:5px 10px;border-radius:8px;border:1.5px solid rgba(201,168,76,.4);background:transparent;color:var(--gold);cursor:pointer;letter-spacing:.06em">
-      DEV
-    </button>
   </div>
   <div class="card-area">
     <div id="section-nav-container"></div>
@@ -479,6 +496,18 @@
     </div>
   </div>
   <div class="card-area" id="quiz-card-area"></div>
+</div>
+
+<!-- SECTION MASTERY TEST -->
+<div id="screen-mastery" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="confirmMasteryQuit()">Quit</button>
+    <div style="text-align:right">
+      <div class="app-title" id="mastery-title">Mastery Test</div>
+      <div class="app-subtitle" id="mastery-subtitle">10 questions</div>
+    </div>
+  </div>
+  <div class="card-area" id="mastery-card-area"></div>
 </div>
 
 <!-- REVIEW -->
@@ -544,7 +573,7 @@ const KANA = {
     {char:'ゆ',rom:'yu',hint:'A unique fish with a tail fin',tier:'basic'},
     {char:'よ',rom:'yo',hint:'A yo-yo on a string',tier:'basic'},
     {char:'わ',rom:'wa',hint:'A wave breaking against a cliff',tier:'basic'},
-    {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle',tier:'basic'},
+    {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle. Written "wo" but pronounced "o"',tier:'basic'},
     {char:'ら',rom:'ra',hint:'A rabbit hopping over a log',tier:'basic'},
     {char:'り',rom:'ri',hint:'A reed splitting in the wind',tier:'basic'},
     {char:'る',rom:'ru',hint:'A roo (kangaroo) tail looping around',tier:'basic'},
@@ -651,7 +680,7 @@ const KANA = {
     {char:'ユ',rom:'yu',hint:'A unicycle seat from the side',tier:'basic'},
     {char:'ヨ',rom:'yo',hint:'A yodelling singer — three notes',tier:'basic'},
     {char:'ワ',rom:'wa',hint:'A waterfall curving over a ledge',tier:'basic'},
-    {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle',tier:'basic'},
+    {char:'ヲ',rom:'wo',hint:'A woven basket — object-marker particle. Written "wo" but pronounced "o"',tier:'basic'},
     {char:'ラ',rom:'ra',hint:'A radio antenna with a signal wave',tier:'basic'},
     {char:'リ',rom:'ri',hint:'Two reeds standing in a pond',tier:'basic'},
     {char:'ル',rom:'ru',hint:'A roo (kangaroo) hopping forward',tier:'basic'},
@@ -807,14 +836,14 @@ const TIME_BLOCKS = [
     {digital:'7:30',jp:'七時半',rom:'shichiji han',hint:'7:30'},
     {digital:'9:30',jp:'九時半',rom:'kuji han',hint:'kuji + han'},
   ]},
-  { label:'Minutes 分', preview:'分', note:'[min] + fun/pun. Lots of sound changes here.', items:[
+  { label:'Minutes 分', preview:'分', note:'[min] + fun/pun. Lots of sound changes here. (X: means any hour — focus on the minutes.)', items:[
     {digital:'X:01',jp:'一分',rom:'ippun',hint:'IRREGULAR: ippun'},
     {digital:'X:03',jp:'三分',rom:'sanpun',hint:'IRREGULAR: sanpun'},
     {digital:'X:04',jp:'四分',rom:'yonpun',hint:'IRREGULAR: yonpun'},
     {digital:'X:06',jp:'六分',rom:'roppun',hint:'IRREGULAR: roppun'},
     {digital:'X:10',jp:'十分',rom:'juppun',hint:'IRREGULAR: juppun'},
   ]},
-  { label:'Minutes by 5', preview:'分', note:'The common ones you read off a clock.', items:[
+  { label:'Minutes by 5', preview:'分', note:'The common ones you read off a clock. (X: means any hour — focus on the minutes.)', items:[
     {digital:'X:05',jp:'五分',rom:'gofun',hint:''},
     {digital:'X:15',jp:'十五分',rom:'juugofun',hint:'15 min'},
     {digital:'X:20',jp:'二十分',rom:'nijuppun',hint:'IRREGULAR: nijuppun'},
@@ -1015,6 +1044,86 @@ function getMAvg() { return 0; }
 function getML()   { return 0; }
 function recordSession() { /* obsolete — replaced by mark{Practised,Cleared} */ }
 
+// ── Backup & restore ──────────────────────────────────
+// localStorage can be wiped by clearing browser data, so let the learner
+// download a JSON backup of all progress and restore it later or on a new
+// device. Bundles both the progress map and the revision pool.
+const BACKUP_FORMAT = 'japanstart-backup';
+function exportProgress() {
+  const payload = {
+    format: BACKUP_FORMAT,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    progress: localStorage.getItem('jp_app_v1') || '{}',
+    revision: localStorage.getItem('jp_revision_v1') || '',
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `japan-start-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function triggerImport() {
+  const inp = document.getElementById('backup-file-input');
+  if (inp) { inp.value = ''; inp.click(); }
+}
+
+function handleImportFile(fileInput) {
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); }
+    catch (e) {
+      showModal('⚠️', 'Could not read file', 'That file is not a valid Japan Start backup.', 'OK', ()=>{});
+      return;
+    }
+    if (!data || data.format !== BACKUP_FORMAT || data.progress === undefined) {
+      showModal('⚠️', 'Wrong file', 'That does not look like a Japan Start backup.', 'OK', ()=>{});
+      return;
+    }
+    // Validate the progress payload parses before we commit anything
+    try { JSON.parse(data.progress); }
+    catch (e) {
+      showModal('⚠️', 'Backup damaged', 'The progress data in that backup could not be read.', 'OK', ()=>{});
+      return;
+    }
+    showModal('🔁', 'Restore this backup?',
+      'This will replace your current progress with the backup' +
+      (data.exportedAt ? ' from ' + data.exportedAt.slice(0,10) : '') + '.',
+      'Restore', () => {
+        localStorage.setItem('jp_app_v1', data.progress);
+        if (data.revision) localStorage.setItem('jp_revision_v1', data.revision);
+        else localStorage.removeItem('jp_revision_v1');
+        renderHome();
+        showModal('✓', 'Restored', 'Your progress has been restored.', 'Great', ()=>{});
+      });
+  };
+  reader.onerror = () => {
+    showModal('⚠️', 'Could not read file', 'Something went wrong reading that file.', 'OK', ()=>{});
+  };
+  reader.readAsText(file);
+}
+
+// Small reusable footer with backup controls, shown on every home view.
+function backupFooterHTML() {
+  return `<div class="backup-footer">
+    <div class="backup-title">Backup &amp; Restore</div>
+    <div class="backup-sub">Your progress is saved on this device only. Download a backup so you don't lose it.</div>
+    <div class="backup-row">
+      <button class="backup-btn" onclick="exportProgress()">⬇︎ Download backup</button>
+      <button class="backup-btn secondary" onclick="triggerImport()">⬆︎ Restore</button>
+    </div>
+  </div>`;
+}
+
 // ═══════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════
@@ -1022,6 +1131,36 @@ function shuffle(arr) {
   return [...arr].map(v=>({v,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.v);
 }
 function escQ(s){return (s||'').toString().replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+
+// ── Romaji answer matching with long-vowel tolerance ──
+// A learner who hears "arigatou" may reasonably type "arigato"; both are the
+// same word. We compare a reduced "skeleton" where long vowels collapse to a
+// single vowel, so common spelling variants are accepted as correct.
+// IMPORTANT: only ever use this for ROMAJI answers — never English or kana.
+// 'ei' is deliberately NOT collapsed (sensei vs sense changes meaning).
+function romajiSkeleton(s) {
+  let t = (s||'').toString().trim().toLowerCase();
+  t = t.replace(/[\s|・]/g, '');      // strip spaces, pipes, middots
+  t = t.replace(/-/g, '');            // strip hyphens (hyaku-en vs hyakuen)
+  t = t.replace(/ou/g, 'o');          // arigatou -> arigato
+  t = t.replace(/ou/g, 'o');
+  t = t.replace(/oo/g, 'o');          // ookii -> okii
+  t = t.replace(/uu/g, 'u');          // juu -> ju, kyuu -> kyu
+  t = t.replace(/ee/g, 'e');          // onee -> one
+  // collapse any remaining doubled vowel (aa, ii) to single
+  t = t.replace(/([aiueo])\1+/g, '$1');
+  // accept m before b/p/m as equivalent to n (shimbun/shinbun)
+  t = t.replace(/m([bpm])/g, 'n$1');
+  return t;
+}
+// True if a typed romaji answer matches the correct one, leniently.
+// `correct` may contain '/' separated acceptable alternates.
+function romajiMatch(userInput, correct) {
+  const u = romajiSkeleton(userInput);
+  if (u === '') return false;
+  const alts = (correct||'').toString().toLowerCase().split('/');
+  return alts.some(a => romajiSkeleton(a) === u);
+}
 function isKanaTab(){return currentSection==='foundation' && (currentTab==='hiragana'||currentTab==='katakana');}
 function isFoundation(){return currentSection==='foundation';}
 function isDrill(){return currentSection==='drill';}
@@ -1280,6 +1419,20 @@ function renderSectionHome(body) {
     <div class="stat-card"><div class="num">${n}</div><div class="lbl">Blocks</div></div>
   </div>`;
 
+  // Section Mastery Test — appears once every block in this tab is cleared.
+  if (allBlocksCleared(currentSection, currentTab)) {
+    html += `<button class="mastery-cta" onclick="startMasteryTest('${currentSection}','${currentTab}')">
+      <div class="mc-left">
+        <span class="mc-icon">🎯</span>
+        <div>
+          <div class="mc-title">Section Mastery Test</div>
+          <div class="mc-sub">All blocks cleared — prove it. 10 random, sudden death.</div>
+        </div>
+      </div>
+      <span class="mc-arrow">›</span>
+    </button>`;
+  }
+
   // (Mastery banner removed — block state now binary: practised / cleared)
 
   // Block grid
@@ -1399,6 +1552,7 @@ function renderSectionHome(body) {
 
 
 
+  html += backupFooterHTML();
   body.innerHTML = html;
 }
 
@@ -1660,8 +1814,10 @@ function buildFoundationQuestion(item) {
       ).join('')}</div>`;
     } else {
       // time — show digital, pick the romaji reading
+      const xNote = String(item.digital).startsWith('X:') ? `<div class="q-hint" style="opacity:.75">X: = any hour</div>` : '';
       qCard.innerHTML = `<div class="q-label">How do you say this time?</div>
         <div class="q-number">${item.digital}</div>
+        ${xNote}
         ${hint&&item.hint?`<div class="q-hint">${item.hint}</div>`:''}`;
       const blockItems = TIME_BLOCKS[currentBlockIndex].items;
       let pool = shuffle(blockItems.filter(t=>t.rom!==item.rom));
@@ -1799,11 +1955,10 @@ let pqTypedLock = false;
 function checkTyped(correct) {
   const inp = document.getElementById('ans-input');
   if (!inp || pqTypedLock) return;
-  const norm = s => s.trim().toLowerCase().replace(/\s+/g,'');
-  const val  = norm(inp.value);
-  const alts = (correct||'').toLowerCase().split('/').map(s=>norm(s));
-  const ok   = alts.includes(val);
+  const val  = inp.value.trim();
   if (val === '') return; // ignore empty submits
+  // Foundation typed phase is always a romaji reading — use lenient matching
+  const ok   = romajiMatch(val, correct);
   quizTotal++;
   pqTypedLock = true;
   // Visually lock but DON'T disable the input — disabling drops the keyboard
@@ -1997,14 +2152,29 @@ function renderAttemptDots() {
 function submitDrillAnswer() {
   const inp = document.getElementById('answer-input');
   if (!inp) return;
-  const val = inp.value.trim().toLowerCase();
+  const val = inp.value.trim();
   if (val === '') return; // ignore empty submits
   const ph  = DRILL_PHASES[currentTab][quizPhase];
   const w   = phaseOrder[wordIndex];
-  const correct = ph.answer(w).toLowerCase();
+  const correctRaw = ph.answer(w);
+  const correct = correctRaw.toLowerCase();
   quizTotal++;
 
-  if (val === correct) {
+  // Match according to what the phase is testing:
+  //  - romaji readings ('Romaji' / kanji 'Read'): long-vowel tolerant
+  //  - English meaning ('English'): accept any '/'-separated alternative
+  //  - kana production ('Write it'): exact match
+  let ok;
+  if (ph.label === 'Romaji' || ph.label === 'Read') {
+    ok = romajiMatch(val, correctRaw);
+  } else if (ph.label === 'English') {
+    const u = val.toLowerCase().replace(/\s+/g,' ').trim();
+    ok = correct.split('/').map(s=>s.replace(/\s+/g,' ').trim()).includes(u);
+  } else {
+    ok = val.toLowerCase() === correct;
+  }
+
+  if (ok) {
     inp.className = 'answer-input correct';
     showFeedback('correct', '✓ Correct!');
     attempts = 0;
@@ -2407,15 +2577,59 @@ const PQ_PHASES = [
   { n:5, label:'Write in Japanese',    hint:'Type the full phrase using your Japanese keyboard' },
 ];
 
+// ── Curated slot pools ───────────────────────────────
+// Phrase templates like "[body-part] ga itai desu" must only ever pull
+// grammatically + semantically valid fillers. Relying on raw vocab tags is
+// unsafe because a tag like "body-part" doubles as a loose health-domain
+// bucket (it contains verbs, adjectives and symptoms). These pools list, by
+// romaji, only the words that make sense in each slot's sentence frame.
+// Words still must be STUDIED before they appear (see slotCandidates).
+const SLOT_POOLS = {
+  'body-part':   ['atama','onaka','te','ashi','me','mimi','kuchi','nodo','ha','kubi','mune','senaka','ude','yubi','kata','hiza','hada','kao'],
+  'place':       ['eki','toire','byouin','yakkyoku','ginkou','kouban','konbini','depaato','resutoran','hoteru','kouen','otearai','yuubinkyoku','kuukou','mise','daigaku','gakkou'],
+  'room':        ['heya','daidokoro','ofuro','furoba','toire','genkan','kaidan'],
+  'transport':   ['densha','basu','takushii','chikatetsu','shinkansen','jitensha','hikouki','kuruma','baiku'],
+  'food':        ['sushi','raamen','tempura','udon','soba','karee','piza','keeki','pan','tamago','niku','sakana','yasai','gohan','ringo','ichigo','okashi'],
+  'drink':       ['mizu','ocha','koohii','koucha','biiru','wain','juusu','gyuunyuu','osake'],
+  'colour':      ['aka','ao','shiro','kuro','midori','kiiro','chairo','murasaki','pinku','orenji'],
+  'country':     ['oosutoraria','nihon','amerika','igirisu','furansu','doitsu','itaria','kanada','chuugoku','kankoku','indo','supein','tai'],
+  'object':      ['hon','kasa','kagi','megane','saifu','kitte','hagaki','chizu','kusuri','denwa','keitai','kamera'],
+  'weather':     ['ame','yuki','hare','kumori','atsui','samui','atatakai'],
+};
+
+// Resolve a slot pool to actual vocab entries that the learner has studied.
+// Falls back to the full curated pool (ignoring study state) only if the
+// learner has not yet studied any of them, so a phrase is never unfillable.
+function slotCandidates(tag) {
+  const pool = SLOT_POOLS[tag];
+  if (!pool) return getUnlockedForTag(tag); // legacy fallback for any new tag
+  const byRom = {};
+  window.vocabData.forEach(w => { byRom[w.romaji] = w; });
+  const all = pool.map(r => byRom[r]).filter(Boolean);
+  const studied = all.filter(isWordStudied);
+  return studied.length > 0 ? studied : all;
+}
+
+// True if a vocab word sits in a block the learner has practised or cleared,
+// computed against the SAME filtered/sorted lists the drills actually use
+// (not the raw vocabData index — that mismatch was a real bug).
+function isWordStudied(word) {
+  for (const tab of ['hiragana','katakana','kanji']) {
+    const list = vocabForDrill(tab);
+    const pos  = list.indexOf(word);
+    if (pos === -1) continue;
+    const bi = Math.floor(pos / BLOCK_SIZE);
+    if (isBlockPractised('drill',tab,bi) || isBlockCleared('drill',tab,bi)) return true;
+  }
+  return false;
+}
+
 // ── Get unlocked vocab for a tag ─────────────────────
+// (Retained for any tag without a curated pool. Now uses correct block math.)
 function getUnlockedForTag(tag) {
-  const prog = getProgress();
-  return window.vocabData.filter((w, idx) => {
+  return window.vocabData.filter(w => {
     if (!w.tags || !w.tags.includes(tag)) return false;
-    const bi = Math.floor(idx / BLOCK_SIZE);
-    return isBlockPractised('drill','hiragana',bi) || isBlockCleared('drill','hiragana',bi)
-        || isBlockPractised('drill','katakana',bi) || isBlockCleared('drill','katakana',bi)
-        || isBlockPractised('drill','kanji',bi)    || isBlockCleared('drill','kanji',bi);
+    return isWordStudied(w);
   });
 }
 
@@ -2428,7 +2642,7 @@ function resolvePhrase(phrase) {
       resolvedEnglish: phrase.english,
       slotWord: null, candidates: [] };
   }
-  const candidates = getUnlockedForTag(phrase.slot);
+  const candidates = slotCandidates(phrase.slot);
   const chosen = candidates.length > 0
     ? candidates[Math.floor(Math.random() * candidates.length)]
     : null;
@@ -2457,12 +2671,9 @@ function chunkPhrase(kana, romaji) {
 
 // ── Known words in phrase ────────────────────────────
 function knownWordsInPhrase(phrase) {
-  const prog = getProgress();
-  return window.vocabData.filter((w, idx) => {
+  return window.vocabData.filter(w => {
     if (!phrase.romaji.toLowerCase().includes(w.romaji.toLowerCase())) return false;
-    const bi = Math.floor(idx / BLOCK_SIZE);
-    return isBlockPractised('drill','hiragana',bi) || isBlockCleared('drill','hiragana',bi)
-        || isBlockPractised('drill','katakana',bi) || isBlockCleared('drill','katakana',bi);
+    return isWordStudied(w);
   });
 }
 
@@ -2537,6 +2748,7 @@ function renderPhrasesHome(body) {
     </div>`;
   });
   html += '</div>';
+  html += backupFooterHTML();
   body.innerHTML = html;
 }
 
@@ -2951,7 +3163,9 @@ function submitPhraseTyped(mode) {
     }
   }
 
-  const ok = norm(inp.value) === norm(correct);
+  const ok = mode === 'romaji'
+    ? romajiMatch(inp.value, correct)
+    : norm(inp.value) === norm(correct);
 
   phraseQTotal++;
   if (ok) {
@@ -3102,7 +3316,7 @@ let devUnlocked = false;
 
 function toggleDevUnlock() {
   devUnlocked = !devUnlocked;
-  const btn = document.getElementById('dev-unlock-btn');
+  const btn = document.getElementById('dev-unlock-btn'); // null in production — function kept dormant for testing
 
   if (devUnlocked) {
     // Mark every block as cleared (uses new state model)
@@ -3122,16 +3336,12 @@ function toggleDevUnlock() {
     });
 
     saveProgress(prog);
-    btn.textContent = 'DEV ✓';
-    btn.style.color = '#27ae60';
-    btn.style.borderColor = 'rgba(39,174,96,.4)';
+    if (btn) { btn.textContent = 'DEV ✓'; btn.style.color = '#27ae60'; btn.style.borderColor = 'rgba(39,174,96,.4)'; }
   } else {
     // Clear all progress + revision pool
     localStorage.removeItem('jp_app_v1');
     localStorage.removeItem(REVISION_KEY);
-    btn.textContent = 'DEV';
-    btn.style.color = 'var(--gold)';
-    btn.style.borderColor = 'rgba(201,168,76,.4)';
+    if (btn) { btn.textContent = 'DEV'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(201,168,76,.4)'; }
   }
 
   renderHome();
@@ -3364,8 +3574,8 @@ function submitRevisionAnswer() {
   revisionLock = true;
   const correct = (inp.dataset.answer || '').trim();
   const key     = inp.dataset.key;
-  const norm = s => s.toLowerCase().replace(/\s+/g,'').replace(/\|/g,'');
-  const ok = norm(val) === norm(correct);
+  // Revision answers are all romaji readings — use long-vowel tolerant matching
+  const ok = romajiMatch(val, correct);
   revisionTotal++;
   if (ok) {
     revisionCorrect++;
@@ -3434,20 +3644,227 @@ function showModal(emoji, title, body, confirmLabel, onConfirm) {
 }
 
 // ═══════════════════════════════════════════════════════
+// SECTION MASTERY TEST
+// ═══════════════════════════════════════════════════════
+// Unlocked once every block in the current tab is cleared. Pulls 10 random
+// items from the whole tab and runs a single sudden-death pass. Self-contained
+// state so it never touches block-quiz progress. Both Tom and Kate asked for
+// this as the capstone that proves a section is genuinely learned.
+const MASTERY_TEST_SIZE = 10;
+let mtItems = [], mtIndex = 0, mtCorrect = 0, mtLock = false;
+let mtSection = '', mtTab = '';
+
+// True when all blocks in the given tab are cleared.
+function allBlocksCleared(section, tab) {
+  const blocks = blocksFor(section, tab);
+  if (!blocks.length) return false;
+  for (let i = 0; i < blocks.length; i++) {
+    if (!isBlockCleared(section, tab, i)) return false;
+  }
+  return true;
+}
+
+// Flatten a tab into a uniform list of {type, display, answer, item} questions.
+// type: 'kana' | 'number' | 'time' | 'vocab'
+function masteryItemPool(section, tab) {
+  const out = [];
+  if (section === 'foundation') {
+    if (tab === 'hiragana' || tab === 'katakana') {
+      KANA[tab].forEach(k => out.push({ type:'kana', item:k }));
+    } else if (tab === 'numbers') {
+      NUM_ITEMS.forEach(n => out.push({ type:'number', item:n }));
+    } else if (tab === 'time') {
+      TIME_ITEMS.forEach(t => out.push({ type:'time', item:t }));
+    }
+  } else if (section === 'drill') {
+    vocabForDrill(tab).forEach(w => out.push({ type:'vocab', item:w, tab }));
+  }
+  return out;
+}
+
+function startMasteryTest(section, tab) {
+  mtSection = section; mtTab = tab;
+  const pool = masteryItemPool(section, tab);
+  if (pool.length === 0) return;
+  mtItems = shuffle(pool).slice(0, Math.min(MASTERY_TEST_SIZE, pool.length));
+  mtIndex = 0; mtCorrect = 0; mtLock = false;
+
+  const label = section === 'foundation' ? FOUNDATION_META[tab].label : DRILL_META[tab].label;
+  document.getElementById('mastery-title').textContent = label + ' Mastery';
+  document.getElementById('mastery-subtitle').textContent = mtItems.length + ' questions · sudden death';
+  renderMasteryFrame();
+  showScreen('mastery');
+  showMasteryQuestion();
+}
+
+function renderMasteryFrame() {
+  document.getElementById('mastery-card-area').innerHTML = `
+    <div class="test-mode-banner">✦ MASTERY TEST ✦<div class="lives">Sudden death · one mistake ends it</div></div>
+    <div class="quiz-meta">
+      <span class="quiz-phase-label">Mastery Test</span>
+      <span id="mastery-ind" style="font-size:10px;font-weight:700;letter-spacing:.08em;color:#c0392b">● SUDDEN DEATH</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="mastery-fill" style="width:0%"></div></div>
+    <div class="question-card" id="mastery-question"></div>
+    <div id="mastery-answer"></div>
+    <div class="feedback-area"><div class="feedback-pill" id="mastery-feedback"></div></div>`;
+}
+
+// Build the recognition question for one pooled item.
+function showMasteryQuestion() {
+  const q = mtItems[mtIndex];
+  const qCard = document.getElementById('mastery-question');
+  const aEl   = document.getElementById('mastery-answer');
+  const fill  = document.getElementById('mastery-fill');
+  if (fill) fill.style.width = Math.min(mtIndex / mtItems.length * 100, 99) + '%';
+  document.getElementById('mastery-subtitle').textContent =
+    `Question ${mtIndex + 1} of ${mtItems.length}`;
+
+  // All mastery questions are "show the Japanese, type the romaji reading"
+  // — the single most important recall direction. Kanji shows furigana-free
+  // so it is a genuine test.
+  let promptChar = '', answer = '', fontStyle = '';
+  if (q.type === 'kana') {
+    promptChar = q.item.char; answer = q.item.rom;
+    qCard.innerHTML = `<div class="q-label">What is the reading?</div><div class="q-kana">${promptChar}</div>`;
+  } else if (q.type === 'number') {
+    promptChar = q.item.jp; answer = q.item.rom;
+    qCard.innerHTML = `<div class="q-label">How do you say this number?</div>
+      <div class="q-kana" style="font-family:'Shippori Mincho',serif;font-size:46px">${q.item.jp}</div>`;
+  } else if (q.type === 'time') {
+    promptChar = q.item.jp; answer = q.item.rom;
+    qCard.innerHTML = `<div class="q-label">How do you say this time?</div>
+      <div class="q-kana" style="font-family:'Shippori Mincho',serif;font-size:36px">${q.item.jp}</div>`;
+  } else { // vocab
+    const w = q.item;
+    const shown = q.tab === 'kanji' ? w.kanji : q.tab === 'katakana' ? w.katakana : w.hiragana;
+    answer = w.romaji;
+    qCard.innerHTML = `<div class="q-label">Read this word</div>
+      <div class="q-kana-word">${shown}</div>
+      <div class="q-english">${w.english}</div>`;
+  }
+
+  aEl.innerHTML = `<input class="answer-input" id="mastery-input" type="text"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      placeholder="Type romaji…" />
+    <button class="submit-btn" id="mastery-submit">Submit</button>`;
+  const inp = document.getElementById('mastery-input');
+  const btn = document.getElementById('mastery-submit');
+  inp.dataset.answer = answer;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitMasteryAnswer(); });
+  btn.addEventListener('click', submitMasteryAnswer);
+  setTimeout(() => inp.focus(), 60);
+}
+
+function submitMasteryAnswer() {
+  const inp = document.getElementById('mastery-input');
+  if (!inp || mtLock) return;
+  const val = inp.value.trim();
+  if (val === '') return;
+  const correct = inp.dataset.answer || '';
+  const ok = romajiMatch(val, correct);
+  mtLock = true;
+  inp.readOnly = true;
+  const btn = document.getElementById('mastery-submit');
+  if (btn) btn.disabled = true;
+  const fb = document.getElementById('mastery-feedback');
+
+  if (ok) {
+    inp.className = 'answer-input correct';
+    if (fb) { fb.className = 'feedback-pill correct show'; fb.textContent = '✓ Correct!'; }
+    mtCorrect++;
+    setTimeout(() => { mtLock = false; mtIndex++; nextMasteryStep(); }, 800);
+  } else {
+    inp.className = 'answer-input wrong';
+    if (fb) { fb.className = 'feedback-pill reveal show'; fb.textContent = '✗ ' + correct; }
+    // Sudden death — one miss ends the test. Failed item goes to revision.
+    addMasteryItemToRevision(mtItems[mtIndex]);
+    setTimeout(() => { mtLock = false; masteryFailed(); }, 1900);
+  }
+}
+
+function nextMasteryStep() {
+  if (mtIndex < mtItems.length) { showMasteryQuestion(); return; }
+  masteryPassed();
+}
+
+// Route a failed mastery item into the global revision pool using the
+// existing pool plumbing (it infers type from the item shape).
+function addMasteryItemToRevision(q) {
+  if (!q) return;
+  if (q.type === 'kana')       addToRevisionPool(q.item, 'kana');
+  else if (q.type === 'number') addToRevisionPool(q.item, 'number');
+  else if (q.type === 'time')   addToRevisionPool(q.item, 'time');
+  else                          addToRevisionPool(q.item, 'vocab');
+}
+
+function masteryPassed() {
+  const fill = document.getElementById('mastery-fill');
+  if (fill) fill.style.width = '100%';
+  document.getElementById('mastery-card-area').innerHTML = `
+    <div class="complete-card">
+      <img src="images/states/all-cleared.jpg" class="mascot-img" alt="Mastery passed"
+        onerror="this.style.display='none'">
+      <h2 style="color:var(--gold)">Section Mastered!</h2>
+      <p>You answered all ${mtItems.length} questions correctly.<br>
+      This whole section is locked in.</p>
+      <button class="complete-btn" onclick="startMasteryTest('${mtSection}','${mtTab}')">Test Again ↺</button>
+      <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+    </div>`;
+}
+
+function masteryFailed() {
+  document.getElementById('mastery-card-area').innerHTML = `
+    <div class="complete-card">
+      <img src="images/states/test-failed.jpg" class="mascot-img" alt="Test failed"
+        onerror="this.style.display='none'">
+      <h2 style="color:#fff">So Close!</h2>
+      <p>You got ${mtCorrect} right before the first slip.<br>
+      One miss ends a sudden-death test — the word is in your Revision pool.</p>
+      <button class="complete-btn" onclick="startMasteryTest('${mtSection}','${mtTab}')">Retry ↺</button>
+      <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
+    </div>`;
+}
+
+function confirmMasteryQuit() {
+  try {
+    showModal('🐾', 'Quit the test?', 'Your mastery test progress will be lost.', 'Yes, quit',
+      () => showScreen('home'));
+  } catch (e) { showScreen('home'); }
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', ()=>{
   renderHome();
 
-  // Unregister any existing service worker during development
+  // Register the service worker for offline support (production).
+  // When a new version is detected, it activates on next launch.
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(reg => reg.unregister());
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        // If an updated worker is found, let it take over on next load.
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              // New content is available; it will be used after the next restart.
+              sw.postMessage('SKIP_WAITING');
+            }
+          });
+        });
+      }).catch(() => { /* offline-first is best-effort; app still works online */ });
     });
   }
 });
 
 </script>
+
+<!-- HIDDEN BACKUP FILE INPUT -->
+<input type="file" id="backup-file-input" accept="application/json,.json"
+  style="display:none" onchange="handleImportFile(this)" />
 
 <!-- CUSTOM CONFIRM MODAL -->
 <div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; padding:20px;">

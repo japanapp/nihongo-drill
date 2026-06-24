@@ -1,7 +1,7 @@
 {
   "name": "Japan Start",
   "short_name": "Japan Start",
-  "description": "Complete Japanese learning — kana, vocabulary, phrases",
+  "description": "Kana & survival Japanese for travellers — read signs, count, and handle real situations.",
   "start_url": "/nihongo-drill/",
   "scope": "/nihongo-drill/",
   "display": "standalone",
