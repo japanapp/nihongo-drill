@@ -33,6 +33,29 @@
       --radius-sm:  10px;
       --kana-font:  'Noto Sans JP', sans-serif;
     }
+    /* Dark mode — re-theme via variable overrides. Surfaces that used
+       --paper (light card) flip to dark; ink text flips to light. Accent
+       colours (gold/green/red) stay, they read well on both. */
+    body.dark {
+      --paper:      #1e1e30;
+      --paper-warm: #28283f;
+      --ink:        #0f0f1a;
+      --ink-soft:   #2a2a42;
+      --text:       #ece8df;
+      --text-soft:  #9a9ab0;
+      --white:      #ece8df;
+    }
+    body.dark .card-area { background: #16161f; }
+    body.dark .home-hero h2 { color: var(--gold-light); }
+    body.dark .block-btn.locked { background: #24243a; color: #55556f; }
+    body.dark .stat-card { background: #0f0f1a; }
+    body.dark .choice-btn { background: #24243a; color: var(--text); }
+    body.dark .choice-btn.correct { background: rgba(39,174,96,.25); }
+    body.dark .choice-btn.wrong { background: rgba(231,76,60,.22); }
+    body.dark .answer-input { background: #24243a; color: var(--text); }
+    body.dark .answer-input.wrong { background: rgba(231,76,60,.22); }
+    body.dark .modal-overlay-inner, body.dark .options-sheet { background: #1e1e30; }
+    body.dark .word-card, body.dark .study-card, body.dark .study-card-num, body.dark .kana-study-card { background: #24243a; }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; background: var(--ink); font-family: 'DM Sans', sans-serif; color: var(--text); overscroll-behavior: none; }
     body.brush-font { --kana-font: 'Shippori Mincho', serif; }
@@ -163,6 +186,38 @@
     .backup-btn { flex: 1; border: none; border-radius: var(--radius-sm); padding: 11px 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--ink); color: var(--paper); transition: transform .12s; }
     .backup-btn:active { transform: scale(.96); }
     .backup-btn.secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+    /* Options sheet */
+    .options-sheet { background: var(--paper); width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 12px 22px max(28px,env(safe-area-inset-bottom,28px)); box-shadow: 0 -8px 40px rgba(0,0,0,.3); animation: sheet-up .25s ease; }
+    @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .options-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--text-soft); opacity: .3; margin: 0 auto 14px; }
+    .options-heading { font-family: 'Shippori Mincho', serif; font-size: 19px; color: var(--ink); margin: 0 0 16px; }
+    .options-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 6px 0; }
+    .options-row-title { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
+    .options-row-sub { display: block; font-size: 12px; color: var(--text-soft); line-height: 1.5; }
+    .options-divider { height: 1px; background: var(--text-soft); opacity: .15; margin: 14px 0; }
+    .options-section-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 4px; }
+    .options-btn-row { display: flex; gap: 8px; }
+    .options-action { flex: 1; border: none; border-radius: var(--radius-sm); padding: 12px 8px; font-family: 'DM Sans',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--ink); color: var(--paper); transition: transform .12s; }
+    .options-action:active { transform: scale(.96); }
+    .options-action.secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+    .options-close { width: 100%; margin-top: 18px; background: transparent; border: none; color: var(--text-soft); font-family: 'DM Sans',sans-serif; font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer; }
+    .toggle-switch { position: relative; width: 50px; height: 28px; border-radius: 14px; border: none; background: var(--text-soft); opacity: .4; cursor: pointer; transition: background .2s, opacity .2s; flex-shrink: 0; }
+    .toggle-switch.on { background: var(--gold); opacity: 1; }
+    .toggle-knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    .toggle-switch.on .toggle-knob { transform: translateX(22px); }
+    /* Dictionary */
+    #dict-input { width: 100%; box-sizing: border-box; border: 2px solid var(--ink-soft); border-radius: var(--radius-sm); padding: 14px 16px; font-family: 'DM Sans',sans-serif; font-size: 16px; color: var(--text); background: var(--white); margin-bottom: 16px; }
+    #dict-input:focus { outline: none; border-color: var(--gold); }
+    body.dark #dict-input { background: #24243a; }
+    .dict-empty { text-align: center; color: var(--text-soft); font-size: 13px; line-height: 1.7; padding: 30px 16px; }
+    .dict-section-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); margin: 14px 0 8px; }
+    .dict-card { background: var(--paper-warm); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid var(--gold); }
+    .dict-jp { font-family: 'Shippori Mincho', serif; font-size: 24px; color: var(--ink); line-height: 1.2; }
+    body.dark .dict-jp { color: var(--gold-light); }
+    .dict-jp-phrase { font-size: 18px; }
+    .dict-reading { font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--text-soft); margin-left: 10px; }
+    .dict-rom { font-size: 13px; color: var(--gold); font-weight: 600; margin-top: 2px; }
+    .dict-en { font-size: 13px; color: var(--text-soft); margin-top: 3px; }
     .study-card-num { background: var(--ink); border-radius: var(--radius-sm); padding: 16px 18px; display: flex; flex-direction: row; align-items: center; gap: 18px; }
     .sn-text  { display: flex; flex-direction: column; flex: 1; }
     .sn-digit { font-size: 32px; font-weight: 700; color: var(--gold); min-width: 80px; text-align: center; flex-shrink: 0; }
@@ -449,10 +504,30 @@
       <div class="app-title">Japan Start</div>
       <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
     </div>
+    <button id="dict-btn" onclick="openDictionary()" aria-label="Dictionary"
+      style="margin-left:auto;background:transparent;border:none;cursor:pointer;padding:6px;color:var(--paper);font-size:20px;line-height:1">🔍</button>
+    <button id="options-btn" onclick="openOptions()" aria-label="Options"
+      style="background:transparent;border:none;cursor:pointer;padding:6px;color:var(--paper);font-size:22px;line-height:1">⚙</button>
   </div>
   <div class="card-area">
     <div id="section-nav-container"></div>
     <div id="home-body"></div>
+  </div>
+</div>
+
+<!-- DICTIONARY -->
+<div id="screen-dictionary" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="showScreen('home')">Done</button>
+    <div style="text-align:right">
+      <div class="app-title">Dictionary</div>
+      <div class="app-subtitle">Look up any word or phrase</div>
+    </div>
+  </div>
+  <div class="card-area">
+    <input id="dict-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      placeholder="Type English or romaji…" oninput="runDictionarySearch(this.value)" />
+    <div id="dict-results"></div>
   </div>
 </div>
 
@@ -1124,8 +1199,129 @@ function backupFooterHTML() {
   </div>`;
 }
 
+// ── Options menu ─────────────────────────────────────
+function openOptions() {
+  syncDarkToggle();
+  const o = document.getElementById('options-overlay');
+  if (o) o.style.display = 'flex';
+}
+function closeOptions() {
+  const o = document.getElementById('options-overlay');
+  if (o) o.style.display = 'none';
+}
+
+// ── Dark mode ────────────────────────────────────────
+const DARK_KEY = 'jp_dark_v1';
+function isDark() { return localStorage.getItem(DARK_KEY) === '1'; }
+function applyDarkMode(on) {
+  document.body.classList.toggle('dark', !!on);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', on ? '#12121f' : '#1a1a2e');
+  syncDarkToggle();
+}
+function toggleDarkMode() {
+  const on = !isDark();
+  localStorage.setItem(DARK_KEY, on ? '1' : '0');
+  applyDarkMode(on);
+}
+function syncDarkToggle() {
+  const t = document.getElementById('dark-toggle');
+  if (!t) return;
+  const on = isDark();
+  t.classList.toggle('on', on);
+  t.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+
 // ═══════════════════════════════════════════════════════
-// HELPERS
+// DICTIONARY — lookup over existing vocab + phrase data
+// ═══════════════════════════════════════════════════════
+// Tourist-handy reverse lookup. Type English or romaji; matching words and
+// phrases appear with kanji/kana/romaji/meaning. Reuses the data already in
+// the app, plus the lenient romaji matcher so "arigato" finds "arigatou".
+function openDictionary() {
+  closeOptions();
+  showScreen('dictionary');
+  const inp = document.getElementById('dict-input');
+  if (inp) { inp.value = ''; setTimeout(()=>inp.focus(), 60); }
+  runDictionarySearch('');
+}
+
+function dictNorm(s){ return (s||'').toString().trim().toLowerCase(); }
+
+function runDictionarySearch(raw) {
+  const out = document.getElementById('dict-results');
+  if (!out) return;
+  const q = dictNorm(raw);
+  if (q.length === 0) {
+    out.innerHTML = `<div class="dict-empty">Search ${window.vocabData.length} words and ${window.phraseData.phrases.length} phrases.<br>Try “water”, “arigato”, “station”, or “excuse me”.</div>`;
+    return;
+  }
+  const qSkel = romajiSkeleton(q);
+
+  // Score a vocab word: higher = better match, 0 = no match
+  function scoreWord(w) {
+    const en = dictNorm(w.english), rom = dictNorm(w.romaji);
+    if (rom === q || romajiSkeleton(rom) === qSkel) return 100;          // exact romaji
+    if (en === q) return 95;                                             // exact english
+    if (en.split('/').map(s=>s.trim()).includes(q)) return 90;          // exact english alt
+    if (rom.startsWith(q) || romajiSkeleton(rom).startsWith(qSkel)) return 70;
+    if (en.startsWith(q)) return 65;
+    if (w.kanji === raw.trim() || w.hiragana === raw.trim() || w.katakana === raw.trim()) return 80; // JP input
+    if (en.includes(q)) return 40;
+    if (rom.includes(q)) return 35;
+    return 0;
+  }
+  function scorePhrase(p) {
+    const en = dictNorm(p.english), rom = dictNorm(p.romaji.replace(/\|/g,' '));
+    if (en === q || rom === q) return 92;
+    if (romajiSkeleton(rom) === qSkel) return 88;
+    if (en.startsWith(q) || rom.startsWith(q)) return 60;
+    if (p.kana && p.kana.replace(/\|/g,'') === raw.trim()) return 75;
+    if (en.includes(q) || rom.includes(q)) return 38;
+    return 0;
+  }
+
+  const words = window.vocabData.map(w=>({w,s:scoreWord(w)})).filter(x=>x.s>0)
+    .sort((a,b)=>b.s-a.s).slice(0,40);
+  const phrs  = window.phraseData.phrases.map(p=>({p,s:scorePhrase(p)})).filter(x=>x.s>0)
+    .sort((a,b)=>b.s-a.s).slice(0,15);
+
+  if (words.length === 0 && phrs.length === 0) {
+    out.innerHTML = `<div class="dict-empty">No matches for “${escapeHtml(raw.trim())}”.<br>Try a different spelling or a simpler word.</div>`;
+    return;
+  }
+
+  let html = '';
+  if (words.length) {
+    html += `<div class="dict-section-label">Words (${words.length})</div>`;
+    words.forEach(({w}) => {
+      const jp = w.hasKanji ? w.kanji : w.hiragana;
+      const reading = w.hasKanji ? `<span class="dict-reading">${w.hiragana}</span>` : '';
+      html += `<div class="dict-card">
+        <div class="dict-jp">${jp}${reading}</div>
+        <div class="dict-rom">${w.romaji}</div>
+        <div class="dict-en">${escapeHtml(w.english)}</div>
+      </div>`;
+    });
+  }
+  if (phrs.length) {
+    html += `<div class="dict-section-label">Phrases (${phrs.length})</div>`;
+    phrs.forEach(({p}) => {
+      const kana = (p.resolvedKana || p.kana || '').replace(/\|/g,' ').replace(/\[[a-z-]+\]/g,'___');
+      const rom  = p.romaji.replace(/\|/g,' ').replace(/\[[a-z-]+\]/g,'___');
+      html += `<div class="dict-card">
+        <div class="dict-jp dict-jp-phrase">${kana}</div>
+        <div class="dict-rom">${rom}</div>
+        <div class="dict-en">${escapeHtml(p.english.replace(/\[[a-z-]+\]/g,'___'))}</div>
+      </div>`;
+    });
+  }
+  out.innerHTML = html;
+}
+
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+
 // ═══════════════════════════════════════════════════════
 function shuffle(arr) {
   return [...arr].map(v=>({v,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.v);
@@ -1552,7 +1748,7 @@ function renderSectionHome(body) {
 
 
 
-  html += backupFooterHTML();
+
   body.innerHTML = html;
 }
 
@@ -2748,7 +2944,7 @@ function renderPhrasesHome(body) {
     </div>`;
   });
   html += '</div>';
-  html += backupFooterHTML();
+
   body.innerHTML = html;
 }
 
@@ -3837,6 +4033,7 @@ function confirmMasteryQuit() {
 // INIT
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', ()=>{
+  applyDarkMode(isDark());
   renderHome();
 
   // Register the service worker for offline support (production).
@@ -3876,6 +4073,35 @@ window.addEventListener('DOMContentLoaded', ()=>{
       <button id="modal-confirm" style="background:var(--gold); color:var(--ink); border:none; border-radius:12px; padding:13px; font-size:14px; font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer;">Ready →</button>
       <button id="modal-cancel" style="background:transparent; color:var(--paper); border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:11px; font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; opacity:.7;">Not yet</button>
     </div>
+  </div>
+</div>
+
+<!-- OPTIONS MENU -->
+<div id="options-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1001; align-items:flex-end; justify-content:center;" onclick="if(event.target===this)closeOptions()">
+  <div class="options-sheet">
+    <div class="options-grip"></div>
+    <h3 class="options-heading">Options</h3>
+
+    <div class="options-row">
+      <div class="options-row-label">
+        <span class="options-row-title">Dark mode</span>
+        <span class="options-row-sub">Easier on the eyes at night</span>
+      </div>
+      <button id="dark-toggle" class="toggle-switch" role="switch" aria-checked="false" onclick="toggleDarkMode()">
+        <span class="toggle-knob"></span>
+      </button>
+    </div>
+
+    <div class="options-divider"></div>
+
+    <div class="options-section-label">Your progress</div>
+    <div class="options-row-sub" style="margin-bottom:12px">Progress is saved on this device only. Download a backup so you don't lose it.</div>
+    <div class="options-btn-row">
+      <button class="options-action" onclick="exportProgress()">⬇︎ Download backup</button>
+      <button class="options-action secondary" onclick="triggerImport()">⬆︎ Restore</button>
+    </div>
+
+    <button class="options-close" onclick="closeOptions()">Close</button>
   </div>
 </div>
 </body>
