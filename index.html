@@ -33,29 +33,31 @@
       --radius-sm:  10px;
       --kana-font:  'Noto Sans JP', sans-serif;
     }
-    /* Dark mode — re-theme via variable overrides. Surfaces that used
-       --paper (light card) flip to dark; ink text flips to light. Accent
-       colours (gold/green/red) stay, they read well on both. */
+    /* Dark mode. Key principle: --paper stays LIGHT because it is used as
+       text colour on dark surfaces throughout (titles, kana, hints). We only
+       darken the big light panel (.card-area) and flip page text. The cards
+       inside already use --ink (dark) with --paper (light) text, so they keep
+       working. --ink lifts slightly so cards separate from the page. */
     body.dark {
-      --paper:      #1e1e30;
-      --paper-warm: #28283f;
-      --ink:        #0f0f1a;
-      --ink-soft:   #2a2a42;
-      --text:       #ece8df;
-      --text-soft:  #9a9ab0;
-      --white:      #ece8df;
+      --paper:      #f1ece2;   /* stays light — it is text on dark cards */
+      --paper-warm: #2a2a40;   /* this one is a surface, so it darkens */
+      --ink:        #232338;   /* card surface — lifted so it reads on dark bg */
+      --ink-soft:   #2e2e48;
+      --text:       #ece8df;   /* page text flips light */
+      --text-soft:  #a6a6be;
+      --white:      #232338;   /* inputs/cards that were white go dark */
     }
-    body.dark .card-area { background: #16161f; }
+    body.dark .card-area { background: #15151f; }
     body.dark .home-hero h2 { color: var(--gold-light); }
-    body.dark .block-btn.locked { background: #24243a; color: #55556f; }
-    body.dark .stat-card { background: #0f0f1a; }
-    body.dark .choice-btn { background: #24243a; color: var(--text); }
-    body.dark .choice-btn.correct { background: rgba(39,174,96,.25); }
-    body.dark .choice-btn.wrong { background: rgba(231,76,60,.22); }
-    body.dark .answer-input { background: #24243a; color: var(--text); }
-    body.dark .answer-input.wrong { background: rgba(231,76,60,.22); }
-    body.dark .modal-overlay-inner, body.dark .options-sheet { background: #1e1e30; }
-    body.dark .word-card, body.dark .study-card, body.dark .study-card-num, body.dark .kana-study-card { background: #24243a; }
+    body.dark .block-btn.locked { background: #1c1c2c; color: #6a6a85; }
+    body.dark .choice-btn { background: #2a2a42; color: var(--paper); }
+    body.dark .choice-btn.correct { background: rgba(39,174,96,.28); color: #fff; }
+    body.dark .choice-btn.wrong { background: rgba(231,76,60,.24); color: #fff; }
+    body.dark .answer-input { background: #2a2a42; color: var(--paper); border-color: #3a3a55; }
+    body.dark .answer-input.wrong { background: rgba(231,76,60,.24); }
+    body.dark .options-sheet { background: #1c1c2c; }
+    body.dark #dict-input { background: #2a2a42; color: var(--paper); }
+    body.dark .dict-card { background: #232338; }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; background: var(--ink); font-family: 'DM Sans', sans-serif; color: var(--text); overscroll-behavior: none; }
     body.brush-font { --kana-font: 'Shippori Mincho', serif; }
@@ -96,7 +98,7 @@
     .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; }
     .stat-card { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
     .stat-card .num { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--gold); line-height: 1; }
-    .stat-card .lbl { font-size: 11px; color: var(--paper-warm); margin-top: 3px; opacity: .7; text-transform: uppercase; letter-spacing: .08em; }
+    .stat-card .lbl { font-size: 11px; color: var(--paper); margin-top: 3px; opacity: .7; text-transform: uppercase; letter-spacing: .08em; }
 
     .section-heading { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-soft); margin: 14px 0 8px; }
 
@@ -200,6 +202,8 @@
     .options-action { flex: 1; border: none; border-radius: var(--radius-sm); padding: 12px 8px; font-family: 'DM Sans',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--ink); color: var(--paper); transition: transform .12s; }
     .options-action:active { transform: scale(.96); }
     .options-action.secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+    .options-action.danger { width: 100%; background: transparent; color: var(--red-light); border: 1.5px solid var(--red-light); }
+    body.dark .options-action.secondary { color: var(--paper); border-color: var(--paper); }
     .options-close { width: 100%; margin-top: 18px; background: transparent; border: none; color: var(--text-soft); font-family: 'DM Sans',sans-serif; font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer; }
     .toggle-switch { position: relative; width: 50px; height: 28px; border-radius: 14px; border: none; background: var(--text-soft); opacity: .4; cursor: pointer; transition: background .2s, opacity .2s; flex-shrink: 0; }
     .toggle-switch.on { background: var(--gold); opacity: 1; }
@@ -1147,6 +1151,19 @@ function exportProgress() {
 function triggerImport() {
   const inp = document.getElementById('backup-file-input');
   if (inp) { inp.value = ''; inp.click(); }
+}
+
+// Reset all progress — destructive, so double-confirm via the custom modal.
+function confirmResetProgress() {
+  closeOptions();
+  showModal('⚠️', 'Reset all progress?',
+    'This permanently erases every cleared block and your revision pool. This cannot be undone. If you might want it back, download a backup first.',
+    'Reset everything', () => {
+      localStorage.removeItem('jp_app_v1');
+      localStorage.removeItem(REVISION_KEY);
+      renderHome();
+      showModal('✓', 'Progress reset', 'Everything has been cleared. You are back to a fresh start.', 'OK', ()=>{});
+    });
 }
 
 function handleImportFile(fileInput) {
@@ -4104,6 +4121,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
       <button class="options-action" onclick="exportProgress()">⬇︎ Download backup</button>
       <button class="options-action secondary" onclick="triggerImport()">⬆︎ Restore</button>
     </div>
+
+    <div class="options-divider"></div>
+
+    <div class="options-section-label" style="color:var(--red-light)">Danger zone</div>
+    <div class="options-row-sub" style="margin-bottom:12px">Reset wipes all progress and the revision pool. Download a backup first if you might want it back.</div>
+    <button class="options-action danger" onclick="confirmResetProgress()">↺ Reset all progress</button>
 
     <button class="options-close" onclick="closeOptions()">Close</button>
   </div>
