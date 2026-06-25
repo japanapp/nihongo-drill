@@ -1580,6 +1580,12 @@ function renderSectionHome(body) {
   const n       = blocks.length;
   const prog    = getProgress();
 
+  // Count of cleared blocks in this tab — gates the Review section unlock.
+  let done = 0;
+  for (let i = 0; i < n; i++) {
+    if (isBlockCleared(currentSection, currentTab, i)) done++;
+  }
+
   // Build the section body
   let html = '';
 
