@@ -85,6 +85,7 @@
     .app-title { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--paper); letter-spacing: .04em; }
     .header-logo { width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; object-fit: cover; }
     .header-badge { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; background: var(--red-light); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; border-radius: 8px; }
+    .cat-back { background: transparent; border: none; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; padding: 4px 0 10px; }
     .app-subtitle { font-size: 12px; color: var(--gold); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
     .header-back { background: none; border: none; color: var(--gold); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; padding: 8px 0; display: flex; align-items: center; gap: 6px; }
     .header-back::before { content: '←'; font-size: 18px; }
@@ -990,6 +991,72 @@ const DRILL_META = {
   kanji:    {icon:'字',label:'Kanji',heroBg:'学習',heroTitle:'Kanji You Will See',heroSub:'Signs, menus and the written world',phases:1},
 };
 
+// ─── WORD CATEGORIES ───────────────────────────────────
+// The Words section is organised by meaning, not script. Each word is
+// assigned to the FIRST category whose tags it matches (priority order),
+// so every word lands in exactly one category. Within a category, words are
+// ordered by survival priority (kanjiPriority ascending — lower = more
+// useful day-to-day). Reading + meaning are tested; kana-writing lives in
+// Foundation. id is used as the progress key, so it must stay stable.
+const WORD_CATEGORIES = [
+  { id:'food',      icon:'🍜', label:'Food & Drink',      tags:['food','drink'] },
+  { id:'transport', icon:'🚃', label:'Getting Around',    tags:['transport','transport-place','direction'] },
+  { id:'places',    icon:'🏛️', label:'Places & Signs',    tags:['place','signage'] },
+  { id:'people',    icon:'👪', label:'People & Family',    tags:['person','family'] },
+  { id:'body',      icon:'🩹', label:'Body & Health',      tags:['body-part'] },
+  { id:'home',      icon:'🏠', label:'In the Home',        tags:['household','room'] },
+  { id:'things',    icon:'🔧', label:'Things & Tools',     tags:['object'] },
+  { id:'clothing',  icon:'👕', label:'Clothing',           tags:['clothing'] },
+  { id:'timenum',   icon:'🕐', label:'Time & Numbers',     tags:['time-word','number-word','quantity'] },
+  { id:'describe',  icon:'🎨', label:'Describing Things',  tags:['i-adjective','na-adjective','colour','adverb'] },
+  { id:'actions',   icon:'🏃', label:'Actions',            tags:['action-verb'] },
+  { id:'nature',    icon:'🌸', label:'Nature & Weather',   tags:['nature','plant','animal','weather'] },
+  { id:'everyday',  icon:'💬', label:'Everyday Words',     tags:['abstract','communication','greeting','question-word','demonstrative','conjunction','country','language','school','work','art','event'] },
+];
+
+// Build the category → ordered word list map once (memoised).
+let _wordCatCache = null;
+function wordsByCategory() {
+  if (_wordCatCache) return _wordCatCache;
+  const assigned = new Set();
+  const map = {};
+  WORD_CATEGORIES.forEach(cat => {
+    const words = [];
+    window.vocabData.forEach(w => {
+      if (assigned.has(w)) return;
+      if (w.tags.some(t => cat.tags.includes(t))) { assigned.add(w); words.push(w); }
+    });
+    // survival priority: lower kanjiPriority first, then keep stable order
+    words.sort((a,b) => (a.kanjiPriority||8000) - (b.kanjiPriority||8000));
+    map[cat.id] = words;
+  });
+  _wordCatCache = map;
+  return map;
+}
+function wordsForCategory(catId) { return wordsByCategory()[catId] || []; }
+function wordCategoryMeta(catId) { return WORD_CATEGORIES.find(c => c.id === catId); }
+
+// The natural written form of a word: kanji if it has one, else the script a
+// Japanese person would actually use (katakana for loanwords, hiragana else).
+function wordKana(w)    { return w.isLoanword ? w.katakana : w.hiragana; }
+function wordDisplay(w) { return w.hasKanji ? w.kanji : wordKana(w); }
+
+// Category drill phases — reading + meaning only (no kana-writing; that lives
+// in Foundation). Works for any word regardless of script.
+const CATEGORY_PHASES = [
+  { label:'Read', prompts:[
+      w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplay(w)}</div><div class="q-english">${w.english}</div>`,
+      w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplay(w)}</div>`,
+      w=>`<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
+    ], answer:w=>w.romaji, placeholder:'Type romaji…', hint:null },
+  { label:'English', prompts:[
+      w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${wordDisplay(w)}</div><div class="q-romaji">${displayRomaji(w.romaji)}</div>`,
+      w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${wordDisplay(w)}</div>`,
+      w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:26px">${displayRomaji(w.romaji)}</div>`,
+    ], answer:w=>w.english, placeholder:'Type English meaning…', hint:null },
+];
+
+
 // Word drill phase definitions (3 cycles with escalating difficulty)
 const DRILL_PHASES = {
   hiragana: [
@@ -1450,7 +1517,8 @@ function blocksFor(section, tab) {
     if (tab==='time')    return TIME_BLOCKS.map(b=>({...b, numeric:false}));
   }
   if (section==='drill') {
-    const v = vocabForDrill(tab);
+    // tab is now a word-category id; words ordered by survival priority.
+    const v = wordsForCategory(tab);
     const n = Math.ceil(v.length/BLOCK_SIZE);
     return Array.from({length:n},(_,i)=>({
       label:`Block ${i+1}`, preview:null,
@@ -1537,10 +1605,15 @@ function switchSection(sec) {
   currentSection = sec;
   // Reset sub-tab to first available in that section
   if (sec==='foundation')   currentTab = 'hiragana';
-  else if (sec==='drill')   currentTab = 'hiragana';
+  else if (sec==='drill')   { currentWordCat = null; }   // show category grid
   renderHome();
 }
 function switchTab(tab) { currentTab = tab; renderHome(); }
+
+// Words section: pick a category (shows its blocks) or go back to the grid.
+let currentWordCat = null;
+function openWordCategory(catId) { currentWordCat = catId; currentTab = catId; renderHome(); }
+function backToWordCategories() { currentWordCat = null; renderHome(); }
 
 // ═══════════════════════════════════════════════════════
 // HOME RENDERING
@@ -1568,8 +1641,84 @@ function renderHome() {
     renderPhrasesHome(body);
     return;
   }
+  if (currentSection === 'drill') {
+    if (currentWordCat === null) { renderWordCategoriesHome(body); return; }
+    renderWordCategoryBlocks(body);
+    return;
+  }
 
   renderSectionHome(body);
+}
+
+// Words section landing — grid of category cards (like phrase themes).
+function renderWordCategoriesHome(body) {
+  const byCat = wordsByCategory();
+  let html = `
+    <div class="home-hero">
+      <div class="kanji-bg">単語</div>
+      <h2>Words</h2>
+      <p>Pick a topic · learn the vocabulary you need</p>
+    </div>
+    <div class="section-heading">Choose a Topic</div>
+    <div class="theme-grid">`;
+  WORD_CATEGORIES.forEach(cat => {
+    const words  = byCat[cat.id] || [];
+    const nBlocks = Math.ceil(words.length / BLOCK_SIZE);
+    let cleared = 0;
+    for (let i = 0; i < nBlocks; i++) if (isBlockCleared('drill', cat.id, i)) cleared++;
+    const complete = nBlocks > 0 && cleared === nBlocks;
+    html += `<div class="theme-card ${complete?'complete':''}" onclick="openWordCategory('${cat.id}')">
+      <div class="tc-icon">${cat.icon}</div>
+      <div class="tc-label">${cat.label}</div>
+      <div class="tc-count">${cleared}/${nBlocks} blocks</div>
+      ${complete ? '<div class="tc-check">✓ Complete</div>' : ''}
+    </div>`;
+  });
+  html += `</div>`;
+  body.innerHTML = html;
+}
+
+// Blocks within a chosen word category.
+function renderWordCategoryBlocks(body) {
+  const cat    = wordCategoryMeta(currentWordCat);
+  const blocks = blocksFor('drill', currentWordCat);
+  let html = `
+    <button class="cat-back" onclick="backToWordCategories()">‹ All topics</button>
+    <div class="home-hero">
+      <div class="kanji-bg">${cat.icon}</div>
+      <h2>${cat.label}</h2>
+      <p>${blocks.length} block${blocks.length!==1?'s':''} · learn in fives</p>
+    </div>`;
+
+  // Mastery CTA when the whole category is cleared
+  if (allBlocksCleared('drill', currentWordCat)) {
+    html += `<button class="mastery-cta" onclick="startMasteryTest('drill','${currentWordCat}')">
+      <div class="mc-left">
+        <span class="mc-icon">🎯</span>
+        <div>
+          <div class="mc-title">Topic Mastery Test</div>
+          <div class="mc-sub">All blocks cleared — prove it. 10 random, sudden death.</div>
+        </div>
+      </div>
+      <span class="mc-arrow">›</span>
+    </button>`;
+  }
+
+  html += '<div class="section-heading">Your Blocks</div>';
+  html += '<div class="block-grid">';
+  blocks.forEach((block, i) => {
+    const isCleared   = isBlockCleared('drill', currentWordCat, i);
+    const isPractised = !isCleared && isBlockPractised('drill', currentWordCat, i);
+    const open        = isBlockUnlocked('drill', currentWordCat, i);
+    const cls = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''} numeric`;
+    const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
+    html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+      <span class="bn">${i+1}</span>
+      <span class="bs">${icon}</span>
+    </button>`;
+  });
+  html += '</div>';
+  body.innerHTML = html;
 }
 
 function renderSectionHome(body) {
@@ -1640,8 +1789,8 @@ function renderSectionHome(body) {
   // (Mastery banner removed — block state now binary: practised / cleared)
 
   // Block grid
-  // For Words section — show review at top if unlocked, then blocks below
-  if (isDrill() && done > 0) {
+  // Foundation review buttons — show once enough blocks are cleared.
+  if (isFound && done > 0) {
     // Review buttons
       html += '<div class="section-heading">Review</div>';
     html += '<div class="review-row">';
@@ -1769,10 +1918,10 @@ function openBlock(i) {
   currentBlock = blocks[i].items;
   quizCorrect = 0; quizTotal = 0;
 
-  const meta = isFoundation() ? FOUNDATION_META[currentTab] : DRILL_META[currentTab];
+  const metaLabel = isFoundation() ? FOUNDATION_META[currentTab].label : currentDrillLabel();
 
   document.getElementById('study-title').textContent    = blocks[i].label;
-  document.getElementById('study-subtitle').textContent = meta.label + ' · ' + currentBlock.length + ' items';
+  document.getElementById('study-subtitle').textContent = metaLabel + ' · ' + currentBlock.length + ' items';
 
   const heading =
     isFoundation()
@@ -1820,17 +1969,18 @@ function openBlock(i) {
       </div>`).join('')}</div>`;
     }
   } else {
-    // Drill section — word cards
+    // Drill section — word cards. Script is per-word now (category may mix
+    // scripts): show kanji large with kana furigana, else the natural kana.
     cards = currentBlock.map(w => {
-      const script = currentTab==='hiragana'?w.hiragana:currentTab==='katakana'?w.katakana:w.kanji;
-      const loanNote = (currentTab==='katakana')
+      const main = wordDisplay(w);
+      const loanNote = w.isLoanword
         ? `<div style="font-size:9px;color:var(--text-soft);margin-top:2px;letter-spacing:.06em;text-transform:uppercase">loanword</div>`
         : '';
-      // Kanji tab: show kanji large + hiragana reading below so user knows how to sound it out
-      const furigana = (currentTab==='kanji' && w.hiragana)
-        ? `<div class="furigana">${w.hiragana}</div>` : '';
+      // If we're showing kanji, add the kana reading below as furigana.
+      const furigana = (w.hasKanji && wordKana(w))
+        ? `<div class="furigana">${wordKana(w)}</div>` : '';
       return `<div class="word-card">
-        <div class="kana">${script}</div>
+        <div class="kana">${main}</div>
         ${furigana}
         <div class="romaji">${displayRomaji(w.romaji)}</div>
         <div class="english">${w.english}</div>
@@ -2286,18 +2436,21 @@ function beginDrillQuiz() {
   renderDrillQuizFrame();
 }
 
-const drillNumPhases = () => DRILL_META[currentTab].phases;
+const drillNumPhases = () => isDrill() ? CATEGORY_PHASES.length : DRILL_META[currentTab].phases;
+// Phases for the current drill context: category-based in Words, kana-based in Foundation.
+function currentDrillPhases() { return isDrill() ? CATEGORY_PHASES : DRILL_PHASES[currentTab]; }
+function currentDrillLabel()  { return isDrill() ? (wordCategoryMeta(currentTab)||{}).label || 'Words' : DRILL_META[currentTab].label; }
 
 function renderDrillQuizFrame() {
   const blocks = blocksFor(currentSection, currentTab);
   document.getElementById('quiz-block-label').textContent = blocks[currentBlockIndex].label;
-  document.getElementById('quiz-mode-label').textContent  = DRILL_META[currentTab].label;
+  document.getElementById('quiz-mode-label').textContent  = currentDrillLabel();
 
   const tp = drillNumPhases();
   const pills = document.getElementById('phase-pills');
   pills.innerHTML = '';
   if (tp > 1) {
-    DRILL_PHASES[currentTab].forEach((ph,i) => {
+    currentDrillPhases().forEach((ph,i) => {
       const p = document.createElement('div');
       p.className = 'phase-pill '+(i<quizPhase?'pp-done':i===quizPhase?'pp-active':'');
       p.textContent = ph.label;
@@ -2309,7 +2462,7 @@ function renderDrillQuizFrame() {
 }
 
 function showDrillQuestion() {
-  const ph  = DRILL_PHASES[currentTab][quizPhase];
+  const ph  = currentDrillPhases()[quizPhase];
   const w   = phaseOrder[wordIndex];
   const tp  = drillNumPhases();
 
@@ -2358,7 +2511,7 @@ function submitDrillAnswer() {
   if (!inp) return;
   const val = inp.value.trim();
   if (val === '') return; // ignore empty submits
-  const ph  = DRILL_PHASES[currentTab][quizPhase];
+  const ph  = currentDrillPhases()[quizPhase];
   const w   = phaseOrder[wordIndex];
   const correctRaw = ph.answer(w);
   const correct = correctRaw.toLowerCase();
@@ -2796,7 +2949,7 @@ const SLOT_POOLS = {
   'drink':       ['mizu','ocha','koohii','koucha','biiru','wain','juusu','gyuunyuu','osake','sooda','koora'],
   'colour':      ['aka','ao','shiro','kuro','midori','kiiro','chairo','murasaki','pinku','orenji'],
   'country':     ['oosutoraria','nihon','amerika','igirisu','furansu','doitsu','itaria','kanada','chuugoku','kankoku','indo','supein','tai'],
-  'object':      ['hon','kasa','kagi','megane','saifu','kitte','hagaki','chizu','kusuri','denwa','keitai','kamera','taoru','sekken','shanpuu','haburashi','itamidome','bansoukou','kaado','genkin'],
+  'object':      ['hon','kasa','kagi','megane','saifu','kitte','hagaki','chizu','kusuri','denwa','keitai','kamera','taoru','sekken','shanpuu','haburashi','itamidome','bansoukou','kaado','genkin','juudenki','batterii','pasupooto','koppu','ohashi','hako','himo','hasami','tokei','nootopasokon'],
   'weather':     ['ame','yuki','hare','kumori','atsui','samui','atatakai'],
 };
 
@@ -2817,12 +2970,13 @@ function slotCandidates(tag) {
 // computed against the SAME filtered/sorted lists the drills actually use
 // (not the raw vocabData index — that mismatch was a real bug).
 function isWordStudied(word) {
-  for (const tab of ['hiragana','katakana','kanji']) {
-    const list = vocabForDrill(tab);
+  // Words now live in categories; find the word's category and block.
+  for (const cat of WORD_CATEGORIES) {
+    const list = wordsForCategory(cat.id);
     const pos  = list.indexOf(word);
     if (pos === -1) continue;
     const bi = Math.floor(pos / BLOCK_SIZE);
-    if (isBlockPractised('drill',tab,bi) || isBlockCleared('drill',tab,bi)) return true;
+    if (isBlockPractised('drill',cat.id,bi) || isBlockCleared('drill',cat.id,bi)) return true;
   }
   return false;
 }
@@ -3887,7 +4041,7 @@ function masteryItemPool(section, tab) {
       TIME_ITEMS.forEach(t => out.push({ type:'time', item:t }));
     }
   } else if (section === 'drill') {
-    vocabForDrill(tab).forEach(w => out.push({ type:'vocab', item:w, tab }));
+    wordsForCategory(tab).forEach(w => out.push({ type:'vocab', item:w, tab }));
   }
   return out;
 }
