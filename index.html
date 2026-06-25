@@ -58,6 +58,22 @@
     body.dark .options-sheet { background: #1c1c2c; }
     body.dark #dict-input { background: #2a2a42; color: var(--paper); }
     body.dark .dict-card { background: #232338; }
+    /* Dark-mode text fixes — elements using --ink (dark) as text colour on
+       surfaces that go dark in dark mode. Flip them to light --text. */
+    body.dark .word-card .kana { color: var(--text); }
+    body.dark .psc-kana { color: var(--text); }
+    body.dark .chunk-built { color: var(--text); }
+    body.dark .review-btn { color: var(--text); border-color: var(--paper); }
+    body.dark .options-heading { color: var(--text); }
+    body.dark .review-score .frac { color: var(--text); }
+    body.dark .keyboard-hint strong { color: var(--gold-light); }
+    body.dark .word-card { background: #232338; }
+    body.dark .phrase-study-card { background: #232338; }
+    body.dark .review-btn { background: #232338; }
+    body.dark .psc-badge.polite { background: rgba(41,128,185,.25); color: #7fc4f5; }
+    body.dark .psc-badge.casual { background: rgba(201,168,76,.25); color: var(--gold-light); }
+    body.dark .psc-badge.formal { background: rgba(142,68,173,.25); color: #c89be0; }
+    body.dark .psc-ha-wa-note { background: rgba(201,168,76,.15); color: var(--gold-light); }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; background: var(--ink); font-family: 'DM Sans', sans-serif; color: var(--text); overscroll-behavior: none; }
     body.brush-font { --kana-font: 'Shippori Mincho', serif; }
@@ -351,7 +367,7 @@
       background: var(--white); border-radius: var(--radius); padding: 16px;
       margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
     }
-    .psc-kana { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); margin-bottom: 4px; line-height: 1.4; }
+    .psc-kana { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--text); margin-bottom: 4px; line-height: 1.4; }
     .psc-kana .slot-word { color: var(--gold); font-weight: 700; }
     .psc-romaji { font-size: 13px; color: var(--text-soft); margin-bottom: 3px; }
     .psc-english { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
@@ -409,7 +425,7 @@
     }
     .chunk-built {
       font-family: 'Shippori Mincho', serif; font-size: 18px;
-      background: var(--paper-warm); color: var(--ink);
+      background: var(--paper-warm); color: var(--text);
       border-radius: 8px; padding: 6px 12px;
       transition: background .2s;
     }
@@ -459,7 +475,7 @@
   </div>
   <div class="card-area">
     <div style="text-align:center;margin-bottom:16px">
-      <h2 style="font-family:'Shippori Mincho',serif;font-size:20px;font-weight:800;color:var(--ink)" id="phrase-study-heading">Study these phrases</h2>
+      <h2 style="font-family:'Shippori Mincho',serif;font-size:20px;font-weight:800;color:var(--text)" id="phrase-study-heading">Study these phrases</h2>
       <p style="color:var(--text-soft);font-size:12px;margin-top:4px">Gold words are ones you've already learned</p>
     </div>
     <div id="phrase-study-cards"></div>
@@ -546,7 +562,7 @@
   </div>
   <div class="card-area">
     <div style="text-align:center;margin-bottom:14px">
-      <h2 style="font-family:'Shippori Mincho',serif;font-size:20px;font-weight:800;color:var(--ink)" id="study-heading">Study these items</h2>
+      <h2 style="font-family:'Shippori Mincho',serif;font-size:20px;font-weight:800;color:var(--text)" id="study-heading">Study these items</h2>
       <p style="color:var(--text-soft);font-size:12px;margin-top:4px">Memorise them, then take the quiz</p>
     </div>
     <div id="study-font-toggle"></div>
