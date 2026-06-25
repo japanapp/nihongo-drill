@@ -112,11 +112,6 @@
     .home-hero h2 { font-family: 'Shippori Mincho', serif; font-size: 20px; font-weight: 800; color: var(--ink); position: relative; z-index: 1; margin: 0; }
     .home-hero p { color: var(--text-soft); font-size: 12px; margin-top: 4px; }
 
-    .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; }
-    .stat-card { background: var(--ink); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
-    .stat-card .num { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--gold); line-height: 1; }
-    .stat-card .lbl { font-size: 11px; color: var(--paper); margin-top: 3px; opacity: .7; text-transform: uppercase; letter-spacing: .08em; }
-
     .section-heading { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-soft); margin: 14px 0 8px; }
 
     /* ── BLOCK GRIDS ── */
@@ -1581,23 +1576,6 @@ function renderSectionHome(body) {
   const n       = blocks.length;
   const prog    = getProgress();
 
-  let cleared = 0, practised = 0;
-  for(let i=0;i<n;i++){
-    if (isBlockCleared(currentSection, currentTab, i))   cleared++;
-    else if (isBlockPractised(currentSection, currentTab, i)) practised++;
-  }
-  // Backward-compat aliases for existing code paths
-  const done = cleared;
-  const mastered = 0;
-
-  let totalItems = 0;
-  if (isFound) {
-    if (currentTab==='hiragana'||currentTab==='katakana') totalItems = KANA[currentTab].length;
-    else totalItems = blocks.reduce((a,b)=>a+b.items.length,0);
-  } else {
-    totalItems = vocabForDrill(currentTab).length;
-  }
-
   // Build the section body
   let html = '';
 
@@ -1649,13 +1627,6 @@ function renderSectionHome(body) {
       <span class="rb-arrow">›</span>
     </button>`;
   }
-
-  // Stats
-  html += `<div class="stats-bar">
-    <div class="stat-card"><div class="num">${cleared}</div><div class="lbl">Cleared</div></div>
-    <div class="stat-card"><div class="num">${practised}</div><div class="lbl">In Practice</div></div>
-    <div class="stat-card"><div class="num">${n}</div><div class="lbl">Blocks</div></div>
-  </div>`;
 
   // Section Mastery Test — appears once every block in this tab is cleared.
   if (allBlocksCleared(currentSection, currentTab)) {
@@ -2957,18 +2928,12 @@ function buildSituationMC(correct, allPhrases, currentId) {
 function renderPhrasesHome(body) {
   const themes  = window.phraseData.themes;
   const phrases = window.phraseData.phrases;
-  const done    = themes.filter(t => phraseThemeDone(t.id)).length;
 
   let html = `
     <div class="home-hero">
       <div class="kanji-bg">日本語</div>
       <h2>Phrases</h2>
       <p>Real situations · 5-step scaffolded practice</p>
-    </div>
-    <div class="stats-bar">
-      <div class="stat-card"><div class="num">${done}</div><div class="lbl">Practiced</div></div>
-      <div class="stat-card"><div class="num">${phrases.length}</div><div class="lbl">Phrases</div></div>
-      <div class="stat-card"><div class="num">${phrases.filter(p=>p.slot).length}</div><div class="lbl">Templates</div></div>
     </div>
     <div class="section-heading">Choose a Theme</div>
     <div class="theme-grid">`;
