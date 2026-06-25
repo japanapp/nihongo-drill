@@ -83,6 +83,7 @@
 
     .app-header { background: var(--ink); padding: 12px 20px 14px; padding-top: max(env(safe-area-inset-top,12px),12px); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .app-title { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--paper); letter-spacing: .04em; }
+    .header-logo { width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; object-fit: cover; }
     .app-subtitle { font-size: 12px; color: var(--gold); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
     .header-back { background: none; border: none; color: var(--gold); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; padding: 8px 0; display: flex; align-items: center; gap: 6px; }
     .header-back::before { content: '←'; font-size: 18px; }
@@ -520,9 +521,13 @@
 <!-- HOME -->
 <div id="screen-home" class="screen active">
   <div class="app-header">
-    <div>
-      <div class="app-title">Japan Start</div>
-      <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="icon-192.png" alt="Japan Start" class="header-logo"
+        onerror="this.style.display='none'">
+      <div>
+        <div class="app-title">Japan Start</div>
+        <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
+      </div>
     </div>
     <button id="dict-btn" onclick="openDictionary()" aria-label="Dictionary"
       style="margin-left:auto;background:transparent;border:none;cursor:pointer;padding:6px;color:var(--paper);font-size:20px;line-height:1">🔍</button>
