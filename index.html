@@ -1593,7 +1593,7 @@ function renderSectionHome(body) {
 
   // Hero
   // Show welcome mascot always on Foundation home — they guide the learner
-  const heroMascot = `<img src="images/states/welcome.png" class="mascot-img" style="width:260px;margin-bottom:8px" alt="Luna and Bentley">`;
+  const heroMascot = `<img src="images/states/welcome.png" onerror="this.style.display=\'none\'" class="mascot-img" style="width:260px;margin-bottom:8px" alt="Luna and Bentley">`;
   html += `<div class="home-hero">
     ${heroMascot}
     <div class="hero-title-wrap">
@@ -2263,7 +2263,7 @@ function testModeFailed(item) {
   // The user can retry test, or go back and practise more.
   document.getElementById('quiz-card-area').innerHTML = `
     <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
-      <img src="images/states/test-failed.jpg" class="mascot-img" alt="Test failed">
+      <img src="images/states/test-failed.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Test failed">
       <h2 style="color:#fff">Test Failed</h2>
       <p>One wrong answer ends the test in Sudden Death mode.<br>The wrong item has been added to your Revision pool.</p>
       <button class="complete-btn" onclick="beginQuiz('test')">Retry Test ↺</button>
@@ -2486,10 +2486,10 @@ function blockComplete() {
 
   // Mascot image — different for last block, cleared, or practice
   const mascot = cleared && isLast
-    ? `<img src="images/states/all-cleared.jpg" class="mascot-img" alt="All cleared!">`
+    ? `<img src="images/states/all-cleared.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="All cleared!">`
     : cleared
-    ? `<img src="images/states/test-cleared.jpg" class="mascot-img" alt="Test cleared!">`
-    : `<img src="images/states/practice-complete.jpg" class="mascot-img" alt="Practice complete">`;
+    ? `<img src="images/states/test-cleared.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Test cleared!">`
+    : `<img src="images/states/practice-complete.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Practice complete">`;
 
   // Action buttons depend on mode + state
   let buttons = '';
@@ -3469,10 +3469,10 @@ function phraseQuizComplete() {
   const isLastBlock  = !hasNextBlock;
   const headline     = cleared ? 'Block cleared!' : 'Practice complete';
   const mascot       = cleared && isLastBlock
-    ? `<img src="images/states/all-cleared.jpg" class="mascot-img" alt="All cleared!">`
+    ? `<img src="images/states/all-cleared.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="All cleared!">`
     : cleared
-    ? `<img src="images/states/test-cleared.jpg" class="mascot-img" alt="Test cleared!">`
-    : `<img src="images/states/practice-complete.jpg" class="mascot-img" alt="Practice complete">`;
+    ? `<img src="images/states/test-cleared.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Test cleared!">`
+    : `<img src="images/states/practice-complete.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Practice complete">`;
   const subtext  = cleared
     ? `Flawless run across all 5 phases — next block unlocked.`
     : `${phraseQCorrect}/${phraseQTotal} correct. Take the Test to clear this block.`;
@@ -3497,7 +3497,7 @@ function phraseQuizComplete() {
 
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete">
-      <img src="images/states/test-cleared.jpg" class="mascot-img" alt="${headline}">
+      <img src="images/states/test-cleared.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="${headline}">
       <h2>${headline}</h2>
       <p>${subtext}</p>
       ${buttons}
@@ -3508,7 +3508,7 @@ function phraseQuizComplete() {
 function phraseTestModeFailed(item) {
   document.getElementById('phrase-quiz-area').innerHTML = `
     <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
-      <img src="images/states/test-failed.jpg" class="mascot-img" alt="Test failed">
+      <img src="images/states/test-failed.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Test failed">
       <h2 style="color:#fff">Test Failed</h2>
       <p>One wrong answer ends the test in Sudden Death mode.<br>The phrase has been added to your Revision pool.</p>
       <button class="complete-btn" onclick="beginPhraseQuiz('test')">Retry Test ↺</button>
@@ -3696,7 +3696,7 @@ function startRevisionQuiz() {
     showScreen('revision');
     document.getElementById('revision-card-area').innerHTML = `
       <div class="complete-card">
-        <img src="images/states/empty-revision.jpg" class="mascot-img" alt="Nothing to revise">
+        <img src="images/states/empty-revision.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Nothing to revise">
         <h2>All caught up!</h2>
         <p style="color:var(--paper);opacity:.75;font-size:13px;margin-bottom:20px">
           Your revision pool is empty — items land here when you get them wrong in practice or test mode.
@@ -3823,7 +3823,7 @@ function revisionComplete() {
   const pct = revisionTotal > 0 ? Math.round(revisionCorrect/revisionTotal*100) : 0;
   document.getElementById('revision-card-area').innerHTML = `
     <div class="complete-card">
-      <img src="images/states/revision-time.jpg" class="mascot-img" alt="Revision complete">
+      <img src="images/states/revision-time.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Revision complete">
       <h2>Revision session complete</h2>
       <p>${revisionCorrect}/${revisionTotal} correct — ${pct}%${revisionRemoved>0 ? `<br><span style="color:var(--green)">${revisionRemoved} item${revisionRemoved!==1?'s':''} retained and removed from the pool</span>` : ''}</p>
       <p style="font-size:11px;color:var(--text-soft);margin-top:6px">${remaining} item${remaining!==1?'s':''} still in your pool</p>
@@ -4020,7 +4020,7 @@ function masteryPassed() {
   if (fill) fill.style.width = '100%';
   document.getElementById('mastery-card-area').innerHTML = `
     <div class="complete-card">
-      <img src="images/states/all-cleared.jpg" class="mascot-img" alt="Mastery passed"
+      <img src="images/states/all-cleared.png" class="mascot-img" alt="Mastery passed"
         onerror="this.style.display='none'">
       <h2 style="color:var(--gold)">Section Mastered!</h2>
       <p>You answered all ${mtItems.length} questions correctly.<br>
@@ -4033,7 +4033,7 @@ function masteryPassed() {
 function masteryFailed() {
   document.getElementById('mastery-card-area').innerHTML = `
     <div class="complete-card">
-      <img src="images/states/test-failed.jpg" class="mascot-img" alt="Test failed"
+      <img src="images/states/test-failed.png" class="mascot-img" alt="Test failed"
         onerror="this.style.display='none'">
       <h2 style="color:#fff">So Close!</h2>
       <p>You got ${mtCorrect} right before the first slip.<br>
