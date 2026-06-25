@@ -2513,7 +2513,6 @@ function blockComplete() {
     if (!isLast) {
       buttons += `<button class="complete-btn" onclick="openBlock(${currentBlockIndex+1})">Next: ${blocks[currentBlockIndex+1].label} →</button>`;
     }
-    buttons += `<button class="complete-btn secondary" onclick="beginQuiz('practice')">Practice Again ↺</button>`;
   } else {
     // Practice complete — encourage them toward the test
     buttons += `<button class="complete-btn" onclick="confirmTestMode()">Take Test →</button>`;
@@ -3504,7 +3503,6 @@ function phraseQuizComplete() {
         buttons += `<button class="complete-btn" onclick="openPhraseTheme('${nextTheme.id}')">Next theme: ${nextTheme.label} →</button>`;
       }
     }
-    buttons += `<button class="complete-btn secondary" onclick="beginPhraseQuiz('practice')">Practice Again ↺</button>`;
   } else {
     buttons += `<button class="complete-btn" onclick="confirmPhraseTestMode()">Take Test →</button>`;
     buttons += `<button class="complete-btn secondary" onclick="beginPhraseQuiz('practice')">Practice Again ↺</button>`;
