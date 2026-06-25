@@ -1,9 +1,9 @@
 // ==========================================================
-// Japan Start - Service Worker (production)
+// Japan Go - Service Worker (production)
 // Bump CACHE_VERSION whenever you ship new app code/assets.
 // This forces clients to fetch the new shell on next launch.
 // ==========================================================
-const CACHE_VERSION = 'japanstart-v1.5.0';
+const CACHE_VERSION = 'japango-v1.5.2';
 const BASE = '/nihongo-drill/';
 
 // Core app shell - must all exist or install fails, so keep this list

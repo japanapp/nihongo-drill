@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Japan Start" />
+  <meta name="apple-mobile-web-app-title" content="Japan Go" />
   <meta name="theme-color" content="#1a1a2e" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <title>Japan Start</title>
+  <title>Japan Go</title>
   <meta name="description" content="Kana and survival Japanese for travellers. Learn to read signs, count, tell the time, and handle real situations in shops, restaurants and stations before your trip to Japan." />
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -519,10 +519,10 @@
 <div id="screen-home" class="screen active">
   <div class="app-header">
     <div style="display:flex;align-items:center;gap:10px">
-      <img src="icon-192.png" alt="Japan Start" class="header-logo"
+      <img src="icon-192.png" alt="Japan Go" class="header-logo"
         onerror="this.style.display='none'">
       <div>
-        <div class="app-title">Japan Start</div>
+        <div class="app-title">Japan Go</div>
         <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
       </div>
     </div>
@@ -1041,9 +1041,15 @@ function wordCategoryMeta(catId) { return WORD_CATEGORIES.find(c => c.id === cat
 function wordKana(w)    { return w.isLoanword ? w.katakana : w.hiragana; }
 function wordDisplay(w) { return w.hasKanji ? w.kanji : wordKana(w); }
 
-// Category drill phases — reading + meaning only (no kana-writing; that lives
-// in Foundation). Works for any word regardless of script.
+// Category drill phases — start gentle (recognise meaning from choices), then
+// build to production (type the reading, type the meaning). No kana-writing;
+// that lives in Foundation. Works for any word regardless of script.
 const CATEGORY_PHASES = [
+  { label:'Recognise', type:'mc', prompts:[
+      w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:30px;color:var(--gold)">${displayRomaji(w.romaji)}</div><div class="q-kana-word" style="font-size:22px;margin-top:4px">${wordDisplay(w)}</div>`,
+      w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:30px;color:var(--gold)">${displayRomaji(w.romaji)}</div><div class="q-kana-word" style="font-size:22px;margin-top:4px">${wordDisplay(w)}</div>`,
+      w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:30px;color:var(--gold)">${displayRomaji(w.romaji)}</div>`,
+    ], answer:w=>w.english, placeholder:null, hint:null },
   { label:'Read', prompts:[
       w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplay(w)}</div><div class="q-english">${w.english}</div>`,
       w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplay(w)}</div>`,
@@ -1213,7 +1219,9 @@ function recordSession() { /* obsolete — replaced by mark{Practised,Cleared} *
 // localStorage can be wiped by clearing browser data, so let the learner
 // download a JSON backup of all progress and restore it later or on a new
 // device. Bundles both the progress map and the revision pool.
-const BACKUP_FORMAT = 'japanstart-backup';
+const BACKUP_FORMAT = 'japango-backup';
+// Accept the previous name too, so backups exported before the rename still import.
+const BACKUP_FORMATS_ACCEPTED = ['japango-backup', 'japanstart-backup'];
 function exportProgress() {
   const payload = {
     format: BACKUP_FORMAT,
@@ -1227,7 +1235,7 @@ function exportProgress() {
   const a    = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = `japan-start-backup-${stamp}.json`;
+  a.download = `japan-go-backup-${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1260,11 +1268,11 @@ function handleImportFile(fileInput) {
     let data;
     try { data = JSON.parse(reader.result); }
     catch (e) {
-      showModal('⚠️', 'Could not read file', 'That file is not a valid Japan Start backup.', 'OK', ()=>{});
+      showModal('⚠️', 'Could not read file', 'That file is not a valid Japan Go backup.', 'OK', ()=>{});
       return;
     }
-    if (!data || data.format !== BACKUP_FORMAT || data.progress === undefined) {
-      showModal('⚠️', 'Wrong file', 'That does not look like a Japan Start backup.', 'OK', ()=>{});
+    if (!data || !BACKUP_FORMATS_ACCEPTED.includes(data.format) || data.progress === undefined) {
+      showModal('⚠️', 'Wrong file', 'That does not look like a Japan Go backup.', 'OK', ()=>{});
       return;
     }
     // Validate the progress payload parses before we commit anything
@@ -2426,10 +2434,13 @@ function beginDrillQuiz() {
     <div class="phase-pills" id="phase-pills"></div>
     <div class="question-card" id="question-card"></div>
     <div id="keyboard-hint-area"></div>
-    <input class="answer-input" id="answer-input" type="text"
-           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-           placeholder="Type your answer…" />
-    <button class="submit-btn" onclick="submitDrillAnswer()">Submit</button>
+    <div id="drill-typed-area">
+      <input class="answer-input" id="answer-input" type="text"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             placeholder="Type your answer…" />
+      <button class="submit-btn" onclick="submitDrillAnswer()">Submit</button>
+    </div>
+    <div id="drill-choices-area"></div>
     <div class="feedback-area"><div class="feedback-pill" id="feedback-pill"></div></div>
     <div class="attempts-row" id="attempts-row"></div>`;
   showScreen('quiz');
@@ -2479,21 +2490,82 @@ function showDrillQuestion() {
   const cycleIdx = quizMode === 'test' ? 2 : 1;
   document.getElementById('question-card').innerHTML = ph.prompts[cycleIdx](w);
 
+  const typedArea   = document.getElementById('drill-typed-area');
+  const choicesArea = document.getElementById('drill-choices-area');
+
+  if (ph.type === 'mc') {
+    // Gentle recognition step — pick the English meaning from 4 choices.
+    typedArea.style.display = 'none';
+    document.getElementById('keyboard-hint-area').innerHTML = '';
+    const distractors = drillMeaningDistractors(w);
+    const choices = shuffle([{val:w.english, ok:true}, ...distractors.map(d=>({val:d, ok:false}))]);
+    choicesArea.innerHTML = `<div class="choices-grid">${choices.map(c=>
+      `<button class="choice-btn rom" onclick="checkDrillMC(this,${c.ok})">${c.val}</button>`
+    ).join('')}</div>`;
+    clearFeedback();
+    renderAttemptDots();
+    return;
+  }
+
+  // Typed phases (Read / English)
+  typedArea.style.display = '';
+  choicesArea.innerHTML = '';
   document.getElementById('keyboard-hint-area').innerHTML = (ph.hint && quizPhase===2)
     ? `<div class="keyboard-hint">${ph.hint}</div>` : '';
 
   const inp = document.getElementById('answer-input');
   inp.value = ''; inp.placeholder = ph.placeholder;
   inp.className = 'answer-input';
-  if (quizPhase === 2) {
-    inp.setAttribute('lang','ja'); inp.removeAttribute('autocapitalize');
-  } else {
-    inp.setAttribute('lang','en'); inp.setAttribute('autocapitalize','off');
-  }
+  inp.setAttribute('lang','en'); inp.setAttribute('autocapitalize','off');
 
   clearFeedback();
   renderAttemptDots();
   setTimeout(()=>inp.focus(), 80);
+}
+
+// Three plausible wrong English meanings — prefer words from the same block,
+// then the same category, so distractors are topically close (harder, fairer).
+function drillMeaningDistractors(w) {
+  const clean = s => s.split('/')[0].trim();
+  const target = clean(w.english);
+  const seen = new Set([target]);
+  const pool = [];
+  const add = list => list.forEach(x => {
+    if (pool.length >= 3) return;
+    const e = clean(x.english);
+    if (!seen.has(e)) { seen.add(e); pool.push(e); }
+  });
+  add(shuffle(currentBlock.filter(x => x !== w)));
+  if (pool.length < 3) add(shuffle(wordsForCategory(currentWordCat).filter(x => x !== w)));
+  if (pool.length < 3) add(shuffle(window.vocabData.filter(x => x !== w)));
+  return pool.slice(0,3);
+}
+
+// MC answer handler for the drill recognition phase.
+function checkDrillMC(btn, ok) {
+  document.querySelectorAll('#drill-choices-area .choice-btn').forEach(b=>b.disabled=true);
+  quizTotal++;
+  const w = phaseOrder[wordIndex];
+  if (ok) {
+    btn.classList.add('correct');
+    showFeedback('correct', '✓ Correct!');
+    quizCorrect++;
+    setTimeout(nextDrillWord, 700);
+  } else {
+    btn.classList.add('wrong');
+    markMistake();
+    addToRevisionPool(w);
+    const correctVal = w.english;
+    document.querySelectorAll('#drill-choices-area .choice-btn').forEach(b=>{
+      if (b.textContent.trim() === correctVal) b.classList.add('correct');
+    });
+    showFeedback('reveal', '✗ '+correctVal);
+    if (quizMode === 'test') {
+      setTimeout(() => testModeFailed(w), 1800);
+    } else {
+      setTimeout(nextDrillWord, 1600);
+    }
+  }
 }
 
 function renderAttemptDots() {
