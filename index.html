@@ -3062,6 +3062,28 @@ function getUnlockedForTag(tag) {
   });
 }
 
+// All acceptable answers for a resolved phrase, in the given mode.
+// For a slotted phrase the displayed word is only ONE of many valid fillers —
+// the scenario doesn't tell the user which word was chosen, so ANY studied
+// candidate that fits the slot must be accepted (Kate's bug). For a
+// non-slotted phrase there's a single answer.
+function acceptablePhraseAnswers(p, mode) {
+  const field = mode === 'kana' ? 'resolvedKana' : 'resolvedRomaji';
+  if (!p.slot) return [p[field]];
+  // Build the template filled with every candidate word.
+  const tmpl = mode === 'kana' ? p.kana : p.romaji;
+  const cands = (p.candidates && p.candidates.length) ? p.candidates : [];
+  const answers = cands.map(c => {
+    const filler = mode === 'kana'
+      ? (c.isLoanword ? c.katakana : c.hiragana) || c.kana || c.hiragana
+      : c.romaji;
+    return tmpl.replace('['+p.slot+']', filler);
+  });
+  // Always include the resolved one (covers fallback when candidates empty).
+  answers.push(p[field]);
+  return answers;
+}
+
 // ── Resolve slot in a phrase ─────────────────────────
 function resolvePhrase(phrase) {
   if (!phrase.slot) {
@@ -3456,9 +3478,16 @@ function renderPhase2(p, qCard, aArea) {
 
 // ── Phase 3: Type the romaji ──────────────────────────
 function renderPhase3(p, qCard, aArea) {
+  // Show the English frame so the user knows what to produce. For slotted
+  // phrases the slot becomes a blank — any word they know that fits is accepted.
+  let englishHint = p.slot
+    ? (p.english || '').replace('['+p.slot+']', '____')
+    : (p.resolvedEnglish || p.english || '');
   qCard.innerHTML = `
     <div class="pq-theme">Type the full phrase in romaji</div>
-    <div class="pq-scenario">${p.scenario}</div>`;
+    <div class="pq-scenario">${p.scenario}</div>
+    <div style="font-size:13px;color:var(--gold-light);font-style:italic;margin-top:6px">${englishHint}</div>
+    ${p.slot ? '<div style="font-size:11px;color:var(--text-soft);margin-top:3px">fill the blank with any word you know</div>' : ''}`;
 
   aArea.innerHTML = `
     <input class="answer-input" id="pq-input" type="text"
@@ -3493,9 +3522,14 @@ function renderPhase4(p, qCard, aArea, kanaHL) {
 
 // ── Phase 5: Type full kana ───────────────────────────
 function renderPhase5(p, qCard, aArea) {
+  let englishHint = p.slot
+    ? (p.english || '').replace('['+p.slot+']', '____')
+    : (p.resolvedEnglish || p.english || '');
   qCard.innerHTML = `
     <div class="pq-theme">Write this in Japanese</div>
-    <div class="pq-scenario">${p.scenario}</div>`;
+    <div class="pq-scenario">${p.scenario}</div>
+    <div style="font-size:13px;color:var(--gold-light);font-style:italic;margin-top:6px">${englishHint}</div>
+    ${p.slot ? '<div style="font-size:11px;color:var(--text-soft);margin-top:3px">fill the blank with any word you know</div>' : ''}`;
 
   aArea.innerHTML = `
     <div class="keyboard-hint" style="margin-bottom:10px">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>
@@ -3570,6 +3604,7 @@ function submitPhraseTyped(mode) {
   if (!inp) return;
   const p       = phraseQuizList[phraseQIndex];
   const correct = mode === 'romaji' ? p.resolvedRomaji : p.resolvedKana;
+  const accepted = acceptablePhraseAnswers(p, mode);
   const norm    = s => s.replace(/[|\s]/g,'').toLowerCase();
 
   // Phase 5: reject if input contains no Japanese script characters
@@ -3587,8 +3622,8 @@ function submitPhraseTyped(mode) {
   }
 
   const ok = mode === 'romaji'
-    ? romajiMatch(inp.value, correct)
-    : norm(inp.value) === norm(correct);
+    ? accepted.some(a => romajiMatch(inp.value, a))
+    : accepted.some(a => norm(inp.value) === norm(a));
 
   phraseQTotal++;
   if (ok) {
@@ -3604,7 +3639,8 @@ function submitPhraseTyped(mode) {
     if (quizMode === 'test') {
       inp.className = 'answer-input wrong';
       const hwNote = phraseQuizList[phraseQIndex].haWaNote ? ' (tip: ends in は not わ)' : '';
-      showPQFeedback('reveal', 'Answer: ' + correct.replace(/\|/g,' ') + (mode === 'kana' ? hwNote : ''));
+      const slotNote = p.slot ? ' — any word that fits works' : '';
+      showPQFeedback('reveal', 'e.g. ' + correct.replace(/\|/g,' ') + slotNote + (mode === 'kana' ? hwNote : ''));
       const failedItem = phraseQuizList[phraseQIndex];
       addToRevisionPool(failedItem, 'phrase');
       setTimeout(() => phraseTestModeFailed(failedItem), 2500);
@@ -3613,7 +3649,8 @@ function submitPhraseTyped(mode) {
     if (pqAttempts >= MAX_ATTEMPTS) {
       inp.className = 'answer-input wrong';
       const hwNote = phraseQuizList[phraseQIndex].haWaNote ? ' (tip: ends in は not わ)' : '';
-      showPQFeedback('reveal', 'Answer: ' + correct.replace(/\|/g,' ') + (mode === 'kana' ? hwNote : ''));
+      const slotNote = p.slot ? ' — any word that fits works' : '';
+      showPQFeedback('reveal', 'e.g. ' + correct.replace(/\|/g,' ') + slotNote + (mode === 'kana' ? hwNote : ''));
       addToRevisionPool(phraseQuizList[phraseQIndex], 'phrase');
       pqAttempts = 0;
       setTimeout(nextPhraseQuestion, 2500);
