@@ -236,6 +236,8 @@
     .dict-reading { font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--text-soft); margin-left: 10px; }
     .dict-rom { font-size: 13px; color: var(--gold); font-weight: 600; margin-top: 2px; }
     .dict-en { font-size: 13px; color: var(--text-soft); margin-top: 3px; }
+    .dict-pos { display: inline-block; font-size: 10px; color: var(--text-soft); opacity: .6; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--text-soft); border-radius: 8px; text-transform: lowercase; letter-spacing: .03em; }
+    .dict-attribution { font-size: 10px; color: var(--text-soft); opacity: .55; margin: 18px 4px 8px; line-height: 1.5; text-align: center; }
     .study-card-num { background: var(--ink); border-radius: var(--radius-sm); padding: 16px 18px; display: flex; flex-direction: row; align-items: center; gap: 18px; }
     .sn-text  { display: flex; flex-direction: column; flex: 1; }
     .sn-digit { font-size: 32px; font-weight: 700; color: var(--gold); min-width: 80px; text-align: center; flex-shrink: 0; }
@@ -1354,7 +1356,29 @@ function openDictionary() {
   showScreen('dictionary');
   const inp = document.getElementById('dict-input');
   if (inp) { inp.value = ''; setTimeout(()=>inp.focus(), 60); }
+  ensureDictionaryLoaded();   // lazy-load the big word list in the background
   runDictionarySearch('');
+}
+
+// The extended dictionary (~18k words) is loaded on demand the first time the
+// user opens the dictionary, so it never slows app startup.
+let _dictLoadState = 'idle';   // idle | loading | ready | error
+function ensureDictionaryLoaded() {
+  if (_dictLoadState === 'ready' || _dictLoadState === 'loading') return;
+  _dictLoadState = 'loading';
+  const s = document.createElement('script');
+  s.src = 'dictionary.js';
+  s.async = true;
+  s.onload = () => {
+    _dictLoadState = window.dictionaryData ? 'ready' : 'error';
+    // re-run current search now that the big list is available
+    const inp = document.getElementById('dict-input');
+    if (inp && document.getElementById('screen-dictionary').classList.contains('active')) {
+      runDictionarySearch(inp.value || '');
+    }
+  };
+  s.onerror = () => { _dictLoadState = 'error'; };
+  document.head.appendChild(s);
 }
 
 function dictNorm(s){ return (s||'').toString().trim().toLowerCase(); }
@@ -1364,7 +1388,7 @@ function runDictionarySearch(raw) {
   if (!out) return;
   const q = dictNorm(raw);
   if (q.length === 0) {
-    out.innerHTML = `<div class="dict-empty">Search ${window.vocabData.length} words and ${window.phraseData.phrases.length} phrases.<br>Try “water”, “arigato”, “station”, or “excuse me”.</div>`;
+    out.innerHTML = `<div class="dict-empty">Search thousands of words and every phrase.<br>Try &ldquo;water&rdquo;, &ldquo;arigato&rdquo;, &ldquo;station&rdquo;, or &ldquo;excuse me&rdquo;.</div>`;
     return;
   }
   const qSkel = romajiSkeleton(q);
@@ -1397,8 +1421,32 @@ function runDictionarySearch(raw) {
   const phrs  = window.phraseData.phrases.map(p=>({p,s:scorePhrase(p)})).filter(x=>x.s>0)
     .sort((a,b)=>b.s-a.s).slice(0,15);
 
-  if (words.length === 0 && phrs.length === 0) {
-    out.innerHTML = `<div class="dict-empty">No matches for “${escapeHtml(raw.trim())}”.<br>Try a different spelling or a simpler word.</div>`;
+  // Extended dictionary (lazy-loaded). Score similarly; exclude entries that are
+  // already in the learning vocab (they show in the Words section above).
+  function scoreDict(e) {
+    const en = dictNorm(e.e), rom = dictNorm(e.m);
+    if (rom === q || romajiSkeleton(rom) === qSkel) return 100;
+    if (en === q) return 95;
+    if (en.split('/').map(s=>s.trim()).includes(q)) return 90;
+    if (e.k === raw.trim() || e.r === raw.trim()) return 80;
+    if (rom.startsWith(q) || romajiSkeleton(rom).startsWith(qSkel)) return 68;
+    if (en.startsWith(q)) return 63;
+    if (en.includes(q)) return 38;
+    if (rom.includes(q)) return 33;
+    return 0;
+  }
+  let dictEntries = [];
+  if (window.dictionaryData) {
+    dictEntries = window.dictionaryData.map(e=>({e,s:scoreDict(e)}))
+      .filter(x=>x.s>0 && !x.e.v)   // skip learning-vocab dupes (shown as Words)
+      .sort((a,b)=>b.s-a.s).slice(0,60);
+  }
+
+  if (words.length === 0 && phrs.length === 0 && dictEntries.length === 0) {
+    const stillLoading = _dictLoadState === 'loading';
+    out.innerHTML = `<div class="dict-empty">${stillLoading
+      ? 'Loading full dictionary…'
+      : 'No matches for &ldquo;'+escapeHtml(raw.trim())+'&rdquo;.<br>Try a different spelling or a simpler word.'}</div>`;
     return;
   }
 
@@ -1426,6 +1474,23 @@ function runDictionarySearch(raw) {
         <div class="dict-en">${escapeHtml(p.english.replace(/\[[a-z-]+\]/g,'___'))}</div>
       </div>`;
     });
+  }
+  if (dictEntries.length) {
+    html += `<div class="dict-section-label">Dictionary (${dictEntries.length})</div>`;
+    dictEntries.forEach(({e}) => {
+      const jp = e.k || e.r;
+      const reading = e.k ? `<span class="dict-reading">${e.r}</span>` : '';
+      const pos = e.p ? `<span class="dict-pos">${e.p}</span>` : '';
+      html += `<div class="dict-card">
+        <div class="dict-jp">${jp}${reading}</div>
+        <div class="dict-rom">${displayRomaji(e.m)}</div>
+        <div class="dict-en">${escapeHtml(e.e)}${pos}</div>
+      </div>`;
+    });
+  }
+  // Attribution required by the EDRDG Licence when JMdict-derived data is shown.
+  if (dictEntries.length) {
+    html += `<div class="dict-attribution">Dictionary data from JMdict, &copy; Electronic Dictionary Research and Development Group, used under licence.</div>`;
   }
   out.innerHTML = html;
 }
