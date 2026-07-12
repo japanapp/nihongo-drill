@@ -428,7 +428,7 @@ window.vocabData = [
   { hiragana: "せかい", katakana: "セカイ", kanji: "世界", romaji: "sekai", english: "world", hasKanji: true, tags: ["place"], isLoanword: false, kanjiExclude: false, kanjiPriority: 6000 },
   { hiragana: "せんたくき", katakana: "センタクキ", kanji: "洗濯機", romaji: "sentakuki", english: "washing machine", hasKanji: true, tags: ["object"], isLoanword: false, kanjiExclude: false, kanjiPriority: 6000 },
   { hiragana: "しゃしんかん", katakana: "シャシンカン", kanji: "写真館", romaji: "shashinkan", english: "photo studio", hasKanji: true, tags: ["place"], isLoanword: false, kanjiExclude: false, kanjiPriority: 6000 },
-  { hiragana: "し", katakana: "シ", kanji: "詩", romaji: "shi", english: "poem", hasKanji: true, tags: ["number-word"], isLoanword: false, kanjiExclude: false, kanjiPriority: 8000 },
+  { hiragana: "し", katakana: "シ", kanji: "詩", romaji: "shi", english: "poem", hasKanji: true, tags: ["art"], isLoanword: false, kanjiExclude: false, kanjiPriority: 8000 },
   { hiragana: "したぎ", katakana: "シタギ", kanji: "下着", romaji: "shitagi", english: "underwear", hasKanji: true, tags: ["clothing"], isLoanword: false, kanjiExclude: false, kanjiPriority: 8000 },
   { hiragana: "しゅくじつ", katakana: "シュクジツ", kanji: "祝日", romaji: "shukujitsu", english: "national holiday", hasKanji: true, tags: ["time-word"], isLoanword: false, kanjiExclude: false, kanjiPriority: 8000 },
   { hiragana: "そば", katakana: "ソバ", kanji: "蕎麦", romaji: "soba", english: "soba noodles", hasKanji: true, tags: ["food"], isLoanword: false, kanjiExclude: false, kanjiPriority: 6000 },
