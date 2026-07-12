@@ -285,6 +285,7 @@
     .q-label  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); opacity: .7; }
     .q-kana   { font-family: var(--kana-font); font-size: 58px; font-weight: 700; color: var(--paper); line-height: 1; }
     .q-kana-word { font-family: 'Shippori Mincho', serif; font-size: 50px; font-weight: 800; color: var(--paper); line-height: 1; letter-spacing: .04em; }
+    .q-kana-word .furigana { font-family: var(--kana-font); font-size: 17px; font-weight: 500; color: var(--gold); opacity: .85; margin-top: 8px; letter-spacing: .04em; line-height: 1.1; }
     .q-romaji { font-size: 17px; font-weight: 400; color: var(--paper); opacity: .75; }
     .q-english { font-size: 15px; font-weight: 500; color: var(--gold-light); font-style: italic; }
     .q-hint   { font-size: 12px; color: var(--gold-light); font-style: italic; opacity: .75; }
@@ -1256,13 +1257,13 @@ const CATEGORY_PHASES = [
       w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:30px;color:var(--gold)">${displayRomaji(w.romaji)}</div>`,
     ], answer:w=>w.english, placeholder:null, hint:null },
   { label:'Read', prompts:[
-      w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplay(w)}</div><div class="q-english">${w.english}</div>`,
-      w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplay(w)}</div>`,
+      w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplayFurigana(w)}</div><div class="q-english">${w.english}</div>`,
+      w=>`<div class="q-label">Read &amp; romanise</div><div class="q-kana-word">${wordDisplayFurigana(w)}</div>`,
       w=>`<div class="q-label">How do you say this?</div><div class="q-english" style="font-size:20px;color:var(--paper);font-style:italic;margin-top:4px">${w.english}</div>`,
     ], answer:w=>w.romaji, placeholder:'Type romaji…', hint:null },
   { label:'English', prompts:[
-      w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${wordDisplay(w)}</div><div class="q-romaji">${displayRomaji(w.romaji)}</div>`,
-      w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${wordDisplay(w)}</div>`,
+      w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${wordDisplayFurigana(w)}</div><div class="q-romaji">${displayRomaji(w.romaji)}</div>`,
+      w=>`<div class="q-label">What does this mean?</div><div class="q-kana-word">${wordDisplayFurigana(w)}</div>`,
       w=>`<div class="q-label">What does this mean?</div><div class="q-romaji" style="font-size:26px">${displayRomaji(w.romaji)}</div>`,
     ], answer:w=>w.english, placeholder:'Type English meaning…', hint:null },
 ];
@@ -1519,6 +1520,7 @@ function backupFooterHTML() {
 function openOptions() {
   syncDarkToggle();
   syncJpKeyboardToggle();
+  syncFuriganaToggle();
   // Reflect purchase state
   const status = document.getElementById('options-iap-status');
   const actions = document.getElementById('options-iap-actions');
@@ -1578,6 +1580,34 @@ function syncJpKeyboardToggle() {
   const on = jpKeyboardOn();
   t.classList.toggle('on', on);
   t.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+
+// Furigana setting. Default ON — most users are still learning to read kanji,
+// so showing the kana reading beneath a kanji word during the Read/English
+// drill phases keeps those phases answerable. Advanced users can switch it off
+// for a harder, kanji-only challenge.
+const FURIGANA_KEY = 'jp_furigana_v1';
+function furiganaOn() { return localStorage.getItem(FURIGANA_KEY) !== '0'; }  // default on
+function toggleFurigana() {
+  const on = !furiganaOn();
+  localStorage.setItem(FURIGANA_KEY, on ? '1' : '0');
+  syncFuriganaToggle();
+}
+function syncFuriganaToggle() {
+  const t = document.getElementById('furigana-toggle');
+  if (!t) return;
+  const on = furiganaOn();
+  t.classList.toggle('on', on);
+  t.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+
+// The word for a drill prompt: kanji with a small kana reading beneath it when
+// furigana is on (and the word has kanji); otherwise just the natural form.
+function wordDisplayFurigana(w) {
+  if (furiganaOn() && w.hasKanji && wordKana(w)) {
+    return `${w.kanji}<div class="furigana">${wordKana(w)}</div>`;
+  }
+  return wordDisplay(w);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4717,6 +4747,16 @@ window.addEventListener('DOMContentLoaded', ()=>{
         <span class="options-row-sub">Turn off to answer everything in romaji</span>
       </div>
       <button id="jpkbd-toggle" class="toggle-switch" role="switch" aria-checked="true" onclick="toggleJpKeyboard()">
+        <span class="toggle-knob"></span>
+      </button>
+    </div>
+
+    <div class="options-row">
+      <div class="options-row-label">
+        <span class="options-row-title">Show furigana</span>
+        <span class="options-row-sub">Kana reading under kanji · turn off for hard mode</span>
+      </div>
+      <button id="furigana-toggle" class="toggle-switch" role="switch" aria-checked="true" onclick="toggleFurigana()">
         <span class="toggle-knob"></span>
       </button>
     </div>
