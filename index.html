@@ -157,6 +157,19 @@
     .block-btn.unlocked.complete { background: var(--green); color: var(--white); }
     .block-btn.unlocked.practised { background: var(--gold); color: var(--ink); }
     .block-btn.locked { background: var(--paper-warm); color: #bbb; cursor: not-allowed; }
+    .block-btn.paywalled { background: var(--paper-warm); color: var(--gold); cursor: pointer; border: 1px dashed var(--gold); }
+    .theme-card.paywalled { border-color: var(--gold); border-style: dashed; }
+    .theme-card .tc-lock { color: var(--gold); font-weight: 700; opacity: 1; }
+    .paywall-hero { text-align: center; padding: 8px 0 4px; }
+    .paywall-hero .mascot-img { max-height: 120px; margin: 0 auto 8px; }
+    .paywall-title { font-family: 'Shippori Mincho', serif; font-size: 24px; font-weight: 800; color: var(--gold-light); }
+    .paywall-sub { font-size: 13px; color: var(--text-soft); margin-top: 4px; }
+    .paywall-list { margin: 20px 0; display: flex; flex-direction: column; gap: 10px; }
+    .pw-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--ink); line-height: 1.4; }
+    body.dark .pw-item { color: var(--text); }
+    .pw-item .pw-tick { color: var(--green); font-weight: 800; flex-shrink: 0; }
+    .pw-item-muted { opacity: .6; }
+    .paywall-legal { font-size: 11px; color: var(--text-soft); text-align: center; margin-top: 14px; line-height: 1.5; }
     .block-btn .bn { font-size: 10px; font-weight: 700; opacity: .7; }
     .block-btn .bk { font-family: 'Shippori Mincho', serif; font-size: 42px; line-height: 1.1; }
     .block-btn .bs { font-size: 16px; }
@@ -554,6 +567,36 @@
     <input id="dict-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
       placeholder="Type English or romaji…" oninput="runDictionarySearch(this.value)" />
     <div id="dict-results"></div>
+  </div>
+</div>
+
+<!-- PAYWALL -->
+<div id="screen-paywall" class="screen">
+  <div class="app-header">
+    <button class="header-back" onclick="closePaywall()">Back</button>
+    <div style="text-align:right">
+      <div class="app-title">Unlock Japan Go</div>
+      <div class="app-subtitle">One payment · yours forever</div>
+    </div>
+  </div>
+  <div class="card-area">
+    <div class="paywall-hero">
+      <img src="images/states/all-cleared.png" onerror="this.style.display='none'" class="mascot-img" alt="">
+      <h2 class="paywall-title">Unlock Everything</h2>
+      <p class="paywall-sub">No subscription. Pay once and keep it for good.</p>
+    </div>
+    <div class="paywall-list">
+      <div class="pw-item"><span class="pw-tick">✓</span> All of Foundation — every kana, numbers &amp; time</div>
+      <div class="pw-item"><span class="pw-tick">✓</span> All 13 Word topics — 991 travel words</div>
+      <div class="pw-item"><span class="pw-tick">✓</span> All 12 Phrase themes — real situations</div>
+      <div class="pw-item"><span class="pw-tick">✓</span> Revision &amp; mastery across everything</div>
+      <div class="pw-item pw-item-muted"><span class="pw-tick">✓</span> The full dictionary is always free</div>
+    </div>
+    <button id="paywall-buy-btn" class="complete-btn" onclick="startPurchase()">
+      Unlock Everything <span id="paywall-price"></span>
+    </button>
+    <button class="complete-btn secondary" onclick="restorePurchase()">Restore Purchase</button>
+    <div class="paywall-legal" id="paywall-legal"></div>
   </div>
 </div>
 
@@ -978,6 +1021,166 @@ const SECTION_META = {
   phrases:    { icon:'話', label:'Phrases',    comingSoon:false },
 };
 
+// ═══════════════════════════════════════════════════════
+// ENTITLEMENT / IN-APP PURCHASE GATE
+// ═══════════════════════════════════════════════════════
+// Japan Go is a free download with a single one-time "Unlock Everything"
+// purchase. This module is the pure JS gate: it decides whether a given
+// piece of content is available, based on (a) the free tier and (b) whether
+// the user has purchased. The native purchase layer (RevenueCat/StoreKit/
+// Play Billing) sets hasFullAccess; here it is driven by a dev flag so the
+// whole gate is testable before any native code exists.
+//
+// FREE TIER (decided pre-launch):
+//   - Foundation > Hiragana > Blocks 1 & 2 (indices 0,1)
+//   - Phrases > "At the Restaurant" (theme id 'restaurant') — full theme
+//   - Dictionary — fully free (handled separately; never gated)
+//   - Revision & mastery operate on whatever content is available
+// Everything else requires the unlock.
+
+const IAP_ENTITLEMENT_KEY = 'jp_entitlement_v1';   // soft local mirror
+
+// FREE TIER — a sampler across all three sections so users taste everything
+// before buying. Values are how many blocks are free (0 = none, Infinity =
+// whole thing). Anything not listed here is fully paid.
+const FREE_PHRASE_THEME    = 'restaurant';         // whole theme free
+const FREE_FOUNDATION_BLOCKS = {                   // tab -> free block count
+  hiragana: 2,
+  numbers:  1,
+  time:     1,
+};
+const FREE_WORD_BLOCKS = {                          // category -> free block count
+  food: 2,
+};
+
+// Dev flag: flip to true to simulate a purchased user in the browser.
+// In production this is replaced by the RevenueCat entitlement check.
+let IAP_DEV_FORCE_UNLOCKED = false;
+
+// The authoritative in-memory flag. Set by the native layer on launch/purchase/
+// restore; mirrored to localStorage for offline UX only (never the source of truth).
+let hasFullAccess = false;
+
+function refreshEntitlementFromCache() {
+  // Soft mirror — used only so a returning user does not flash locked content
+  // before the native SDK re-confirms. The native layer overwrites this.
+  try { hasFullAccess = localStorage.getItem(IAP_ENTITLEMENT_KEY) === '1'; }
+  catch (e) { hasFullAccess = false; }
+}
+function setFullAccess(on) {
+  hasFullAccess = !!on;
+  try { localStorage.setItem(IAP_ENTITLEMENT_KEY, on ? '1' : '0'); } catch (e) {}
+  // Re-render whatever is on screen so locks appear/disappear immediately.
+  if (typeof renderHome === 'function' &&
+      document.getElementById('screen-home') &&
+      document.getElementById('screen-home').classList.contains('active')) {
+    renderHome();
+  }
+}
+function userHasFullAccess() {
+  return IAP_DEV_FORCE_UNLOCKED || hasFullAccess;
+}
+
+// Is a given piece of content in the free tier?
+function isInFreeTier(kind, id, blockIndex) {
+  if (kind === 'foundation') {
+    const freeBlocks = FREE_FOUNDATION_BLOCKS[id] || 0;
+    return blockIndex < freeBlocks;
+  }
+  if (kind === 'drill') {
+    const freeBlocks = FREE_WORD_BLOCKS[id] || 0;
+    return blockIndex < freeBlocks;
+  }
+  if (kind === 'phrase') {
+    // id is the theme id; the whole free theme is free
+    return id === FREE_PHRASE_THEME;
+  }
+  return false;
+}
+
+// THE GATE. kind: 'foundation' | 'drill' | 'phrase'.
+//   foundation: id=tab, blockIndex
+//   drill:      id=categoryId (whole categories are paid)
+//   phrase:     id=themeId (whole themes gated; free theme is fully free)
+function isContentUnlocked(kind, id, blockIndex) {
+  if (userHasFullAccess()) return true;
+  return isInFreeTier(kind, id, blockIndex);
+}
+
+// Convenience wrappers for the call sites.
+function isFoundationBlockPaywalled(tab, idx) {
+  return !isContentUnlocked('foundation', tab, idx);
+}
+function isWordCategoryPaywalled(catId) {
+  return !isContentUnlocked('drill', catId, 0);
+}
+function isPhraseThemePaywalled(themeId) {
+  return !isContentUnlocked('phrase', themeId, 0);
+}
+
+// ── Paywall screen ────────────────────────────────────
+// The price is fetched live from the store in production; here it is a
+// placeholder. Never hardcode a price the store might change.
+let IAP_PRICE_DISPLAY = '$8.99';        // replaced by RevenueCat product price
+let _paywallReturn = null;               // where to go after a successful unlock
+
+function openPaywall(returnFn) {
+  _paywallReturn = typeof returnFn === 'function' ? returnFn : null;
+  const priceEl = document.getElementById('paywall-price');
+  if (priceEl) priceEl.textContent = IAP_PRICE_DISPLAY ? '· ' + IAP_PRICE_DISPLAY : '';
+  const legal = document.getElementById('paywall-legal');
+  if (legal) legal.textContent = 'A one-time purchase for ' + (IAP_PRICE_DISPLAY || 'the listed price') +
+    '. Restore on any device signed in to the same store account.';
+  showScreen('paywall');
+}
+function closePaywall() {
+  _paywallReturn = null;
+  showScreen('home');
+  renderHome();
+}
+
+// PURCHASE — in production this calls the native RevenueCat purchase flow.
+// The dev stub just grants access so the unlock UX is fully testable.
+async function startPurchase() {
+  if (window.JapanGoIAP && typeof window.JapanGoIAP.purchase === 'function') {
+    try {
+      const ok = await window.JapanGoIAP.purchase();
+      if (ok) onPurchaseSuccess();
+    } catch (e) {
+      showModal('⚠️', 'Purchase failed', 'Something went wrong. You have not been charged. Please try again.', 'OK', ()=>{});
+    }
+    return;
+  }
+  // DEV fallback
+  onPurchaseSuccess();
+}
+
+// RESTORE — production calls RevenueCat restorePurchases().
+async function restorePurchase() {
+  if (window.JapanGoIAP && typeof window.JapanGoIAP.restore === 'function') {
+    try {
+      const ok = await window.JapanGoIAP.restore();
+      if (ok) { onPurchaseSuccess(true); }
+      else { showModal('ℹ️', 'Nothing to restore', 'No previous purchase was found on this store account.', 'OK', ()=>{}); }
+    } catch (e) {
+      showModal('⚠️', 'Restore failed', 'Could not reach the store. Please try again.', 'OK', ()=>{});
+    }
+    return;
+  }
+  // DEV fallback
+  onPurchaseSuccess(true);
+}
+
+function onPurchaseSuccess(isRestore) {
+  setFullAccess(true);
+  const go = _paywallReturn;
+  _paywallReturn = null;
+  showModal('🎉', isRestore ? 'Purchase restored' : 'Unlocked!',
+    'Everything is now available. Enjoy Japan Go!', 'Start learning', () => {
+      if (go) go(); else { showScreen('home'); renderHome(); }
+    });
+}
+
 const FOUNDATION_TABS = ['hiragana','katakana','numbers','time'];
 const FOUNDATION_META = {
   hiragana: {icon:'あ',label:'Hiragana',heroBg:'あいうえお',heroTitle:'Hiragana',heroSub:'Learn kana in blocks of 5'},
@@ -1315,6 +1518,19 @@ function backupFooterHTML() {
 // ── Options menu ─────────────────────────────────────
 function openOptions() {
   syncDarkToggle();
+  syncJpKeyboardToggle();
+  // Reflect purchase state
+  const status = document.getElementById('options-iap-status');
+  const actions = document.getElementById('options-iap-actions');
+  if (status && actions) {
+    if (userHasFullAccess()) {
+      status.textContent = '✓ You have full access. Thank you!';
+      actions.style.display = 'none';
+    } else {
+      status.textContent = 'Unlock every topic, theme and the whole of Foundation with a single purchase.';
+      actions.style.display = '';
+    }
+  }
   const o = document.getElementById('options-overlay');
   if (o) o.style.display = 'flex';
 }
@@ -1341,6 +1557,25 @@ function syncDarkToggle() {
   const t = document.getElementById('dark-toggle');
   if (!t) return;
   const on = isDark();
+  t.classList.toggle('on', on);
+  t.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+
+// Japanese-keyboard input setting. Default ON. When OFF, the two spots that
+// require typing kana (Phrase Phase 5 and the Foundation "Meaning to Kana"
+// review) fall back to romaji / are hidden — so the app is fully usable for
+// people who can't switch to a Japanese keyboard.
+const JPKBD_KEY = 'jp_kbd_v1';
+function jpKeyboardOn() { return localStorage.getItem(JPKBD_KEY) !== '0'; }  // default on
+function toggleJpKeyboard() {
+  const on = !jpKeyboardOn();
+  localStorage.setItem(JPKBD_KEY, on ? '1' : '0');
+  syncJpKeyboardToggle();
+}
+function syncJpKeyboardToggle() {
+  const t = document.getElementById('jpkbd-toggle');
+  if (!t) return;
+  const on = jpKeyboardOn();
   t.classList.toggle('on', on);
   t.setAttribute('aria-checked', on ? 'true' : 'false');
 }
@@ -1610,10 +1845,13 @@ function isUnlocked(section, tab, idx) {
 function kanaBlockButton(block, i) {
   const isCleared   = isBlockCleared(currentSection, currentTab, i);
   const isPractised = !isCleared && isBlockPractised(currentSection, currentTab, i);
-  const open        = isBlockUnlocked(currentSection, currentTab, i);
-  const cls  = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''}`;
-  const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
-  return `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+  const seqOpen     = isBlockUnlocked(currentSection, currentTab, i);
+  const paywalled   = isFoundationBlockPaywalled(currentTab, i);
+  const open        = seqOpen && !paywalled;
+  const tappable    = open || paywalled;
+  const cls  = `block-btn${open?' unlocked':' locked'}${paywalled?' paywalled':''}${isCleared?' complete':isPractised?' practised':''}`;
+  const icon = paywalled ? '🔒' : isCleared ? '✓' : isPractised ? '●' : seqOpen ? '○' : '🔒';
+  return `<button class="${cls}" ${tappable?`onclick="openBlock(${i})"`:''} ${tappable?'':'disabled'}>
     <span class="bk">${block.preview}</span>
     <span class="bs">${icon}</span>
   </button>`;
@@ -1685,7 +1923,10 @@ function switchTab(tab) { currentTab = tab; renderHome(); }
 
 // Words section: pick a category (shows its blocks) or go back to the grid.
 let currentWordCat = null;
-function openWordCategory(catId) { currentWordCat = catId; currentTab = catId; renderHome(); }
+function openWordCategory(catId) {
+  if (isWordCategoryPaywalled(catId)) { openPaywall(() => { showScreen('home'); renderHome(); }); return; }
+  currentWordCat = catId; currentTab = catId; renderHome();
+}
 function backToWordCategories() { currentWordCat = null; renderHome(); }
 
 // ═══════════════════════════════════════════════════════
@@ -1740,11 +1981,13 @@ function renderWordCategoriesHome(body) {
     let cleared = 0;
     for (let i = 0; i < nBlocks; i++) if (isBlockCleared('drill', cat.id, i)) cleared++;
     const complete = nBlocks > 0 && cleared === nBlocks;
-    html += `<div class="theme-card ${complete?'complete':''}" onclick="openWordCategory('${cat.id}')">
+    const locked = isWordCategoryPaywalled(cat.id);
+    html += `<div class="theme-card ${complete?'complete':''} ${locked?'paywalled':''}" onclick="openWordCategory('${cat.id}')">
       <div class="tc-icon">${cat.icon}</div>
       <div class="tc-label">${cat.label}</div>
-      <div class="tc-count">${cleared}/${nBlocks} blocks</div>
-      ${complete ? '<div class="tc-check">✓ Complete</div>' : ''}
+      ${locked
+        ? '<div class="tc-count tc-lock">🔒 Unlock</div>'
+        : `<div class="tc-count">${cleared}/${nBlocks} blocks</div>${complete ? '<div class="tc-check">✓ Complete</div>' : ''}`}
     </div>`;
   });
   html += `</div>`;
@@ -1782,10 +2025,13 @@ function renderWordCategoryBlocks(body) {
   blocks.forEach((block, i) => {
     const isCleared   = isBlockCleared('drill', currentWordCat, i);
     const isPractised = !isCleared && isBlockPractised('drill', currentWordCat, i);
-    const open        = isBlockUnlocked('drill', currentWordCat, i);
-    const cls = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''} numeric`;
-    const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
-    html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+    const seqOpen     = isBlockUnlocked('drill', currentWordCat, i);
+    const paywalled   = !isContentUnlocked('drill', currentWordCat, i);
+    const open        = seqOpen && !paywalled;
+    const tappable    = open || paywalled;
+    const cls = `block-btn${open?' unlocked':' locked'}${paywalled?' paywalled':''}${isCleared?' complete':isPractised?' practised':''} numeric`;
+    const icon = paywalled ? '🔒' : isCleared ? '✓' : isPractised ? '●' : seqOpen ? '○' : '🔒';
+    html += `<button class="${cls}" ${tappable?`onclick="openBlock(${i})"`:''} ${tappable?'':'disabled'}>
       <span class="bn">${i+1}</span>
       <span class="bs">${icon}</span>
     </button>`;
@@ -1957,17 +2203,21 @@ function renderSectionHome(body) {
     blocks.forEach((block, i) => {
       const isCleared   = isBlockCleared(currentSection, currentTab, i);
       const isPractised = !isCleared && isBlockPractised(currentSection, currentTab, i);
-      const open        = isBlockUnlocked(currentSection, currentTab, i);
-      const cls = `block-btn${open?' unlocked':' locked'}${isCleared?' complete':isPractised?' practised':''}${block.numeric?' numeric':''}`;
-      const icon = isCleared ? '✓' : isPractised ? '●' : open ? '○' : '🔒';
+      const seqOpen     = isBlockUnlocked(currentSection, currentTab, i);
+      const paywalled   = isFoundationBlockPaywalled(currentTab, i);
+      // A paywalled block is tappable (opens the paywall) but shown locked.
+      const open        = seqOpen && !paywalled;
+      const tappable    = open || paywalled;
+      const cls = `block-btn${open?' unlocked':' locked'}${paywalled?' paywalled':''}${isCleared?' complete':isPractised?' practised':''}${block.numeric?' numeric':''}`;
+      const icon = paywalled ? '🔒' : isCleared ? '✓' : isPractised ? '●' : seqOpen ? '○' : '🔒';
       if (block.preview) {
-        html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+        html += `<button class="${cls}" ${tappable?`onclick="openBlock(${i})"`:''} ${tappable?'':'disabled'}>
           <span class="bn">${block.label}</span>
           <span class="bk">${block.preview}</span>
           <span class="bs">${icon}</span>
         </button>`;
       } else {
-        html += `<button class="${cls}" ${open?`onclick="openBlock(${i})"`:''} ${open?'':'disabled'}>
+        html += `<button class="${cls}" ${tappable?`onclick="openBlock(${i})"`:''} ${tappable?'':'disabled'}>
           <span class="bn">${i+1}</span>
           <span class="bs">${icon}</span>
         </button>`;
@@ -1986,6 +2236,14 @@ function renderSectionHome(body) {
 // STUDY
 // ═══════════════════════════════════════════════════════
 function openBlock(i) {
+  // Entitlement gate — Foundation blocks (beyond free hiragana 1-2) and all
+  // Word-category blocks require the unlock.
+  const gateKind = isFoundation() ? 'foundation' : 'drill';
+  const gateId   = isFoundation() ? currentTab : currentWordCat;
+  if (!isContentUnlocked(gateKind, gateId, i)) {
+    openPaywall(() => { showScreen('home'); renderHome(); });
+    return;
+  }
   currentBlockIndex = i;
   const blocks = blocksFor(currentSection, currentTab);
   currentBlock = blocks[i].items;
@@ -3251,11 +3509,13 @@ function renderPhrasesHome(body) {
     const blocks    = phraseBlocksForTheme(t.id);
     const doneCount = blocks.filter((_,i) => phraseBlockDone(t.id, i)).length;
     const practiced = phraseThemeDone(t.id);
-    html += `<div class="theme-card ${practiced?'complete':''}" onclick="openPhraseTheme('${t.id}')">
+    const locked = isPhraseThemePaywalled(t.id);
+    html += `<div class="theme-card ${practiced?'complete':''} ${locked?'paywalled':''}" onclick="openPhraseTheme('${t.id}')">
       <div class="tc-icon">${t.icon}</div>
       <div class="tc-label">${t.label}</div>
-      <div class="tc-count">${doneCount}/${blocks.length} blocks</div>
-      ${practiced ? '<div class="tc-check">✓ Complete</div>' : ''}
+      ${locked
+        ? '<div class="tc-count tc-lock">🔒 Unlock</div>'
+        : `<div class="tc-count">${doneCount}/${blocks.length} blocks</div>${practiced ? '<div class="tc-check">✓ Complete</div>' : ''}`}
     </div>`;
   });
   html += '</div>';
@@ -3268,6 +3528,7 @@ function renderPhrasesHome(body) {
 // ═══════════════════════════════════════════════════════
 // Opening a theme shows a BLOCK PICKER on the study screen
 function openPhraseTheme(themeId) {
+  if (isPhraseThemePaywalled(themeId)) { openPaywall(() => { showScreen('home'); renderHome(); }); return; }
   currentThemeId = themeId;
   const theme    = window.phraseData.themes.find(t => t.id === themeId);
   const blocks   = phraseBlocksForTheme(themeId);
@@ -3586,23 +3847,24 @@ function renderPhase4(p, qCard, aArea, kanaHL) {
   aArea.appendChild(aDiv);
 }
 
-// ── Phase 5: Type full kana ───────────────────────────
+// ── Phase 5: Type full kana (or romaji if JP keyboard is off) ──
 function renderPhase5(p, qCard, aArea) {
+  const jp = jpKeyboardOn();
   let englishHint = p.slot
     ? (p.english || '').replace('['+p.slot+']', '____')
     : (p.resolvedEnglish || p.english || '');
   qCard.innerHTML = `
-    <div class="pq-theme">Write this in Japanese</div>
+    <div class="pq-theme">${jp ? 'Write this in Japanese' : 'Write this in romaji'}</div>
     <div class="pq-scenario">${p.scenario}</div>
     <div style="font-size:13px;color:var(--gold-light);font-style:italic;margin-top:6px">${englishHint}</div>
     ${p.slot ? '<div style="font-size:11px;color:var(--text-soft);margin-top:3px">fill the blank with any word you know</div>' : ''}`;
 
   aArea.innerHTML = `
-    <div class="keyboard-hint" style="margin-bottom:10px">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>
-    <input class="answer-input" id="pq-input" type="text" lang="ja"
+    ${jp ? '<div class="keyboard-hint" style="margin-bottom:10px">🇯🇵 Switch to your <strong>Japanese keyboard</strong></div>' : ''}
+    <input class="answer-input" id="pq-input" type="text" ${jp ? 'lang="ja"' : 'lang="en" autocapitalize="off"'}
            autocomplete="off" autocorrect="off" spellcheck="false"
-           placeholder="Type in Japanese…" />
-    <button class="submit-btn" onclick="submitPhraseTyped('kana')">Submit</button>
+           placeholder="${jp ? 'Type in Japanese…' : 'Type romaji…'}" />
+    <button class="submit-btn" onclick="submitPhraseTyped('${jp ? 'kana' : 'romaji'}')">Submit</button>
     <div class="attempts-row" id="pq-attempts">${[0,1,2].map(()=>'<div class="attempt-dot"></div>').join('')}</div>`;
   focusPQ();
 }
@@ -3612,7 +3874,8 @@ function focusPQ() {
     const inp = document.getElementById('pq-input');
     if (inp) {
       inp.focus();
-      inp.onkeydown = e => { if(e.key==='Enter') inp.getAttribute('data-type')==='kana' ? submitPhraseTyped('kana') : submitPhraseTyped('romaji'); };
+      // Submit in the mode matching the input: lang="ja" means kana, else romaji.
+      inp.onkeydown = e => { if(e.key==='Enter') submitPhraseTyped(inp.getAttribute('lang')==='ja' ? 'kana' : 'romaji'); };
     }
   }, 80);
 }
@@ -4376,8 +4639,21 @@ function confirmMasteryQuit() {
 // INIT
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', ()=>{
+  refreshEntitlementFromCache();      // soft mirror, before first render
   applyDarkMode(isDark());
   renderHome();
+
+  // If the native purchase bridge is present (Capacitor build), ask it for the
+  // real entitlement and update. On the web/dev it simply isn't there, so the
+  // soft-mirror value stands (and free tier applies).
+  if (window.JapanGoIAP && typeof window.JapanGoIAP.getEntitlement === 'function') {
+    Promise.resolve(window.JapanGoIAP.getEntitlement())
+      .then(info => {
+        if (info && typeof info.hasFullAccess === 'boolean') setFullAccess(info.hasFullAccess);
+        if (info && info.priceString) { IAP_PRICE_DISPLAY = info.priceString; }
+      })
+      .catch(()=>{});
+  }
 
   // Register the service worker for offline support (production).
   // When a new version is detected, it activates on next launch.
@@ -4433,6 +4709,25 @@ window.addEventListener('DOMContentLoaded', ()=>{
       <button id="dark-toggle" class="toggle-switch" role="switch" aria-checked="false" onclick="toggleDarkMode()">
         <span class="toggle-knob"></span>
       </button>
+    </div>
+
+    <div class="options-row">
+      <div class="options-row-label">
+        <span class="options-row-title">Japanese keyboard</span>
+        <span class="options-row-sub">Turn off to answer everything in romaji</span>
+      </div>
+      <button id="jpkbd-toggle" class="toggle-switch" role="switch" aria-checked="true" onclick="toggleJpKeyboard()">
+        <span class="toggle-knob"></span>
+      </button>
+    </div>
+
+    <div class="options-divider"></div>
+
+    <div class="options-section-label">Full access</div>
+    <div id="options-iap-status" class="options-row-sub" style="margin-bottom:12px"></div>
+    <div class="options-btn-row" id="options-iap-actions">
+      <button class="options-action" onclick="openPaywall()">✦ Unlock Everything</button>
+      <button class="options-action secondary" onclick="restorePurchase()">Restore Purchase</button>
     </div>
 
     <div class="options-divider"></div>
