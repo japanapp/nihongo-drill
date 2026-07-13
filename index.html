@@ -85,6 +85,13 @@
     .app-title { font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 800; color: var(--paper); letter-spacing: .04em; }
     .header-logo { width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; object-fit: cover; }
     .header-badge { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; background: var(--red-light); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; border-radius: 8px; }
+    /* Utility row: Dictionary / Revision / Settings — smaller than the section nav below it */
+    .utility-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .utility-btn { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--paper-warm); border-radius: 10px; padding: 7px 4px; background: var(--paper-warm); color: var(--text-soft); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .utility-btn:active { transform: scale(.96); }
+    .utility-btn .ub-icon { font-size: 14px; line-height: 1; }
+    .utility-btn .ub-label { line-height: 1; }
+    .utility-btn .header-badge { top: 2px; right: 2px; }
     .cat-back { background: transparent; border: none; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; padding: 4px 0 10px; }
     .app-subtitle { font-size: 12px; color: var(--gold); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
     .header-back { background: none; border: none; color: var(--gold); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; padding: 8px 0; display: flex; align-items: center; gap: 6px; }
@@ -497,7 +504,6 @@
       <button class="big-btn gold" id="phrase-quiz-btn" onclick="beginPhraseQuiz('practice')">Practice Mode</button>
       <button class="big-btn test-btn" id="phrase-test-btn" onclick="confirmPhraseTestMode()">
         <span class="tb-title">Test Mode</span>
-        <span class="tb-sub">Sudden Death · 100% to clear</span>
       </button>
     </div>
     <p id="phrase-mode-help" style="font-size:11px;color:var(--text-soft);text-align:center;margin-top:10px;line-height:1.5">
@@ -542,14 +548,20 @@
         <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
       </div>
     </div>
-    <button id="dict-btn" onclick="openDictionary()" aria-label="Dictionary"
-      style="margin-left:auto;background:transparent;border:none;cursor:pointer;padding:6px;color:var(--paper);font-size:20px;line-height:1">🔍</button>
-    <button id="revision-btn" onclick="startRevisionQuiz()" aria-label="Revision"
-      style="position:relative;background:transparent;border:none;cursor:pointer;padding:6px;color:var(--paper);font-size:20px;line-height:1">📖<span id="revision-badge" class="header-badge" style="display:none"></span></button>
-    <button id="options-btn" onclick="openOptions()" aria-label="Options"
-      style="background:transparent;border:none;cursor:pointer;padding:6px;color:var(--paper);font-size:22px;line-height:1">⚙</button>
   </div>
   <div class="card-area">
+    <div class="utility-row">
+      <button class="utility-btn" onclick="openDictionary()">
+        <span class="ub-icon">🔍</span><span class="ub-label">Dictionary</span>
+      </button>
+      <button class="utility-btn" onclick="startRevisionQuiz()">
+        <span class="ub-icon">📖</span><span class="ub-label">Revision</span>
+        <span id="revision-badge" class="header-badge" style="display:none"></span>
+      </button>
+      <button class="utility-btn" onclick="openOptions()">
+        <span class="ub-icon">⚙</span><span class="ub-label">Settings</span>
+      </button>
+    </div>
     <div id="section-nav-container"></div>
     <div id="home-body"></div>
   </div>
@@ -621,7 +633,6 @@
       <button class="big-btn gold" onclick="beginQuiz('practice')">Practice Mode</button>
       <button class="big-btn test-btn" onclick="confirmTestMode()" id="test-mode-btn">
         <span class="tb-title">Test Mode</span>
-        <span class="tb-sub">Sudden Death · 100% to clear</span>
       </button>
     </div>
     <p id="mode-help" style="font-size:11px;color:var(--text-soft);text-align:center;margin-top:10px;line-height:1.5">
@@ -719,13 +730,13 @@ const KANA = {
     {char:'よ',rom:'yo',hint:'A yo-yo on a string',tier:'basic'},
     {char:'わ',rom:'wa',hint:'A wave breaking against a cliff',tier:'basic'},
     {char:'を',rom:'wo',hint:'A woven basket — the object-marker particle. Written "wo" but pronounced "o"',tier:'basic'},
+    {char:'ん',rom:'n',hint:'An nnn humming sound — sealed lips',tier:'basic',mergeUp:true},
+    {char:'っ',rom:'double/sokuon',hint:'っ (sokuon) — the small tsu doubles the next consonant: がっこう (gakkou), きって (kitte), ちょっと (chotto). Answer "double" or "sokuon".',tier:'basic',mergeUp:true},
     {char:'ら',rom:'ra',hint:'A rabbit hopping over a log',tier:'basic'},
     {char:'り',rom:'ri',hint:'A reed splitting in the wind',tier:'basic'},
     {char:'る',rom:'ru',hint:'A roo (kangaroo) tail looping around',tier:'basic'},
     {char:'れ',rom:'re',hint:'A reggae musician strumming a chord',tier:'basic'},
     {char:'ろ',rom:'ro',hint:'A road winding into a tight loop',tier:'basic'},
-    {char:'ん',rom:'n',hint:'An nnn humming sound — sealed lips',tier:'basic'},
-    {char:'っ',rom:'double',hint:'っ (sokuon 促音) — doubles the next consonant: がっこう (gakkou), きって (kitte), ちょっと (chotto)',tier:'basic'},
     {char:'が',rom:'ga',hint:'か with dakuten — voiced "ka" becomes "ga"',tier:'dakuten'},
     {char:'ぎ',rom:'gi',hint:'き with dakuten — "ki" becomes "gi"',tier:'dakuten'},
     {char:'ぐ',rom:'gu',hint:'く with dakuten — "ku" becomes "gu"',tier:'dakuten'},
@@ -831,8 +842,8 @@ const KANA = {
     {char:'ル',rom:'ru',hint:'A roo (kangaroo) hopping forward',tier:'basic'},
     {char:'レ',rom:'re',hint:'A reggae rhythm — sharp downbeat',tier:'basic'},
     {char:'ロ',rom:'ro',hint:'A rotunda — a square garden',tier:'basic'},
-    {char:'ン',rom:'n',hint:'An nnn echo — short and sealed',tier:'basic'},
-    {char:'ッ',rom:'double',hint:'ッ (sokuon 促音) — doubles the next consonant: キット (kitto), マッサージ (massaaji), ベッド (beddo)',tier:'basic'},
+    {char:'ン',rom:'n',hint:'An nnn echo — short and sealed',tier:'basic',mergeUp:true},
+    {char:'ッ',rom:'double/sokuon',hint:'ッ (sokuon 促音) — doubles the next consonant: キット (kitto), マッサージ (massaaji), ベッド (beddo)',tier:'basic',mergeUp:true},
     {char:'ー',rom:'long vowel',hint:'ー (choonpu 長音符) — extends the previous vowel: コーヒー (koohii), ラーメン (raamen), ビール (biiru)',tier:'basic'},
     {char:'ガ',rom:'ga',hint:'カ with dakuten — "ka" becomes "ga"',tier:'dakuten'},
     {char:'ギ',rom:'gi',hint:'キ with dakuten — "ki" becomes "gi"',tier:'dakuten'},
@@ -964,6 +975,7 @@ const TIME_BLOCKS = [
     {digital:'2:00',jp:'二時',rom:'niji',hint:''},
     {digital:'3:00',jp:'三時',rom:'sanji',hint:''},
     {digital:'4:00',jp:'四時',rom:'yoji',hint:'IRREGULAR: yoji not yonji'},
+    {digital:'5:00',jp:'五時',rom:'goji',hint:''},
     {digital:'6:00',jp:'六時',rom:'rokuji',hint:''},
   ]},
   { label:"O'clock 7-12", preview:'時', note:'9時 is kuji, not kyuuji. The rest are regular.', items:[
@@ -1840,6 +1852,12 @@ function blocksFor(section, tab) {
         while (i < k.length && chunk.length < BLOCK_SIZE && (k[i].tier||'basic') === tier) {
           chunk.push(k[i]); i++;
         }
+        // Absorb any following items flagged mergeUp (same tier) so small
+        // trailing sets like ん + っ join the previous block instead of
+        // forming a tiny orphan block of their own.
+        while (i < k.length && k[i].mergeUp && (k[i].tier||'basic') === tier) {
+          chunk.push(k[i]); i++;
+        }
         const tierLabel = KANA_TIER_LABELS[tier] || 'Basic';
         blocks.push({ label: tierLabel, preview: chunk[0].char, items: chunk, numeric:false, tier });
       }
@@ -2442,7 +2460,8 @@ function confirmTestMode() {
     'Test Mode',
     'This is sudden death — one wrong answer ends the test instantly. You need 100% to clear the block.',
     'Ready — go!',
-    () => beginQuiz('test')
+    () => beginQuiz('test'),
+    'images/states/test-mode.png'
   );
 }
 
@@ -2594,7 +2613,7 @@ function buildFoundationQuestion(item) {
     } else {
       // Time — show jp form
       prompt = `<div class="q-label">Type the reading</div><div class="q-kana" style="font-family:'Shippori Mincho',serif;font-size:38px">${item.jp}</div>`;
-      correct = item.rom; ph = 'e.g. sanji han…';
+      correct = item.rom; ph = 'Type romaji…';
     }
     qCard.innerHTML = prompt;
     const safe = escQ(correct);
@@ -2763,9 +2782,8 @@ function testModeFailed(item) {
     <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
       <img src="images/states/test-failed.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Test failed">
       <h2 style="color:#fff">Test Failed</h2>
-      <p>One wrong answer ends the test in Sudden Death mode.<br>The wrong item has been added to your Revision pool.</p>
+      <p style="font-size:12px">Wrong answer added to your Revision pool.</p>
       <button class="complete-btn" onclick="beginQuiz('test')">Retry Test ↺</button>
-      <button class="complete-btn" onclick="beginQuiz('practice')">Switch to Practice</button>
       <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
     </div>`;
 }
@@ -3080,7 +3098,7 @@ function blockComplete() {
 
 function confirmQuit() {
   try {
-    showModal('🐾', 'Quit quiz?', 'Your progress in this session will be lost.', 'Yes, quit', () => showScreen('home'));
+    showModal('🐾', 'Quit quiz?', 'Your progress in this session will be lost.', 'Yes, quit', () => showScreen('home'), 'images/states/quit.png');
   } catch(e) {
     showScreen('home'); // direct fallback if modal errors
   }
@@ -3159,7 +3177,7 @@ function showFoundationReviewQ() {
     const safe = escQ(String(item.n));
     answer = `<input class="answer-input" id="rev-input" type="text" inputmode="numeric"
       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-      placeholder="e.g. 325…"/>
+      placeholder="Type your answer…"/>
       <button class="submit-btn" onclick="checkRevTyped('${safe}')">Submit</button>`;
   } else if (reviewType === 'time-rom') {
     // Digital time shown → pick the romaji reading
@@ -3174,7 +3192,7 @@ function showFoundationReviewQ() {
     const safe = escQ(item.rom);
     answer = `<input class="answer-input" id="rev-input" type="text"
       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-      placeholder="e.g. sanji nijuppun…"/>
+      placeholder="Type your answer…"/>
       <button class="submit-btn" onclick="checkRevTyped('${safe}')">Submit</button>`;
   }
 
@@ -3683,7 +3701,8 @@ function confirmPhraseTestMode() {
     'Test Mode',
     'Sudden death across all 5 phases. One wrong answer anywhere ends the test. You need a flawless run to clear this block.',
     'Ready — go!',
-    () => beginPhraseQuiz('test')
+    () => beginPhraseQuiz('test'),
+    'images/states/test-mode.png'
   );
 }
 
@@ -4111,16 +4130,15 @@ function phraseTestModeFailed(item) {
     <div class="phrases-complete" style="background:linear-gradient(135deg,#8a2828,#5a1a1a)">
       <img src="images/states/test-failed.png" onerror="this.style.display=\'none\'" class="mascot-img" alt="Test failed">
       <h2 style="color:#fff">Test Failed</h2>
-      <p>One wrong answer ends the test in Sudden Death mode.<br>The phrase has been added to your Revision pool.</p>
+      <p style="font-size:12px">Phrase added to your Revision pool.</p>
       <button class="complete-btn" onclick="beginPhraseQuiz('test')">Retry Test ↺</button>
-      <button class="complete-btn" onclick="beginPhraseQuiz('practice')">Switch to Practice</button>
       <button class="complete-btn secondary" onclick="showScreen('home')">Back to Home</button>
     </div>`;
 }
 
 function confirmPhraseQuit() {
   try {
-    showModal('🐾', 'Quit phrases?', 'Your progress in this session will be lost.', 'Yes, quit', () => showScreen('home'));
+    showModal('🐾', 'Quit phrases?', 'Your progress in this session will be lost.', 'Yes, quit', () => showScreen('home'), 'images/states/quit.png');
   } catch(e) {
     showScreen('home');
   }
@@ -4452,9 +4470,10 @@ function confirmRevisionQuit() {
 }
 
 // ── Custom confirm modal ─────────────────────────────
-function showModal(emoji, title, body, confirmLabel, onConfirm) {
+function showModal(emoji, title, body, confirmLabel, onConfirm, imageSrc) {
   const overlay    = document.getElementById('modal-overlay');
   const emojiEl    = document.getElementById('modal-emoji');
+  const imageEl    = document.getElementById('modal-image');
   const titleEl    = document.getElementById('modal-title');
   const bodyEl     = document.getElementById('modal-body');
   const confirmBtn = document.getElementById('modal-confirm');
@@ -4463,6 +4482,11 @@ function showModal(emoji, title, body, confirmLabel, onConfirm) {
   if (!overlay || !emojiEl || !confirmBtn) {
     if (confirm(title + '\n\n' + body)) onConfirm();
     return;
+  }
+  // Optional image replaces the emoji when provided.
+  if (imageEl) {
+    if (imageSrc) { imageEl.src = imageSrc; imageEl.style.display = 'block'; emojiEl.style.display = 'none'; }
+    else { imageEl.style.display = 'none'; emojiEl.style.display = ''; }
   }
   emojiEl.textContent    = emoji;
   titleEl.textContent    = title;
@@ -4661,7 +4685,7 @@ function masteryFailed() {
 function confirmMasteryQuit() {
   try {
     showModal('🐾', 'Quit the test?', 'Your mastery test progress will be lost.', 'Yes, quit',
-      () => showScreen('home'));
+      () => showScreen('home'), 'images/states/quit.png');
   } catch (e) { showScreen('home'); }
 }
 
@@ -4715,6 +4739,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
 <!-- CUSTOM CONFIRM MODAL -->
 <div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; padding:20px;">
   <div style="background:var(--ink); border:2px solid var(--gold); border-radius:20px; padding:28px 22px; max-width:320px; width:100%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.4);">
+    <img id="modal-image" style="display:none; max-height:110px; margin:0 auto 8px;" alt="" onerror="this.style.display='none'">
     <div id="modal-emoji" style="font-size:36px; margin-bottom:10px;"></div>
     <h3 id="modal-title" style="font-family:'Shippori Mincho',serif; font-size:20px; color:var(--gold-light); margin-bottom:8px;"></h3>
     <p id="modal-body" style="font-size:13px; color:var(--paper); opacity:.8; line-height:1.6; margin-bottom:20px;"></p>
