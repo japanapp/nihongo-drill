@@ -1214,9 +1214,12 @@ const DRILL_META = {
 // The Words section is organised by meaning, not script. Each word is
 // assigned to the FIRST category whose tags it matches (priority order),
 // so every word lands in exactly one category. Within a category, words are
-// ordered by survival priority (kanjiPriority ascending — lower = more
-// useful day-to-day). Reading + meaning are tested; kana-writing lives in
-// Foundation. id is used as the progress key, so it must stay stable.
+// ordered common-first by JMdict corpus frequency (w.freq: nf rank 1-48
+// plus ichi1/gai1/spec1 everyday-vocab tags mapped in; lower = more common;
+// null = unranked, sorts last), tie-broken by kanjiPriority so survival
+// ordering is preserved within a frequency band. Reading + meaning are
+// tested; kana-writing lives in Foundation. id is used as the progress key,
+// so it must stay stable.
 const WORD_CATEGORIES = [
   { id:'food',      icon:'🍜', label:'Food & Drink',      tags:['food','drink'] },
   { id:'transport', icon:'🚃', label:'Getting Around',    tags:['transport','transport-place','direction'] },
@@ -1245,8 +1248,11 @@ function wordsByCategory() {
       if (assigned.has(w)) return;
       if (w.tags.some(t => cat.tags.includes(t))) { assigned.add(w); words.push(w); }
     });
-    // survival priority: lower kanjiPriority first, then keep stable order
-    words.sort((a,b) => (a.kanjiPriority||8000) - (b.kanjiPriority||8000));
+    // common-first: JMdict frequency rank ascending (unranked last),
+    // tie-break by kanjiPriority, then keep stable order
+    words.sort((a,b) =>
+      ((a.freq ?? 999) - (b.freq ?? 999)) ||
+      ((a.kanjiPriority||8000) - (b.kanjiPriority||8000)));
     map[cat.id] = words;
   });
   _wordCatCache = map;
