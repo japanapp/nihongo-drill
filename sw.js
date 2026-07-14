@@ -3,7 +3,7 @@
 // Bump CACHE_VERSION whenever you ship new app code/assets.
 // This forces clients to fetch the new shell on next launch.
 // ==========================================================
-const CACHE_VERSION = 'japango-v1.6.7';
+const CACHE_VERSION = 'japango-v1.6.8';
 const BASE = '/nihongo-drill/';
 
 // Core app shell - must all exist or install fails, so keep this list
@@ -24,6 +24,7 @@ const CORE_ASSETS = [
   BASE + 'images/states/test-failed.png',
   BASE + 'images/states/revision-time.png',
   BASE + 'images/states/empty-revision.png',
+  BASE + 'images/states/locked.png',
 ];
 
 // Install: pre-cache the core shell. Individual failures (e.g. an image

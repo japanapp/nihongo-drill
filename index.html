@@ -166,6 +166,13 @@
     .block-btn.locked { background: var(--paper-warm); color: #bbb; cursor: not-allowed; }
     .block-btn.paywalled { background: var(--paper-warm); color: var(--gold); cursor: pointer; border: 1px dashed var(--gold); }
     .theme-card.paywalled { border-color: var(--gold); border-style: dashed; }
+    /* Mascot lock overlay on paywalled boxes (sits over content, taps pass through) */
+    .block-btn.paywalled, .theme-card.paywalled { position: relative; overflow: hidden; }
+    .block-btn.paywalled::after, .theme-card.paywalled::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: url('images/states/locked.png') center / 62% no-repeat;
+      opacity: .32;
+    }
     .theme-card .tc-lock { color: var(--gold); font-weight: 700; opacity: 1; }
     .paywall-hero { text-align: center; padding: 8px 0 4px; }
     .paywall-hero .mascot-img { max-height: 120px; margin: 0 auto 8px; }
