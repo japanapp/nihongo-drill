@@ -1822,6 +1822,72 @@ function romajiMatch(userInput, correct) {
   return alts.some(a => romajiSkeleton(a) === u);
 }
 function isKanaTab(){return currentSection==='foundation' && (currentTab==='hiragana'||currentTab==='katakana');}
+
+// ── English answer matching with UK/US spelling tolerance ──
+// Typed English answers accept both British and American spellings by
+// canonicalising BOTH the stored answer and the user's input to the same
+// skeleton before comparing (so it doesn't matter which convention the
+// data happens to use — and the data uses a mix). Parenthetical hints in
+// answers, e.g. "hot (weather)", are optional to type. '/' still separates
+// fully distinct acceptable alternates in the data.
+const EN_WORD_PAIRS = {
+  grey:'gray', colour:'color', colours:'colors', flavour:'flavor', flavours:'flavors',
+  favourite:'favorite', favourites:'favorites', neighbour:'neighbor', neighbours:'neighbors',
+  neighbourhood:'neighborhood', centre:'center', theatre:'theater',
+  litre:'liter', litres:'liters', metre:'meter', metres:'meters',
+  kilometre:'kilometer', kilometres:'kilometers',
+  traveller:'traveler', travellers:'travelers', travelling:'traveling', travelled:'traveled',
+  cancelled:'canceled', cancelling:'canceling', jewellery:'jewelry', pyjamas:'pajamas',
+  aeroplane:'airplane', doughnut:'donut', doughnuts:'donuts', programme:'program',
+  cheque:'check', kerb:'curb', tyre:'tire', tyres:'tires', storey:'story', mum:'mom',
+  practise:'practice', practised:'practiced', practising:'practicing', licence:'license',
+  whisky:'whiskey', yoghurt:'yogurt', aluminium:'aluminum', moustache:'mustache',
+  harbour:'harbor', humour:'humor', honour:'honor', odour:'odor', labour:'labor',
+  behaviour:'behavior', rumour:'rumor', savoury:'savory', mould:'mold', draught:'draft',
+  plough:'plow', manoeuvre:'maneuver', anaesthetic:'anesthetic', enrol:'enroll',
+  fulfil:'fulfill', marvellous:'marvelous', woollen:'woolen', sombre:'somber'
+};
+function englishWordNorm(w){
+  if (EN_WORD_PAIRS[w]) return EN_WORD_PAIRS[w];
+  let t = w;
+  // Generic suffix transforms. These are applied to BOTH sides of every
+  // comparison, so they only need to be consistent, not linguistically
+  // perfect ("hour"->"hor" on both sides still compares correctly).
+  t = t.replace(/isation(s?)$/,'ization$1');
+  t = t.replace(/is(e|es|ed|ing)$/,'iz$1');    // recognise/organised/apologising
+  t = t.replace(/ys(e|es|ed|ing)$/,'yz$1');    // analyse
+  t = t.replace(/([tbd])re(s?)$/,'$1er$2');    // centre/litre/metre/fibre — not "tire"
+  t = t.replace(/ogue(s?)$/,'og$1');           // catalogue/dialogue
+  t = t.replace(/our(s?)$/,'or$1');            // colour/flavour/harbour
+  return t;
+}
+function _enBase(s){
+  return (s||'').toString().toLowerCase()
+    .replace(/[.,!?'’"]/g,'').replace(/\s+/g,' ').trim();
+}
+function _enWords(s){
+  return _enBase(s).split(' ').filter(Boolean).map(englishWordNorm).join(' ');
+}
+// An answer string yields up to two comparable forms: with the
+// parenthetical dropped ("hot") and with it kept as plain words
+// ("hot weather"); typing either is correct.
+function englishForms(s){
+  const noParen   = (s||'').toString().replace(/\([^)]*\)/g,' ');
+  const unwrapped = (s||'').toString().replace(/[()]/g,' ');
+  const forms = [_enWords(noParen), _enWords(unwrapped)].filter(x=>x!=='');
+  return [...new Set(forms)];
+}
+// True if a typed English answer matches, tolerating UK/US spelling,
+// optional parentheticals, and '/'-separated alternates.
+function englishMatch(userInput, correct){
+  const userForms = englishForms(userInput);
+  if (!userForms.length) return false;
+  return (correct||'').toString().split('/').some(alt=>{
+    const altForms = englishForms(alt);
+    return userForms.some(u=>altForms.includes(u));
+  });
+}
+
 function isFoundation(){return currentSection==='foundation';}
 function isDrill(){return currentSection==='drill';}
 
@@ -2972,14 +3038,14 @@ function submitDrillAnswer() {
 
   // Match according to what the phase is testing:
   //  - romaji readings ('Romaji' / kanji 'Read'): long-vowel tolerant
-  //  - English meaning ('English'): accept any '/'-separated alternative
+  //  - English meaning ('English'): UK/US spelling tolerant, parentheticals
+  //    optional, '/'-separated alternates accepted (see englishMatch)
   //  - kana production ('Write it'): exact match
   let ok;
   if (ph.label === 'Romaji' || ph.label === 'Read') {
     ok = romajiMatch(val, correctRaw);
   } else if (ph.label === 'English') {
-    const u = val.toLowerCase().replace(/\s+/g,' ').trim();
-    ok = correct.split('/').map(s=>s.replace(/\s+/g,' ').trim()).includes(u);
+    ok = englishMatch(val, correctRaw);
   } else {
     ok = val.toLowerCase() === correct;
   }
@@ -3285,7 +3351,9 @@ function checkRevTyped(correct) {
   const norm = s => s.trim().toLowerCase().replace(/\s+/g,'');
   const val = norm(inp.value);
   const alts = correct.toLowerCase().split('/').map(s=>norm(s));
-  const ok = alts.includes(val);
+  // Exact path covers digits, romaji, and kana; the English path adds
+  // UK/US spelling + parenthetical tolerance for meaning questions.
+  const ok = alts.includes(val) || englishMatch(inp.value, correct);
   inp.disabled = true;
   document.querySelector('#review-content .submit-btn').disabled = true;
   const fb = document.getElementById('rev-fb');
