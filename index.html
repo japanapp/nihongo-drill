@@ -6,7 +6,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Japan Go" />
-  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="theme-color" content="#fbf0e5" />
+  <!-- Boots cream to match the welcome splash; JS restores the
+       app ink (or dark-mode ink) when the splash is dismissed. -->
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Japan Go</title>
@@ -166,13 +168,20 @@
     .block-btn.locked { background: var(--paper-warm); color: #bbb; cursor: not-allowed; }
     .block-btn.paywalled { background: var(--paper-warm); color: var(--gold); cursor: pointer; border: 1px dashed var(--gold); }
     .theme-card.paywalled { border-color: var(--gold); border-style: dashed; }
-    /* Mascot lock overlay on paywalled boxes (sits over content, taps pass through) */
+    /* Mascot lock overlay on paywalled boxes (taps pass through).
+       Kana blocks (::after): mascots sit OVER the block number.
+       Words/Phrases cards (::before): mascots sit UNDER the label so the
+       topic name stays readable; card content is lifted above it. */
     .block-btn.paywalled, .theme-card.paywalled { position: relative; overflow: hidden; }
-    .block-btn.paywalled::after, .theme-card.paywalled::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none;
+    .block-btn.paywalled::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
       background: url('images/states/locked.png') center / 62% no-repeat;
-      opacity: .32;
     }
+    .theme-card.paywalled::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background: url('images/states/locked.png') center / 62% no-repeat;
+    }
+    .theme-card.paywalled > * { position: relative; z-index: 1; }
     .theme-card .tc-lock { color: var(--gold); font-weight: 700; opacity: 1; }
     .paywall-hero { text-align: center; padding: 8px 0 4px; }
     .paywall-hero .mascot-img { max-height: 120px; margin: 0 auto 8px; }
@@ -648,39 +657,39 @@
   </div>
   <div class="card-area">
     <div class="howto-block">
-      <div class="howto-title">🧱 Foundation</div>
+      <div class="howto-title">Foundation</div>
       <div class="howto-sub">Learn hiragana and katakana in blocks of five, plus numbers and time. Each block drills reading, meaning and typing until it sticks.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">📚 Words</div>
+      <div class="howto-title">Words</div>
       <div class="howto-sub">991 travel words across 13 topics, ordered most-common-first — the words you'll actually need come up soonest. Work through a block in practice mode, then prove it in the test.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">💬 Phrases — powered by your words</div>
+      <div class="howto-title">Phrases — powered by your words</div>
       <div class="howto-sub">Real situations, theme by theme. Many phrases have a changeable slot, like "do you have it in [colour]?" — every matching word you've learned in Words becomes available inside these phrases, so the more words you study, the more each phrase can say. Phrase cards also show "You know:" chips for the words you've already studied, so you can watch sentences turn from noise into words you recognise.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">🧪 Test mode</div>
+      <div class="howto-title">Test mode</div>
       <div class="howto-sub">Every block ends with a test. One wrong answer fails the test — that's the point. Anything you miss goes to Revision so it comes back around.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">🔁 Revision</div>
+      <div class="howto-title">Revision</div>
       <div class="howto-sub">Your personal pool of everything you've slipped on. Clear it regularly — an empty revision pool means it's all sticking.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">🏆 Mastery</div>
+      <div class="howto-title">Mastery</div>
       <div class="howto-sub">Long-run tests across everything you've studied. Pass these and you've genuinely got it.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">📖 Dictionary</div>
+      <div class="howto-title">Dictionary</div>
       <div class="howto-sub">Search any Japanese or English word — the full dictionary is always free, whether or not you've unlocked the app.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">✦ Free tier &amp; unlocking</div>
+      <div class="howto-title">Free tier &amp; unlocking</div>
       <div class="howto-sub">The first hiragana blocks, the first numbers and time blocks, the first Food word blocks and the whole "At the Restaurant" phrase theme are free — a sampler of every section. One single purchase unlocks everything else, forever. No subscription. Use Restore Purchase on a new device signed in to the same store account.</div>
     </div>
     <div class="howto-block">
-      <div class="howto-title">⚙️ Options worth knowing</div>
+      <div class="howto-title">Options worth knowing</div>
       <div class="howto-sub">Turn off the Japanese keyboard to answer everything in romaji. Furigana shows kana readings above kanji — turn it off for hard mode. Typed English answers accept both British and American spellings. Back up your progress from Options; it's saved on this device only.</div>
     </div>
     <button class="complete-btn" onclick="closeHowTo()">Got it</button>
@@ -1652,6 +1661,10 @@ function closeHowTo() {
 function dismissWelcomeSplash(instant) {
   const el = document.getElementById('welcome-splash');
   if (!el) return;
+  // Hand the safe-area strip back to the app's own colour. Reuses the
+  // dark-mode logic so the strip is correct under either theme.
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isDark() ? '#12121f' : '#1a1a2e');
   if (instant) { el.remove(); return; }
   el.classList.add('leaving');
   setTimeout(() => el.remove(), 400);
@@ -1662,8 +1675,12 @@ const DARK_KEY = 'jp_dark_v1';
 function isDark() { return localStorage.getItem(DARK_KEY) === '1'; }
 function applyDarkMode(on) {
   document.body.classList.toggle('dark', !!on);
+  // While the welcome splash is up, leave theme-color alone so the iOS
+  // safe-area strip stays cream and matches the artwork. Dismissing the
+  // splash applies the right colour for the current theme.
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', on ? '#12121f' : '#1a1a2e');
+  const splashUp = !!document.getElementById('welcome-splash');
+  if (meta && !splashUp) meta.setAttribute('content', on ? '#12121f' : '#1a1a2e');
   syncDarkToggle();
 }
 function toggleDarkMode() {
@@ -2204,10 +2221,9 @@ function renderWordCategoriesHome(body) {
     const complete = nBlocks > 0 && cleared === nBlocks;
     const locked = isWordCategoryPaywalled(cat.id);
     html += `<div class="theme-card ${complete?'complete':''} ${locked?'paywalled':''}" onclick="openWordCategory('${cat.id}')">
-      <div class="tc-icon">${cat.icon}</div>
       <div class="tc-label">${cat.label}</div>
       ${locked
-        ? '<div class="tc-count tc-lock">🔒 Unlock</div>'
+        ? '<div class="tc-count tc-lock">Unlock</div>'
         : `<div class="tc-count">${cleared}/${nBlocks} blocks</div>${complete ? '<div class="tc-check">✓ Complete</div>' : ''}`}
     </div>`;
   });
@@ -3737,10 +3753,9 @@ function renderPhrasesHome(body) {
     const practiced = phraseThemeDone(t.id);
     const locked = isPhraseThemePaywalled(t.id);
     html += `<div class="theme-card ${practiced?'complete':''} ${locked?'paywalled':''}" onclick="openPhraseTheme('${t.id}')">
-      <div class="tc-icon">${t.icon}</div>
       <div class="tc-label">${t.label}</div>
       ${locked
-        ? '<div class="tc-count tc-lock">🔒 Unlock</div>'
+        ? '<div class="tc-count tc-lock">Unlock</div>'
         : `<div class="tc-count">${doneCount}/${blocks.length} blocks</div>${practiced ? '<div class="tc-check">✓ Complete</div>' : ''}`}
     </div>`;
   });
