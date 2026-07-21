@@ -17,7 +17,7 @@ workflows:
         - appstore_credentials   # must contain CERTIFICATE_PRIVATE_KEY (added in Codemagic UI)
       vars:
         BUNDLE_ID: "com.habi.japango"
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
         APP_STORE_APPLE_ID: 6792918628
       node: 22
@@ -62,7 +62,7 @@ workflows:
       - name: Build iOS app (archive .ipa)
         script: |
           xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
+            --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
 
     artifacts:
