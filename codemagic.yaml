@@ -13,6 +13,8 @@ workflows:
       app_store_connect: JapanGo!
 
     environment:
+      groups:
+        - appstore_credentials   # must contain CERTIFICATE_PRIVATE_KEY (added in Codemagic UI)
       vars:
         BUNDLE_ID: "com.habi.japango"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
