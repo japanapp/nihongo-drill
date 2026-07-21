@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Japan Go" />
+  <meta name="apple-mobile-web-app-title" content="Japan Go!" />
   <meta name="theme-color" content="#fbf0e5" />
   <!-- Boots cream to match the welcome splash; JS restores the
        app ink (or dark-mode ink) when the splash is dismissed. -->
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <title>Japan Go</title>
+  <title>Japan Go!</title>
   <meta name="description" content="Kana and survival Japanese for travellers. Learn to read signs, count, tell the time, and handle real situations in shops, restaurants and stations before your trip to Japan." />
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -516,7 +516,7 @@
 <!-- WELCOME SPLASH — tap anywhere to enter the app. If the artwork is
      missing (e.g. not yet added to the repo) it dismisses itself. -->
 <div id="welcome-splash" onclick="dismissWelcomeSplash()">
-  <img src="images/welcome-screen.png" alt="Japan Go — Luna and Bentley welcome you"
+  <img src="images/welcome-screen.png" alt="Japan Go! — Luna and Bentley welcome you"
        onerror="dismissWelcomeSplash(true)">
 </div>
 
@@ -576,10 +576,10 @@
 <div id="screen-home" class="screen active">
   <div class="app-header">
     <div style="display:flex;align-items:center;gap:10px">
-      <img src="icon-192.png" alt="Japan Go" class="header-logo"
+      <img src="icon-192.png" alt="Japan Go!" class="header-logo"
         onerror="this.style.display='none'">
       <div>
-        <div class="app-title">Japan Go</div>
+        <div class="app-title">Japan Go!</div>
         <div class="app-subtitle" id="home-section-label">Kana Foundation</div>
       </div>
     </div>
@@ -622,7 +622,7 @@
   <div class="app-header">
     <button class="header-back" onclick="closePaywall()">Back</button>
     <div style="text-align:right">
-      <div class="app-title">Unlock Japan Go</div>
+      <div class="app-title">Unlock Japan Go!</div>
       <div class="app-subtitle">One payment · yours forever</div>
     </div>
   </div>
@@ -651,7 +651,7 @@
   <div class="app-header">
     <button class="header-back" onclick="closeHowTo()">Back</button>
     <div style="text-align:right">
-      <div class="app-title">How to use Japan Go</div>
+      <div class="app-title">How to use Japan Go!</div>
       <div class="app-subtitle">Everything the app can do</div>
     </div>
   </div>
@@ -1121,7 +1121,7 @@ const SECTION_META = {
 // ═══════════════════════════════════════════════════════
 // ENTITLEMENT / IN-APP PURCHASE GATE
 // ═══════════════════════════════════════════════════════
-// Japan Go is a free download with a single one-time "Unlock Everything"
+// Japan Go! is a free download with a single one-time "Unlock Everything"
 // purchase. This module is the pure JS gate: it decides whether a given
 // piece of content is available, based on (a) the free tier and (b) whether
 // the user has purchased. The native purchase layer (RevenueCat/StoreKit/
@@ -1576,11 +1576,11 @@ function handleImportFile(fileInput) {
     let data;
     try { data = JSON.parse(reader.result); }
     catch (e) {
-      showModal('⚠️', 'Could not read file', 'That file is not a valid Japan Go backup.', 'OK', ()=>{});
+      showModal('⚠️', 'Could not read file', 'That file is not a valid Japan Go! backup.', 'OK', ()=>{});
       return;
     }
     if (!data || !BACKUP_FORMATS_ACCEPTED.includes(data.format) || data.progress === undefined) {
-      showModal('⚠️', 'Wrong file', 'That does not look like a Japan Go backup.', 'OK', ()=>{});
+      showModal('⚠️', 'Wrong file', 'That does not look like a Japan Go! backup.', 'OK', ()=>{});
       return;
     }
     // Validate the progress payload parses before we commit anything
