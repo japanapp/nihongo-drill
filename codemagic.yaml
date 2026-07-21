@@ -1,7 +1,7 @@
 # codemagic.yaml — Japan Go! iOS build → TestFlight
-# Cloud build config for Codemagic. Builds the Capacitor iOS app from the
-# web sources, signs it via the "JapanGo!" App Store Connect integration,
-# and uploads to TestFlight. Triggered manually from the Codemagic UI.
+# Builds the Capacitor iOS app from web sources, auto-creates the signing
+# certificate + provisioning profile via the App Store Connect API key
+# ("JapanGo!" integration), and uploads to TestFlight.
 
 workflows:
   ios-testflight:
@@ -10,19 +10,14 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      # Must match the App Store Connect / Apple Developer Portal integration
-      # name you created in Codemagic (Settings → Integrations).
       app_store_connect: JapanGo!
 
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.habi.japango
       vars:
         BUNDLE_ID: "com.habi.japango"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_STORE_APPLE_ID: 6792918628   # numeric Apple ID of the app record
+        APP_STORE_APPLE_ID: 6792918628
       node: 22
       xcode: latest
       cocoapods: default
@@ -37,16 +32,30 @@ workflows:
           node build-www.js
           npx cap sync ios
 
-      - name: Set up code signing settings on Xcode project
+      - name: Initialize keychain for code signing
+        script: |
+          keychain initialize
+
+      - name: Fetch (or create) signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: Add fetched certificate to keychain
+        script: |
+          keychain add-certificates
+
+      - name: Apply provisioning profiles to Xcode project
         script: |
           xcode-project use-profiles
 
       - name: Increment build number
         script: |
-          cd $CM_BUILD_DIR
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
           cd ios/App
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+          cd "$CM_BUILD_DIR"
 
       - name: Build iOS app (archive .ipa)
         script: |
@@ -63,5 +72,4 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        # Leave App Store submission off for now — TestFlight only.
         submit_to_app_store: false
