@@ -1,0 +1,67 @@
+# codemagic.yaml — Japan Go! iOS build → TestFlight
+# Cloud build config for Codemagic. Builds the Capacitor iOS app from the
+# web sources, signs it via the "JapanGo!" App Store Connect integration,
+# and uploads to TestFlight. Triggered manually from the Codemagic UI.
+
+workflows:
+  ios-testflight:
+    name: Japan Go! iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    integrations:
+      # Must match the App Store Connect / Apple Developer Portal integration
+      # name you created in Codemagic (Settings → Integrations).
+      app_store_connect: JapanGo!
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.habi.japango
+      vars:
+        BUNDLE_ID: "com.habi.japango"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        APP_STORE_APPLE_ID: 6792918628   # numeric Apple ID of the app record
+      node: 22
+      xcode: latest
+      cocoapods: default
+
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Assemble web bundle (www) and sync Capacitor iOS
+        script: |
+          node build-www.js
+          npx cap sync ios
+
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+
+      - name: Increment build number
+        script: |
+          cd $CM_BUILD_DIR
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
+          cd ios/App
+          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+
+      - name: Build iOS app (archive .ipa)
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # Leave App Store submission off for now — TestFlight only.
+        submit_to_app_store: false
